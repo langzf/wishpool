@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: core-api
+  datasource:
+    url: ${WISHPOOL_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wishpool}
+    username: ${WISHPOOL_DATASOURCE_USERNAME:wishpool}
+    password: ${WISHPOOL_DATASOURCE_PASSWORD:wishpool}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: ${WISHPOOL_FLYWAY_LOCATIONS:filesystem:../../db/migrations}
+    baseline-on-migrate: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    enabled: true
+
+server:
+  port: ${PORT:8080}
+  error:
+    whitelabel:
+      enabled: false
+
+wishpool:
+  auth:
+    token-secret: ${WISHPOOL_TOKEN_SECRET:wishpool-local-development-token-secret-change-me}
+    access-token-ttl-sec: ${WISHPOOL_ACCESS_TOKEN_TTL_SEC:900}
+    refresh-token-ttl-sec: ${WISHPOOL_REFRESH_TOKEN_TTL_SEC:2592000}
+    phone-code-ttl-sec: ${WISHPOOL_PHONE_CODE_TTL_SEC:300}
+    local-debug-phone-code: ${WISHPOOL_LOCAL_DEBUG_PHONE_CODE:true}
+  http:
+    trace-header: X-Trace-Id
+  internal:
+    token: ${WISHPOOL_INTERNAL_TOKEN:wishpool-local-internal-token}
+  outbox:
+    default-lease-seconds: ${WISHPOOL_OUTBOX_DEFAULT_LEASE_SECONDS:60}
+  storage:
+    s3:
+      endpoint: ${WISHPOOL_S3_ENDPOINT:http://localhost:9000}
+      bucket: ${WISHPOOL_S3_BUCKET:wishpool-media}
+      access-key: ${WISHPOOL_S3_ACCESS_KEY:wishpool}
+      secret-key: ${WISHPOOL_S3_SECRET_KEY:wishpool-local}
+      region: ${WISHPOOL_S3_REGION:us-east-1}
+      path-style-access: ${WISHPOOL_S3_PATH_STYLE_ACCESS:true}
+      upload-url-ttl-sec: ${WISHPOOL_S3_UPLOAD_URL_TTL_SEC:900}
+      download-url-ttl-sec: ${WISHPOOL_S3_DOWNLOAD_URL_TTL_SEC:900}
+      max-upload-size-bytes: ${WISHPOOL_S3_MAX_UPLOAD_SIZE_BYTES:104857600}

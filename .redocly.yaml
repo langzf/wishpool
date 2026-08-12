@@ -1,0 +1,10 @@
+extends:
+  - recommended
+
+apis:
+  wishpool:
+    root: packages/api-contracts/openapi/wishpool.yaml
+
+rules:
+  no-server-example.com: off
+  operation-4xx-response: off

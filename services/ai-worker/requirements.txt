@@ -1,0 +1,2 @@
+# The AI worker runtime and tests use the Python standard library.
+# Model SDKs can be added as provider-specific optional dependencies.

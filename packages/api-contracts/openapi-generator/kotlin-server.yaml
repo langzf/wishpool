@@ -1,0 +1,11 @@
+generatorName: kotlin-spring
+inputSpec: packages/api-contracts/openapi/wishpool.yaml
+outputDir: packages/api-contracts/generated/kotlin-server
+apiPackage: com.wishpool.contracts.api
+modelPackage: com.wishpool.contracts.model
+additionalProperties:
+  interfaceOnly: true
+  useSpringBoot3: true
+  useTags: true
+  serializationLibrary: jackson
+  enumPropertyNaming: original

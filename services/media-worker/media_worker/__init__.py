@@ -1,0 +1,1 @@
+"""WishPool media worker package."""

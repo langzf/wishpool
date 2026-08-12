@@ -1,0 +1,27 @@
+{
+  "name": "@wishpool/admin-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "check": "../../scripts/check-web-app.sh . @wishpool/admin-web"
+  },
+  "dependencies": {
+    "@wishpool/app-fixtures": "0.1.0",
+    "@wishpool/design-tokens": "0.1.0",
+    "lucide-react": "1.31.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "26.0.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "eslint": "10.8.1",
+    "eslint-config-next": "16.3.0",
+    "typescript": "7.0.2"
+  }
+}

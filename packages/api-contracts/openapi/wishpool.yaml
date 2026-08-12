@@ -1,0 +1,3293 @@
+openapi: 3.1.0
+info:
+  title: WishPool API
+  version: 1.0.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+  description: |
+    WishPool core API contract for mobile apps, parent web, admin web, and backend services.
+    All write endpoints are command-oriented and should be called with an Idempotency-Key header.
+servers:
+  - url: http://localhost:8080
+    description: Local core-api
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+    description: Parent login, session refresh, and authenticated user context.
+  - name: Families
+    description: Family spaces, members, and parent invitations.
+  - name: Children
+    description: Child profiles and child-specific contexts.
+  - name: Pairing
+    description: Child device pairing sessions and consumption.
+  - name: Task Templates
+    description: Reusable task templates managed by parents.
+  - name: Plans
+    description: Weekly planning rules and materialized schedules.
+  - name: Tasks
+    description: Daily task instances and child task actions.
+  - name: Media
+    description: Media upload sessions, metadata, and download references.
+  - name: Submissions
+    description: Child task submissions and submission detail views.
+  - name: Reviews
+    description: Parent review queue, decisions, and feedback.
+  - name: Wishes
+    description: Wish cards, wish fragments, and redemption records.
+  - name: Memories
+    description: Weekly memories and export jobs.
+  - name: Room
+    description: Child room state and arrangement.
+  - name: Sync
+    description: Family event pull synchronization.
+  - name: Notifications
+    description: Inbox notifications, push tokens, and notification preferences.
+  - name: Privacy
+    description: Privacy export and deletion requests.
+  - name: Admin
+    description: Local administration metadata, audit, and governed media access.
+  - name: Internal
+    description: Internal worker APIs protected by X-Internal-Token.
+
+paths:
+  /auth/phone-codes:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: requestPhoneCode
+      summary: Request a phone verification code for parent login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneCodeRequest'
+      responses:
+        '200':
+          description: Phone verification code created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneCodeCreated'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: login
+      summary: Log in a parent user with phone or provider token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenPair'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: refreshSession
+      summary: Refresh an access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenPair'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /me:
+    get:
+      tags: [Auth]
+      operationId: getMe
+      summary: Get the current authenticated user context.
+      responses:
+        '200':
+          description: Current user context.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /families:
+    post:
+      tags: [Families]
+      operationId: createFamily
+      summary: Create a family.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFamilyRequest'
+      responses:
+        '201':
+          description: Family created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Family'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /families/{familyId}:
+    get:
+      tags: [Families]
+      operationId: getFamily
+      summary: Get family details.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+      responses:
+        '200':
+          description: Family.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Family'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /families/{familyId}/members:
+    get:
+      tags: [Families]
+      operationId: listFamilyMembers
+      summary: List family members.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+      responses:
+        '200':
+          description: Family members.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FamilyMember'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /families/{familyId}/invites:
+    post:
+      tags: [Families]
+      operationId: inviteParent
+      summary: Invite a parent to a family.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteParentRequest'
+      responses:
+        '201':
+          description: Invite created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FamilyInvite'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /families/{familyId}/children:
+    get:
+      tags: [Children]
+      operationId: listChildren
+      summary: List children in a family.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+      responses:
+        '200':
+          description: Children.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChildProfile'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Children]
+      operationId: createChild
+      summary: Create a child profile.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChildRequest'
+      responses:
+        '201':
+          description: Child profile created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildProfile'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /children/{childId}:
+    patch:
+      tags: [Children]
+      operationId: updateChild
+      summary: Update child profile.
+      parameters:
+        - $ref: '#/components/parameters/ChildId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChildRequest'
+      responses:
+        '200':
+          description: Child profile updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildProfile'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /families/{familyId}/pairing-sessions:
+    post:
+      tags: [Pairing]
+      operationId: createPairingSession
+      summary: Create a child device pairing session.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePairingSessionRequest'
+      responses:
+        '201':
+          description: Pairing session created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairingSessionCreated'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /pairing/consume:
+    post:
+      tags: [Pairing]
+      security: []
+      operationId: consumePairingCode
+      summary: Pair a child device with a family.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumePairingCodeRequest'
+      responses:
+        '200':
+          description: Device paired.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenPair'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /task-templates:
+    get:
+      tags: [Task Templates]
+      operationId: listTaskTemplates
+      summary: List task templates for the current family.
+      parameters:
+        - name: familyId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task templates.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskTemplate'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Task Templates]
+      operationId: createTaskTemplate
+      summary: Create a task template.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskTemplateRequest'
+      responses:
+        '201':
+          description: Template created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskTemplate'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /plans:
+    post:
+      tags: [Plans]
+      operationId: saveWeeklyPlan
+      summary: Create or update a weekly plan.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveWeeklyPlanRequest'
+      responses:
+        '200':
+          description: Weekly plan saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyPlan'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /plans/{planId}:
+    get:
+      tags: [Plans]
+      operationId: getWeeklyPlan
+      summary: Get a weekly plan.
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Weekly plan.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyPlan'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /children/{childId}/today:
+    get:
+      tags: [Tasks]
+      operationId: getToday
+      summary: Get child today dashboard data.
+      parameters:
+        - $ref: '#/components/parameters/ChildId'
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Today snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodaySnapshot'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /tasks/{taskId}/skip:
+    post:
+      tags: [Tasks]
+      operationId: skipTask
+      summary: Mark a task as skipped.
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkipTaskRequest'
+      responses:
+        '200':
+          description: Task skipped.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskInstance'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /tasks/{taskId}/postpone:
+    post:
+      tags: [Tasks]
+      operationId: postponeTask
+      summary: Postpone a task to another date.
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostponeTaskRequest'
+      responses:
+        '200':
+          description: Task postponed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskInstance'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /media/upload-sessions:
+    post:
+      tags: [Media]
+      operationId: createUploadSession
+      summary: Create a signed upload session.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUploadSessionRequest'
+      responses:
+        '201':
+          description: Upload session created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadSession'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /media/{mediaId}/finalize:
+    post:
+      tags: [Media]
+      operationId: finalizeMedia
+      summary: Finalize a media upload.
+      parameters:
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizeMediaRequest'
+      responses:
+        '200':
+          description: Media finalized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /submissions:
+    post:
+      tags: [Submissions]
+      operationId: createSubmission
+      summary: Create a child submission.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubmissionRequest'
+      responses:
+        '201':
+          description: Submission created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /submissions/{submissionId}:
+    get:
+      tags: [Submissions]
+      operationId: getSubmission
+      summary: Get submission details.
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Submission.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionDetail'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /reviews/pending:
+    get:
+      tags: [Reviews]
+      operationId: listPendingReviews
+      summary: List pending reviews.
+      parameters:
+        - name: familyId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pending review cards.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PendingReviewCard'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /reviews:
+    post:
+      tags: [Reviews]
+      operationId: reviewSubmission
+      summary: Approve or reject a submission.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewSubmissionRequest'
+      responses:
+        '201':
+          description: Review created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /reviews/{submissionId}/detail:
+    get:
+      tags: [Reviews]
+      operationId: getReviewDetail
+      summary: Get a review detail view for a submission.
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Review detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionDetail'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /reviews/{reviewId}/revoke:
+    post:
+      tags: [Reviews]
+      operationId: revokeReview
+      summary: Revoke a review and create adjustment records when needed.
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeReviewRequest'
+      responses:
+        '200':
+          description: Review revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes:
+    post:
+      tags: [Wishes]
+      operationId: createWish
+      summary: Create a wish.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWishRequest'
+      responses:
+        '201':
+          description: Wish created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wish'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes/{wishId}/activate:
+    post:
+      tags: [Wishes]
+      operationId: activateWish
+      summary: Activate a wish.
+      parameters:
+        - $ref: '#/components/parameters/WishId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Wish activated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wish'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes/{wishId}:
+    get:
+      tags: [Wishes]
+      operationId: getWish
+      summary: Get a wish.
+      parameters:
+        - $ref: '#/components/parameters/WishId'
+      responses:
+        '200':
+          description: Wish.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wish'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes/{wishId}/redeem:
+    post:
+      tags: [Wishes]
+      operationId: redeemWish
+      summary: Redeem an unlocked wish.
+      parameters:
+        - $ref: '#/components/parameters/WishId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedeemWishRequest'
+      responses:
+        '200':
+          description: Wish redeemed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishRedemption'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /children/{childId}/wishes/current:
+    get:
+      tags: [Wishes]
+      operationId: getCurrentWish
+      summary: Get the current wish for a child.
+      parameters:
+        - $ref: '#/components/parameters/ChildId'
+      responses:
+        '200':
+          description: Current wish.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wish'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /children/{childId}/wishes:
+    get:
+      tags: [Wishes]
+      operationId: listChildWishes
+      summary: List wishes for a child.
+      parameters:
+        - $ref: '#/components/parameters/ChildId'
+        - name: weekId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Child wishes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wish'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /memories:
+    get:
+      tags: [Memories]
+      operationId: listMemories
+      summary: List memories for a child.
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Memory timeline.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryTimeline'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /memories/{memoryId}:
+    get:
+      tags: [Memories]
+      operationId: getMemory
+      summary: Get a memory detail.
+      parameters:
+        - name: memoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Weekly memory.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyMemory'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /memories/{memoryId}/export:
+    post:
+      tags: [Memories]
+      operationId: exportMemory
+      summary: Request memory export.
+      parameters:
+        - name: memoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportMemoryRequest'
+      responses:
+        '202':
+          description: Export requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryExport'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /room/state:
+    get:
+      tags: [Room]
+      operationId: getRoomState
+      summary: Get room state for a child.
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Room state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomState'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /room/items/{itemId}/arrange:
+    post:
+      tags: [Room]
+      operationId: arrangeRoomItem
+      summary: Arrange a room item.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArrangeRoomItemRequest'
+      responses:
+        '200':
+          description: Room item arranged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomItem'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /sync/pull:
+    get:
+      tags: [Sync]
+      operationId: pullSyncEvents
+      summary: Pull family events after a sequence number.
+      parameters:
+        - name: familyId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: afterSeq
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 500
+            minimum: 1
+            maximum: 1000
+      responses:
+        '200':
+          description: Family events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPullResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      operationId: listNotifications
+      summary: List the current user's inbox notifications.
+      parameters:
+        - name: familyId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, sent, failed, read]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Inbox notifications.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /notifications/read:
+    post:
+      tags: [Notifications]
+      operationId: markNotificationsRead
+      summary: Mark inbox notifications as read.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkNotificationReadRequest'
+      responses:
+        '200':
+          description: Updated notifications.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /notification-preferences:
+    get:
+      tags: [Notifications]
+      operationId: listNotificationPreferences
+      summary: List notification preferences for the current user.
+      parameters:
+        - name: familyId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification preferences.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationPreference'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags: [Notifications]
+      operationId: updateNotificationPreference
+      summary: Upsert one notification preference for the current user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationPreferenceRequest'
+      responses:
+        '200':
+          description: Notification preference.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreference'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /devices/push-token:
+    post:
+      tags: [Notifications]
+      operationId: registerPushToken
+      summary: Register or update a push token for the current device.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterPushTokenRequest'
+      responses:
+        '200':
+          description: Registered push-capable device.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDevice'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /privacy/export:
+    post:
+      tags: [Privacy]
+      operationId: requestDataExport
+      summary: Request family data export.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyRequestCreate'
+      responses:
+        '202':
+          description: Export requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /privacy/delete:
+    post:
+      tags: [Privacy]
+      operationId: requestFamilyDeletion
+      summary: Request family deletion.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyRequestCreate'
+      responses:
+        '202':
+          description: Deletion requested.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/notifications:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: createNotification
+      summary: Create or deduplicate an internal notification event.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationEventRequest'
+      responses:
+        '200':
+          description: Notification event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationEvent'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/notifications/claim:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: claimNotificationEvents
+      summary: Claim pending notification events for dispatch.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimNotificationEventsRequest'
+      responses:
+        '200':
+          description: Claimed notifications.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimNotificationEventsResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/notifications/{notificationId}/dispatch-result:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: markNotificationDispatchResult
+      summary: Mark notification dispatch result.
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationDispatchResultRequest'
+      responses:
+        '200':
+          description: Notification event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationEvent'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/dashboard:
+    get:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: getAdminDashboard
+      summary: Get local administration dashboard counters.
+      responses:
+        '200':
+          description: Dashboard counters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboard'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/families:
+    get:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: listAdminFamilies
+      summary: List family metadata for administration.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, locked, deleting, deleted]
+      responses:
+        '200':
+          description: Family metadata.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminFamilySummary'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/privacy-requests:
+    get:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: listAdminPrivacyRequests
+      summary: List privacy requests for administration.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Privacy request rows.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminPrivacyRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/audit-logs:
+    get:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: listAdminAuditLogs
+      summary: List audit logs for administration.
+      parameters:
+        - name: familyId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Audit log rows.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminAuditLog'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/media-access-grants:
+    post:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: grantAdminMediaAccess
+      summary: Create an audited short-lived media access grant.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminMediaAccessGrantRequest'
+      responses:
+        '200':
+          description: Media access grant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminMediaAccessGrant'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/outbox/events/claim:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: claimOutboxEvents
+      summary: Claim unpublished outbox events for an internal publisher.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimOutboxEventsRequest'
+      responses:
+        '200':
+          description: Claimed outbox events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboxClaimResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/outbox/events/{eventId}/published:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: markOutboxEventPublished
+      summary: Mark an outbox event as published.
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Outbox event publication acknowledged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboxAckResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/outbox/events/{eventId}/retry:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: retryOutboxEvent
+      summary: Release an outbox event lease and schedule retry.
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetryOutboxEventRequest'
+      responses:
+        '200':
+          description: Outbox event retry scheduled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboxEvent'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/workflows/materialize-weekly-plan:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: runMaterializeWeeklyPlanWorkflowActivity
+      summary: Execute weekly plan materialization activity.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterializeWeeklyPlanWorkflowRequest'
+      responses:
+        '200':
+          description: Weekly plan materialized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyPlan'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/workflows/evaluate-reward:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: runRewardEvaluationWorkflowActivity
+      summary: Execute reward evaluation activity.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateRewardWorkflowRequest'
+      responses:
+        '200':
+          description: Reward evaluation completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowAcceptedResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/workflows/run-ai-precheck:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: runAiPrecheckWorkflowActivity
+      summary: Execute submission AI precheck activity.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunAiPrecheckWorkflowRequest'
+      responses:
+        '200':
+          description: AI precheck completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowAcceptedResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/workflows/generate-memory:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: acceptGenerateMemoryWorkflowActivity
+      summary: Execute weekly memory workflow activity.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateMemoryWorkflowRequest'
+      responses:
+        '200':
+          description: Memory workflow activity completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowAcceptedResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/workflows/privacy-deletion:
+    post:
+      tags: [Internal]
+      security:
+        - internalToken: []
+      operationId: acceptPrivacyDeletionWorkflowActivity
+      summary: Execute privacy deletion workflow activity.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacyDeletionWorkflowRequest'
+      responses:
+        '200':
+          description: Privacy deletion workflow activity completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowAcceptedResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    internalToken:
+      type: apiKey
+      in: header
+      name: X-Internal-Token
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+    FamilyId:
+      name: familyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChildId:
+      name: childId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    WishId:
+      name: wishId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Error:
+      description: Error response.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, traceId]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        traceId:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [provider, credential]
+      properties:
+        provider:
+          type: string
+          enum: [phone, wechat]
+        credential:
+          type: string
+          description: For phone login, use `verificationToken:code` returned by `/auth/phone-codes`; for WeChat, use the provider token.
+        device:
+          $ref: '#/components/schemas/DeviceRegistration'
+
+    PhoneCodeRequest:
+      type: object
+      required: [phoneNumber, purpose]
+      properties:
+        phoneNumber:
+          type: string
+          minLength: 5
+          maxLength: 32
+        purpose:
+          type: string
+          enum: [login]
+
+    PhoneCodeCreated:
+      type: object
+      required: [verificationToken, expiresAt]
+      properties:
+        verificationToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        debugCode:
+          anyOf:
+            - type: string
+            - type: 'null'
+          description: Present only when the local debug SMS provider is enabled.
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    AuthTokenPair:
+      type: object
+      required: [accessToken, refreshToken, expiresInSec, user]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresInSec:
+          type: integer
+        user:
+          $ref: '#/components/schemas/User'
+        primaryFamilyId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+
+    MeResponse:
+      type: object
+      required: [user, families]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        families:
+          type: array
+          items:
+            $ref: '#/components/schemas/FamilyMemberContext'
+
+    User:
+      type: object
+      required: [id, status, displayName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, suspended, deleted]
+        displayName:
+          type: string
+        avatarUrl:
+          anyOf:
+            - type: string
+            - type: 'null'
+
+    DeviceRegistration:
+      type: object
+      required: [platform]
+      properties:
+        platform:
+          type: string
+          enum: [ios, android, ipad_os, web, admin_web]
+        deviceName:
+          type: string
+        pushProvider:
+          type: string
+          enum: [apns, fcm, huawei, xiaomi, oppo, vivo]
+        pushToken:
+          type: string
+
+    Family:
+      type: object
+      required: [id, name, timezone, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        status:
+          type: string
+          enum: [active, locked, deleting, deleted]
+
+    FamilyMember:
+      type: object
+      required: [id, familyId, userId, role, displayName, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/MemberRole'
+        childId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        displayName:
+          type: string
+        status:
+          type: string
+          enum: [active, invited, suspended, removed]
+
+    FamilyMemberContext:
+      type: object
+      required: [family, member]
+      properties:
+        family:
+          $ref: '#/components/schemas/Family'
+        member:
+          $ref: '#/components/schemas/FamilyMember'
+
+    MemberRole:
+      type: string
+      enum: [parent_owner, parent, child_device]
+
+    CreateFamilyRequest:
+      type: object
+      required: [name, timezone]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        timezone:
+          type: string
+          default: Asia/Shanghai
+        firstChild:
+          $ref: '#/components/schemas/CreateChildRequest'
+
+    InviteParentRequest:
+      type: object
+      required: [contact]
+      properties:
+        contact:
+          type: string
+          description: Phone number for the self-hosted version.
+
+    FamilyInvite:
+      type: object
+      required: [id, familyId, status, expiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, accepted, expired, revoked]
+        expiresAt:
+          type: string
+          format: date-time
+
+    CreateChildRequest:
+      type: object
+      required: [nickname]
+      properties:
+        nickname:
+          type: string
+        birthYear:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        avatarAsset:
+          type: string
+        roomTheme:
+          type: string
+          default: star_cabin
+
+    UpdateChildRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+        birthYear:
+          type: integer
+        avatarAsset:
+          type: string
+        roomTheme:
+          type: string
+
+    ChildProfile:
+      type: object
+      required: [id, familyId, nickname, roomTheme, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        nickname:
+          type: string
+        birthYear:
+          anyOf:
+            - type: integer
+            - type: 'null'
+        avatarAsset:
+          anyOf:
+            - type: string
+            - type: 'null'
+        roomTheme:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+
+    CreatePairingSessionRequest:
+      type: object
+      required: [childId]
+      properties:
+        childId:
+          type: string
+          format: uuid
+
+    PairingSessionCreated:
+      type: object
+      required: [sessionId, pairingCode, expiresAt]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        pairingCode:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    ConsumePairingCodeRequest:
+      type: object
+      required: [pairingCode, device]
+      properties:
+        pairingCode:
+          type: string
+        device:
+          $ref: '#/components/schemas/DeviceRegistration'
+
+    TaskCategory:
+      type: string
+      enum: [study, reading, exercise, habit, custom]
+
+    SubmissionType:
+      type: string
+      enum: [photo, audio, video, manual]
+
+    TaskTemplate:
+      type: object
+      required: [id, familyId, title, category, submissionType]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/TaskCategory'
+        submissionType:
+          $ref: '#/components/schemas/SubmissionType'
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+        targetText:
+          anyOf:
+            - type: string
+            - type: 'null'
+        defaultDurationSec:
+          anyOf:
+            - type: integer
+            - type: 'null'
+
+    CreateTaskTemplateRequest:
+      type: object
+      required: [familyId, title, category, submissionType]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/TaskCategory'
+        submissionType:
+          $ref: '#/components/schemas/SubmissionType'
+        description:
+          type: string
+        targetText:
+          type: string
+        defaultDurationSec:
+          type: integer
+
+    SaveWeeklyPlanRequest:
+      type: object
+      required: [familyId, childId, weekId, startDate, endDate, rewardMode, rules]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        weekId:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        rewardMode:
+          type: string
+          enum: [flexible, strict]
+        wishId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyPlanRuleInput'
+
+    WeeklyPlanRuleInput:
+      type: object
+      required: [title, category, submissionType, weekdays, isCore, requireReview]
+      properties:
+        taskTemplateId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/TaskCategory'
+        submissionType:
+          $ref: '#/components/schemas/SubmissionType'
+        description:
+          type: string
+        targetText:
+          type: string
+        weekdays:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 7
+        isCore:
+          type: boolean
+        requireReview:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    WeeklyPlan:
+      type: object
+      required: [id, familyId, childId, weekId, startDate, endDate, rewardMode, status, rules]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        weekId:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        rewardMode:
+          type: string
+          enum: [flexible, strict]
+        status:
+          type: string
+          enum: [draft, active, archived]
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyPlanRule'
+
+    WeeklyPlanRule:
+      allOf:
+        - $ref: '#/components/schemas/WeeklyPlanRuleInput'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+
+    TaskInstance:
+      type: object
+      required: [id, familyId, childId, scheduledDate, title, category, submissionType, status, isCore, requireReview]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        scheduledDate:
+          type: string
+          format: date
+        title:
+          type: string
+        category:
+          $ref: '#/components/schemas/TaskCategory'
+        submissionType:
+          $ref: '#/components/schemas/SubmissionType'
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+        targetText:
+          anyOf:
+            - type: string
+            - type: 'null'
+        isCore:
+          type: boolean
+        requireReview:
+          type: boolean
+        status:
+          type: string
+          enum: [todo, submitted, ai_processing, pending_review, approved, needs_revision, skipped, expired, adjusted_by_parent]
+        latestSubmissionId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+
+    TodaySnapshot:
+      type: object
+      required: [child, date, tasks]
+      properties:
+        child:
+          $ref: '#/components/schemas/ChildProfile'
+        date:
+          type: string
+          format: date
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskInstance'
+        dailySummary:
+          $ref: '#/components/schemas/DailySummary'
+        currentWish:
+          $ref: '#/components/schemas/Wish'
+
+    SkipTaskRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    PostponeTaskRequest:
+      type: object
+      required: [newDate]
+      properties:
+        newDate:
+          type: string
+          format: date
+        reason:
+          type: string
+
+    CreateUploadSessionRequest:
+      type: object
+      required: [familyId, purpose, contentType, sizeBytes]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        purpose:
+          type: string
+          enum: [submission, feedback, wish_image, wish_redemption, memory_export]
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        relatedResource:
+          $ref: '#/components/schemas/RelatedResource'
+
+    RelatedResource:
+      type: object
+      required: [type, id]
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+          format: uuid
+
+    UploadSession:
+      type: object
+      required: [mediaId, uploadUrl, storageKey, expiresAt, maxSizeBytes]
+      properties:
+        mediaId:
+          type: string
+          format: uuid
+        uploadUrl:
+          type: string
+          format: uri
+        storageKey:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        maxSizeBytes:
+          type: integer
+          format: int64
+
+    FinalizeMediaRequest:
+      type: object
+      properties:
+        checksumSha256:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        durationSec:
+          type: integer
+
+    MediaAsset:
+      type: object
+      required: [id, familyId, purpose, storageKey, contentType, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        purpose:
+          type: string
+        storageKey:
+          type: string
+        contentType:
+          type: string
+        status:
+          type: string
+          enum: [upload_pending, uploaded, processing, ready, failed, deleted]
+        downloadUrl:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+
+    CreateSubmissionRequest:
+      type: object
+      required: [taskInstanceId, clientMutationId, mediaAssetIds]
+      properties:
+        taskInstanceId:
+          type: string
+          format: uuid
+        clientMutationId:
+          type: string
+        mediaAssetIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        submittedAtClient:
+          type: string
+          format: date-time
+
+    Submission:
+      type: object
+      required: [id, familyId, childId, taskInstanceId, attemptNo, submissionType, status, submittedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        taskInstanceId:
+          type: string
+          format: uuid
+        attemptNo:
+          type: integer
+        submissionType:
+          $ref: '#/components/schemas/SubmissionType'
+        status:
+          type: string
+          enum: [created, media_uploaded, ai_pending, ai_processing, review_pending, approved, rejected, superseded, cancelled]
+        submittedAt:
+          type: string
+          format: date-time
+
+    SubmissionDetail:
+      allOf:
+        - $ref: '#/components/schemas/Submission'
+        - type: object
+          properties:
+            task:
+              $ref: '#/components/schemas/TaskInstance'
+            media:
+              type: array
+              items:
+                $ref: '#/components/schemas/MediaAsset'
+            aiPrecheck:
+              $ref: '#/components/schemas/AiPrecheck'
+            review:
+              $ref: '#/components/schemas/Review'
+
+    AiPrecheck:
+      type: object
+      required: [id, submissionId, type, summary, flags, model]
+      properties:
+        id:
+          type: string
+          format: uuid
+        submissionId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        summary:
+          type: string
+        confidence:
+          anyOf:
+            - type: number
+              minimum: 0
+              maximum: 1
+            - type: 'null'
+        flags:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        model:
+          type: object
+          additionalProperties: true
+
+    PendingReviewCard:
+      type: object
+      required: [submission, task]
+      properties:
+        submission:
+          $ref: '#/components/schemas/Submission'
+        task:
+          $ref: '#/components/schemas/TaskInstance'
+        aiSummary:
+          anyOf:
+            - type: string
+            - type: 'null'
+        thumbnailMedia:
+          $ref: '#/components/schemas/MediaAsset'
+
+    ReviewSubmissionRequest:
+      type: object
+      required: [submissionId, decision]
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          enum: [approved, needs_revision]
+        feedback:
+          $ref: '#/components/schemas/FeedbackInput'
+
+    FeedbackInput:
+      type: object
+      properties:
+        emoji:
+          type: string
+        text:
+          type: string
+        audioMediaId:
+          type: string
+          format: uuid
+
+    Review:
+      type: object
+      required: [id, submissionId, taskInstanceId, decision, reviewedBy, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        submissionId:
+          type: string
+          format: uuid
+        taskInstanceId:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          enum: [approved, needs_revision]
+        reviewedBy:
+          type: string
+          format: uuid
+        feedback:
+          anyOf:
+            - $ref: '#/components/schemas/Feedback'
+            - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+
+    Feedback:
+      type: object
+      properties:
+        emoji:
+          anyOf:
+            - type: string
+            - type: 'null'
+        text:
+          anyOf:
+            - type: string
+            - type: 'null'
+        audioMedia:
+          anyOf:
+            - $ref: '#/components/schemas/MediaAsset'
+            - type: 'null'
+
+    RevokeReviewRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    CreateWishRequest:
+      type: object
+      required: [familyId, childId, weekId, title, requiredFragments, rewardMode]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        weekId:
+          type: string
+        title:
+          type: string
+        note:
+          type: string
+        imageMediaId:
+          type: string
+          format: uuid
+        requiredFragments:
+          type: integer
+          minimum: 1
+        rewardMode:
+          type: string
+          enum: [flexible, strict]
+
+    Wish:
+      type: object
+      required: [id, familyId, childId, weekId, title, requiredFragments, earnedFragments, rewardMode, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        weekId:
+          type: string
+        title:
+          type: string
+        note:
+          anyOf:
+            - type: string
+            - type: 'null'
+        imageMedia:
+          anyOf:
+            - $ref: '#/components/schemas/MediaAsset'
+            - type: 'null'
+        requiredFragments:
+          type: integer
+        earnedFragments:
+          type: integer
+        rewardMode:
+          type: string
+          enum: [flexible, strict]
+        status:
+          type: string
+          enum: [draft, active, unlocked, redeemed, archived, cancelled, cancelled_by_parent]
+
+    RedeemWishRequest:
+      type: object
+      required: [redeemedDate, photoMediaIds]
+      properties:
+        redeemedDate:
+          type: string
+          format: date
+        photoMediaIds:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            type: string
+            format: uuid
+        parentNote:
+          type: string
+        childNote:
+          type: string
+
+    WishRedemption:
+      type: object
+      required: [id, wishId, redeemedDate, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        wishId:
+          type: string
+          format: uuid
+        redeemedDate:
+          type: string
+          format: date
+        parentNote:
+          anyOf:
+            - type: string
+            - type: 'null'
+        childNote:
+          anyOf:
+            - type: string
+            - type: 'null'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+        createdAt:
+          type: string
+          format: date-time
+
+    DailySummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        coreRequired:
+          type: integer
+        coreApproved:
+          type: integer
+        coreSkipped:
+          type: integer
+        fragmentStatus:
+          type: string
+
+    MemoryTimeline:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyMemory'
+        nextCursor:
+          anyOf:
+            - type: string
+            - type: 'null'
+
+    WeeklyMemory:
+      type: object
+      required: [id, childId, weekId, title, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        weekId:
+          type: string
+        title:
+          type: string
+        summary:
+          type: object
+          additionalProperties: true
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        status:
+          type: string
+          enum: [generating, generated, exported]
+
+    ExportMemoryRequest:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [pdf, long_image]
+
+    MemoryExport:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [requested, processing, ready, failed]
+        media:
+          $ref: '#/components/schemas/MediaAsset'
+
+    RoomState:
+      type: object
+      required: [childId, items]
+      properties:
+        childId:
+          type: string
+          format: uuid
+        theme:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomItem'
+
+    RoomItem:
+      type: object
+      required: [id, childId, type, title, visible, unlockedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        title:
+          type: string
+        media:
+          $ref: '#/components/schemas/MediaAsset'
+        position:
+          type: object
+          additionalProperties: true
+        visible:
+          type: boolean
+        unlockedAt:
+          type: string
+          format: date-time
+
+    ArrangeRoomItemRequest:
+      type: object
+      required: [position]
+      properties:
+        position:
+          type: object
+          additionalProperties: true
+
+    FamilyEvent:
+      type: object
+      required: [seq, familyId, type, aggregateType, aggregateId, occurredAt, payload]
+      properties:
+        seq:
+          type: integer
+          format: int64
+        familyId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        aggregateType:
+          type: string
+        aggregateId:
+          type: string
+          format: uuid
+        occurredAt:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+
+    SyncPullResponse:
+      type: object
+      required: [events, latestSeq]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/FamilyEvent'
+        latestSeq:
+          type: integer
+          format: int64
+
+    ClaimOutboxEventsRequest:
+      type: object
+      required: [limit]
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 50
+        leaseSeconds:
+          type: integer
+          format: int64
+          minimum: 5
+          maximum: 900
+
+    RetryOutboxEventRequest:
+      type: object
+      required: [delaySeconds]
+      properties:
+        delaySeconds:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 86400
+        reason:
+          type: string
+
+    OutboxClaimResponse:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutboxEvent'
+
+    OutboxEvent:
+      type: object
+      required: [id, type, aggregateType, aggregateId, payload, availableAt, retryCount, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        aggregateType:
+          type: string
+        aggregateId:
+          type: string
+          format: uuid
+        payload:
+          type: object
+          additionalProperties: true
+        availableAt:
+          type: string
+          format: date-time
+        leasedUntil:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        retryCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    OutboxAckResponse:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [published]
+        publishedAt:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    MaterializeWeeklyPlanWorkflowRequest:
+      type: object
+      required: [weeklyPlanId]
+      properties:
+        weeklyPlanId:
+          type: string
+          format: uuid
+        triggeredByEventId:
+          type: string
+          format: uuid
+
+    EvaluateRewardWorkflowRequest:
+      type: object
+      required: [eventType, taskInstanceId, actorUserId]
+      properties:
+        eventType:
+          type: string
+          enum: [review.approved, task.skipped, review.revoked]
+        taskInstanceId:
+          type: string
+          format: uuid
+        reviewId:
+          type: string
+          format: uuid
+        actorUserId:
+          type: string
+          format: uuid
+        triggeredByEventId:
+          type: string
+          format: uuid
+
+    RunAiPrecheckWorkflowRequest:
+      type: object
+      required: [submissionId]
+      properties:
+        submissionId:
+          type: string
+          format: uuid
+        triggeredByEventId:
+          type: string
+          format: uuid
+
+    GenerateMemoryWorkflowRequest:
+      type: object
+      required: [triggeredByEventId]
+      properties:
+        triggeredByEventId:
+          type: string
+          format: uuid
+
+    PrivacyDeletionWorkflowRequest:
+      type: object
+      required: [triggeredByEventId]
+      properties:
+        triggeredByEventId:
+          type: string
+          format: uuid
+
+    WorkflowAcceptedResponse:
+      type: object
+      required: [workflow, status, acceptedAt]
+      properties:
+        workflow:
+          type: string
+        status:
+          type: string
+        acceptedAt:
+          type: string
+          format: date-time
+
+    NotificationEvent:
+      type: object
+      required: [id, familyId, recipientUserId, type, title, body, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        recipientUserId:
+          type: string
+          format: uuid
+        recipientDeviceId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        type:
+          type: string
+          enum: [child_submission_created, ai_precheck_completed, review_completed, wish_fragment_earned, wish_unlocked, wish_redeemed_memory_generated, task_plan_changed]
+        title:
+          type: string
+        body:
+          type: string
+        relatedResourceType:
+          anyOf:
+            - type: string
+            - type: 'null'
+        relatedResourceId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        status:
+          type: string
+          enum: [pending, sent, failed, read, suppressed]
+        sentAt:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        readAt:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationEvent'
+        nextCursor:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+
+    MarkNotificationReadRequest:
+      type: object
+      required: [notificationIds]
+      properties:
+        notificationIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+            format: uuid
+
+    NotificationPreference:
+      type: object
+      required: [id, familyId, userId, notificationType, enabled, quietHours, channels, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        notificationType:
+          type: string
+          enum: [child_submission_created, ai_precheck_completed, review_completed, wish_fragment_earned, wish_unlocked, wish_redeemed_memory_generated, task_plan_changed]
+        enabled:
+          type: boolean
+        quietHours:
+          type: object
+          additionalProperties: true
+        channels:
+          type: object
+          additionalProperties: true
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateNotificationPreferenceRequest:
+      type: object
+      required: [familyId, notificationType, enabled]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        notificationType:
+          type: string
+          enum: [child_submission_created, ai_precheck_completed, review_completed, wish_fragment_earned, wish_unlocked, wish_redeemed_memory_generated, task_plan_changed]
+        enabled:
+          type: boolean
+        quietHours:
+          type: object
+          additionalProperties: true
+        channels:
+          type: object
+          additionalProperties: true
+
+    RegisterPushTokenRequest:
+      type: object
+      required: [familyId, platform, pushProvider, pushToken]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        platform:
+          type: string
+          enum: [ios, android, ipad_os, web, admin_web]
+        pushProvider:
+          type: string
+          enum: [apns, fcm, huawei, xiaomi, oppo, vivo]
+        pushToken:
+          type: string
+        deviceName:
+          type: string
+
+    NotificationDevice:
+      type: object
+      required: [id, platform]
+      properties:
+        id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+          enum: [ios, android, ipad_os, web, admin_web]
+        deviceName:
+          anyOf:
+            - type: string
+            - type: 'null'
+        pushProvider:
+          anyOf:
+            - type: string
+              enum: [apns, fcm, huawei, xiaomi, oppo, vivo]
+            - type: 'null'
+        pushToken:
+          anyOf:
+            - type: string
+            - type: 'null'
+
+    CreateNotificationEventRequest:
+      type: object
+      required: [familyId, recipientUserId, type, title, body]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        recipientUserId:
+          type: string
+          format: uuid
+        recipientDeviceId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [child_submission_created, ai_precheck_completed, review_completed, wish_fragment_earned, wish_unlocked, wish_redeemed_memory_generated, task_plan_changed]
+        title:
+          type: string
+        body:
+          type: string
+        relatedResourceType:
+          type: string
+        relatedResourceId:
+          type: string
+          format: uuid
+        dedupeKey:
+          type: string
+
+    ClaimNotificationEventsRequest:
+      type: object
+      required: [limit]
+      properties:
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+
+    ClaimNotificationEventsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationDispatchItem'
+
+    NotificationDispatchItem:
+      type: object
+      required: [notification]
+      properties:
+        notification:
+          $ref: '#/components/schemas/NotificationEvent'
+        recipientDevice:
+          anyOf:
+            - $ref: '#/components/schemas/NotificationDevice'
+            - type: 'null'
+        preference:
+          anyOf:
+            - $ref: '#/components/schemas/NotificationPreference'
+            - type: 'null'
+
+    NotificationDispatchResultRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [sent, failed, suppressed]
+        providerMessageId:
+          type: string
+        errorMessage:
+          type: string
+
+    AdminDashboard:
+      type: object
+      required: [generatedAt, familyCount, activeChildCount, pendingReviewCount, pendingNotificationCount, pendingOutboxCount, processingMediaCount, runningAiJobCount, openPrivacyRequestCount]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        familyCount:
+          type: integer
+          format: int64
+        activeChildCount:
+          type: integer
+          format: int64
+        pendingReviewCount:
+          type: integer
+          format: int64
+        pendingNotificationCount:
+          type: integer
+          format: int64
+        pendingOutboxCount:
+          type: integer
+          format: int64
+        processingMediaCount:
+          type: integer
+          format: int64
+        runningAiJobCount:
+          type: integer
+          format: int64
+        openPrivacyRequestCount:
+          type: integer
+          format: int64
+
+    AdminFamilySummary:
+      type: object
+      required: [id, name, timezone, status, childCount, memberCount, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        timezone:
+          type: string
+        status:
+          type: string
+          enum: [active, locked, deleting, deleted]
+        childCount:
+          type: integer
+          format: int64
+        memberCount:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminPrivacyRequest:
+      type: object
+      required: [id, familyId, requestType, status, requestedBy, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        requestType:
+          type: string
+          enum: [export, delete]
+        status:
+          type: string
+          enum: [requested, verifying, locking_family, deleting_records, deleting_objects, verifying_deletion, completed, failed_needs_attention]
+        requestedBy:
+          type: string
+          format: uuid
+        exportMediaId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        reason:
+          anyOf:
+            - type: string
+            - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+        errorMessage:
+          anyOf:
+            - type: string
+            - type: 'null'
+
+    AdminAuditLog:
+      type: object
+      required: [id, actorRole, action, resourceType, metadata, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        actorUserId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        actorRole:
+          type: string
+        action:
+          type: string
+        resourceType:
+          type: string
+        resourceId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminMediaAccessGrantRequest:
+      type: object
+      required: [familyId, mediaAssetId, reason]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        mediaAssetId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        expiresInMinutes:
+          type: integer
+          default: 30
+          minimum: 5
+          maximum: 120
+
+    AdminMediaAccessGrant:
+      type: object
+      required: [mediaAssetId, familyId, accessUrl, expiresAt, auditLogId]
+      properties:
+        mediaAssetId:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        accessUrl:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+        auditLogId:
+          type: string
+          format: uuid
+
+    PrivacyRequestCreate:
+      type: object
+      required: [familyId, requestType, confirmationText]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        requestType:
+          type: string
+          enum: [export, delete]
+        confirmationText:
+          type: string
+        reason:
+          type: string
+
+    PrivacyRequest:
+      type: object
+      required: [id, familyId, requestType, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        requestType:
+          type: string
+          enum: [export, delete]
+        status:
+          type: string
+          enum: [requested, verifying, locking_family, deleting_records, deleting_objects, verifying_deletion, completed, failed_needs_attention]
+        exportMedia:
+          $ref: '#/components/schemas/MediaAsset'
+        createdAt:
+          type: string
+          format: date-time

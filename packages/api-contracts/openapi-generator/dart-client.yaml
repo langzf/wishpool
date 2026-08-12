@@ -1,0 +1,7 @@
+generatorName: dart-dio
+inputSpec: packages/api-contracts/openapi/wishpool.yaml
+outputDir: packages/api-contracts/generated/dart
+additionalProperties:
+  pubName: wishpool_api
+  pubDescription: WishPool generated API client
+  serializationLibrary: built_value

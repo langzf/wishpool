@@ -1,0 +1,6 @@
+flyway.url=jdbc:postgresql://localhost:5432/wishpool
+flyway.user=wishpool
+flyway.password=wishpool
+flyway.locations=filesystem:db/migrations
+flyway.cleanDisabled=true
+flyway.validateMigrationNaming=true

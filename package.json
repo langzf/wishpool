@@ -1,0 +1,37 @@
+{
+  "name": "wishpool",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WishPool monorepo tooling",
+  "workspaces": [
+    "apps/parent-web",
+    "apps/admin-web",
+    "packages/design-tokens",
+    "packages/app-fixtures"
+  ],
+  "scripts": {
+    "check": "npm run lint:openapi && npm run check:db && npm run check:infra && npm run test:core-api && npm run test:workflow-worker && npm run test:realtime-gateway && npm run test:media-worker && npm run test:ai-worker && npm run test:notification-service && npm run test:admin-api && npm run check:shared && npm run check:clients",
+    "check:shared": "npm run check --workspace @wishpool/design-tokens && npm run check --workspace @wishpool/app-fixtures",
+    "check:clients": "npm run check:mobile && npm run check --workspace @wishpool/parent-web && npm run check --workspace @wishpool/admin-web",
+    "check:mobile": "scripts/check-mobile.sh",
+    "lint:openapi": "redocly lint --config .redocly.yaml packages/api-contracts/openapi/wishpool.yaml",
+    "generate:openapi": "scripts/generate-openapi.sh",
+    "check:db": "scripts/check-db-migrations.sh",
+    "check:infra": "docker compose -f infra/docker-compose/docker-compose.yml config --quiet",
+    "test:core-api": "./services/core-api/gradlew -p services/core-api test",
+    "test:workflow-worker": "./services/workflow-worker/gradlew -p services/workflow-worker test",
+    "test:realtime-gateway": "./services/realtime-gateway/gradlew -p services/realtime-gateway test",
+    "test:media-worker": "scripts/test-media-worker.sh",
+    "test:ai-worker": "scripts/test-ai-worker.sh",
+    "test:notification-service": "./services/notification-service/gradlew -p services/notification-service test",
+    "test:admin-api": "./services/admin-api/gradlew -p services/admin-api test"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "2.40.1",
+    "@redocly/cli": "2.46.1"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  }
+}

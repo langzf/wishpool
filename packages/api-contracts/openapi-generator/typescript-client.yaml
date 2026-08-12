@@ -1,0 +1,8 @@
+generatorName: typescript-fetch
+inputSpec: packages/api-contracts/openapi/wishpool.yaml
+outputDir: packages/api-contracts/generated/typescript
+additionalProperties:
+  npmName: "@wishpool/api-client"
+  supportsES6: true
+  withInterfaces: true
+  enumPropertyNaming: original
