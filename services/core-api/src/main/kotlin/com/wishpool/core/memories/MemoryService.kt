@@ -2,6 +2,7 @@ package com.wishpool.core.memories
 
 import com.wishpool.core.events.DomainEventPublisher
 import com.wishpool.core.family.FamilyPolicy
+import com.wishpool.core.idempotency.IdempotencyService
 import com.wishpool.core.media.MediaService
 import com.wishpool.core.security.CurrentUser
 import com.wishpool.core.shared.BadRequestError
@@ -22,6 +23,7 @@ class MemoryService(
     private val mediaService: MediaService,
     private val eventPublisher: DomainEventPublisher,
     private val objectMapper: ObjectMapper,
+    private val idempotencyService: IdempotencyService,
 ) {
     fun listMemories(childId: UUID, cursor: String?, limit: Int?): MemoryTimelineResponse {
         val user = currentUser.require()
@@ -57,11 +59,13 @@ class MemoryService(
     }
 
     @Transactional
-    fun exportMemory(memoryId: UUID, request: ExportMemoryRequest): MemoryExportResponse {
+    fun exportMemory(memoryId: UUID, request: ExportMemoryRequest, idempotencyKey: String?): MemoryExportResponse {
         if (request.format !in setOf("pdf", "long_image")) throw BadRequestError("Unsupported memory export format.")
         val memory = findMemory(memoryId) ?: throw NotFoundError("Memory not found.")
         val user = currentUser.require()
         familyPolicy.requireParent(user, memory.familyId)
+        idempotencyService.find(memory.familyId, idempotencyKey, MEMORY_EXPORT_OPERATION)
+            ?.let { return getExport(it.resourceId) }
         val mediaId = UUID.randomUUID()
         val contentType = if (request.format == "pdf") "application/pdf" else "image/png"
         val storageKey = "families/${memory.familyId}/memory_export/$mediaId.${if (request.format == "pdf") "pdf" else "png"}"
@@ -98,7 +102,13 @@ class MemoryService(
             ),
         )
         val media = mediaService.findMedia(mediaId)?.let(mediaService::toResponse)
+        idempotencyService.remember(memory.familyId, idempotencyKey, MEMORY_EXPORT_OPERATION, "media_asset", mediaId, user.userId)
         return MemoryExportResponse(id = mediaId, status = "requested", media = media)
+    }
+
+    private fun getExport(mediaId: UUID): MemoryExportResponse {
+        val media = mediaService.findMedia(mediaId) ?: throw NotFoundError("Memory export not found.")
+        return MemoryExportResponse(id = media.id, status = media.status, media = mediaService.toResponse(media))
     }
 
     @Transactional
@@ -366,6 +376,10 @@ class MemoryService(
                 "sourceId" to memory.id.toString(),
             ),
         )
+    }
+
+    private companion object {
+        const val MEMORY_EXPORT_OPERATION = "memory.export"
     }
 }
 

@@ -26,6 +26,7 @@ export const todayTasks = [
     category: "growth",
     submissionType: "photo",
     status: "pending_review",
+    scheduledDate: "2026-08-13",
     isCore: true,
     requireReview: true,
     rewardStarlight: 6
@@ -36,6 +37,7 @@ export const todayTasks = [
     category: "skill",
     submissionType: "video",
     status: "todo",
+    scheduledDate: "2026-08-13",
     isCore: true,
     requireReview: true,
     rewardStarlight: 8
@@ -46,6 +48,7 @@ export const todayTasks = [
     category: "habit",
     submissionType: "audio",
     status: "approved",
+    scheduledDate: "2026-08-13",
     isCore: false,
     requireReview: true,
     rewardStarlight: 4
@@ -87,12 +90,39 @@ export const pendingReviews = [
 export const weeklyPlan = {
   id: "plan-week-33",
   childId: child.id,
+  weekId: "2026-W33",
   weekStartDate: "2026-08-10",
+  weekEndDate: "2026-08-16",
+  rewardMode: "flexible",
   status: "active",
   rules: [
-    { title: "亲子阅读 20 分钟", weekdays: [1, 2, 3, 4, 5], rewardStarlight: 6 },
-    { title: "钢琴练习", weekdays: [1, 3, 5], rewardStarlight: 8 },
-    { title: "运动打卡", weekdays: [2, 4, 6], rewardStarlight: 5 }
+    {
+      title: "亲子阅读 20 分钟",
+      category: "growth",
+      submissionType: "photo",
+      weekdays: [1, 2, 3, 4, 5],
+      isCore: true,
+      requireReview: true,
+      rewardStarlight: 6
+    },
+    {
+      title: "钢琴练习",
+      category: "skill",
+      submissionType: "video",
+      weekdays: [1, 3, 5],
+      isCore: true,
+      requireReview: true,
+      rewardStarlight: 8
+    },
+    {
+      title: "运动打卡",
+      category: "habit",
+      submissionType: "photo",
+      weekdays: [2, 4, 6],
+      isCore: false,
+      requireReview: true,
+      rewardStarlight: 5
+    }
   ]
 };
 
@@ -126,6 +156,32 @@ export const privacyQueue = [
   }
 ];
 
+export const notificationInbox = [
+  {
+    id: "notification-review",
+    type: "review_completed",
+    title: "任务通过啦",
+    body: "亲子阅读记录已经通过，星光已进入本周进度。",
+    status: "pending",
+    createdAt: "2026-08-13T19:20:00+08:00"
+  },
+  {
+    id: "notification-plan",
+    type: "task_plan_changed",
+    title: "今日任务有更新",
+    body: "钢琴练习已顺延到明天。",
+    status: "sent",
+    createdAt: "2026-08-13T18:40:00+08:00"
+  }
+];
+
+export const notificationPreferences = [
+  { notificationType: "child_submission_created", enabled: true, channels: { inbox: true, push: false } },
+  { notificationType: "review_completed", enabled: true, channels: { inbox: true, push: false } },
+  { notificationType: "wish_unlocked", enabled: true, channels: { inbox: true, push: false } },
+  { notificationType: "task_plan_changed", enabled: true, channels: { inbox: true, push: false } }
+];
+
 export const dashboardMetrics = {
   activeChildren: 1,
   pendingReviews: pendingReviews.length,
@@ -145,6 +201,8 @@ export function getFixtureSnapshot() {
     memories,
     roomState,
     privacyQueue,
+    notificationInbox,
+    notificationPreferences,
     dashboardMetrics
   };
 }

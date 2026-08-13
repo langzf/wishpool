@@ -105,9 +105,15 @@ services:
       WISHPOOL_DATASOURCE_USERNAME: wishpool
       WISHPOOL_DATASOURCE_PASSWORD: wishpool
       WISHPOOL_FLYWAY_LOCATIONS: filesystem:/workspace/db/migrations
+      WISHPOOL_TOKEN_SECRET: ${WISHPOOL_TOKEN_SECRET:-wishpool-local-development-token-secret-change-me}
+      WISHPOOL_LOCAL_DEBUG_PHONE_CODE: ${WISHPOOL_LOCAL_DEBUG_PHONE_CODE:-true}
       WISHPOOL_S3_ENDPOINT: http://minio:9000
+      WISHPOOL_S3_BUCKET: wishpool-media
+      WISHPOOL_S3_ACCESS_KEY: wishpool
+      WISHPOOL_S3_SECRET_KEY: wishpool-local
+      WISHPOOL_S3_REGION: local
       WISHPOOL_AI_WORKER_BASE_URL: http://ai-worker:8100
-      WISHPOOL_INTERNAL_TOKEN: wishpool-local-internal-token
+      WISHPOOL_INTERNAL_TOKEN: ${WISHPOOL_INTERNAL_TOKEN:-wishpool-local-internal-token}
     ports:
       - "${CORE_API_PORT:-8080}:8080"
     volumes:
@@ -141,7 +147,7 @@ services:
     environment:
       WISHPOOL_CORE_API_BASE_URL: http://core-api:8080
       WISHPOOL_TEMPORAL_TARGET: temporal:7233
-      WISHPOOL_INTERNAL_TOKEN: wishpool-local-internal-token
+      WISHPOOL_INTERNAL_TOKEN: ${WISHPOOL_INTERNAL_TOKEN:-wishpool-local-internal-token}
     volumes:
       - ../../:/workspace
 
@@ -154,7 +160,7 @@ services:
       PYTHONPATH: /workspace/services/ai-worker
       WISHPOOL_AI_HOST: 0.0.0.0
       WISHPOOL_AI_PORT: 8100
-      WISHPOOL_AI_INTERNAL_TOKEN: wishpool-local-internal-token
+      WISHPOOL_AI_INTERNAL_TOKEN: ${WISHPOOL_INTERNAL_TOKEN:-wishpool-local-internal-token}
     ports:
       - "${AI_WORKER_PORT:-8100}:8100"
     volumes:
@@ -173,7 +179,7 @@ services:
     environment:
       PYTHONPATH: /workspace/services/media-worker
       WISHPOOL_CORE_API_BASE_URL: http://core-api:8080
-      WISHPOOL_INTERNAL_TOKEN: wishpool-local-internal-token
+      WISHPOOL_INTERNAL_TOKEN: ${WISHPOOL_INTERNAL_TOKEN:-wishpool-local-internal-token}
       WISHPOOL_S3_ENDPOINT: http://minio:9000
       WISHPOOL_S3_ACCESS_KEY: wishpool
       WISHPOOL_S3_SECRET_KEY: wishpool-local
@@ -191,7 +197,7 @@ services:
     environment:
       PORT: 8084
       WISHPOOL_CORE_API_BASE_URL: http://core-api:8080
-      WISHPOOL_INTERNAL_TOKEN: wishpool-local-internal-token
+      WISHPOOL_INTERNAL_TOKEN: ${WISHPOOL_INTERNAL_TOKEN:-wishpool-local-internal-token}
       WISHPOOL_NOTIFICATION_DISPATCH_ENABLED: "false"
     ports:
       - "${NOTIFICATION_SERVICE_PORT:-8084}:8084"
@@ -208,10 +214,45 @@ services:
     environment:
       PORT: 8083
       WISHPOOL_CORE_API_BASE_URL: http://core-api:8080
-      WISHPOOL_INTERNAL_TOKEN: wishpool-local-internal-token
-      WISHPOOL_ADMIN_TOKEN: wishpool-local-admin-token
+      WISHPOOL_INTERNAL_TOKEN: ${WISHPOOL_INTERNAL_TOKEN:-wishpool-local-internal-token}
+      WISHPOOL_ADMIN_TOKEN: ${WISHPOOL_ADMIN_TOKEN:-wishpool-local-admin-token}
     ports:
       - "${ADMIN_API_PORT:-8083}:8083"
+    volumes:
+      - ../../:/workspace
+
+  parent-web:
+    image: node:22-alpine
+    container_name: wishpool-parent-web
+    working_dir: /workspace
+    command: npm run dev --workspace @wishpool/parent-web -- --hostname 0.0.0.0
+    depends_on:
+      - core-api
+      - realtime-gateway
+    environment:
+      NEXT_PUBLIC_WISHPOOL_CORE_API_URL: http://core-api:8080
+      NEXT_PUBLIC_WISHPOOL_REALTIME_URL: http://realtime-gateway:8081
+    ports:
+      - "${PARENT_WEB_PORT:-3000}:3000"
+    volumes:
+      - ../../:/workspace
+
+  admin-web:
+    image: node:22-alpine
+    container_name: wishpool-admin-web
+    working_dir: /workspace
+    command: npm run dev --workspace @wishpool/admin-web -- --hostname 0.0.0.0
+    depends_on:
+      - admin-api
+      - core-api
+    environment:
+      NEXT_PUBLIC_WISHPOOL_ADMIN_API_URL: http://admin-api:8083
+      NEXT_PUBLIC_WISHPOOL_CORE_API_URL: http://core-api:8080
+      NEXT_PUBLIC_WISHPOOL_TEMPORAL_UI_URL: http://temporal-ui:8080
+      NEXT_PUBLIC_WISHPOOL_MINIO_CONSOLE_URL: http://minio:9001
+      WISHPOOL_ADMIN_TOKEN: ${WISHPOOL_ADMIN_TOKEN:-wishpool-local-admin-token}
+    ports:
+      - "${ADMIN_WEB_PORT:-3001}:3001"
     volumes:
       - ../../:/workspace
 

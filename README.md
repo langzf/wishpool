@@ -22,10 +22,26 @@ weekly wish -> daily tasks -> child media check-ins -> AI-assisted precheck
 
 ## Local Dependencies
 
-Start PostgreSQL, Redis, MinIO, and Temporal:
+Docker deployment details live in `infra/docker-compose/README.md`.
+
+Start the local runtime and import a usable family workspace:
+
+```bash
+npm run local:start
+```
+
+This starts Docker Compose services and both Web clients, waits for Core API, creates or reuses a local parent account, family, child, weekly wish, weekly plan, today's tasks, and a child pairing code.
+
+Start only the Docker Compose services:
 
 ```bash
 docker compose -f infra/docker-compose/docker-compose.yml up -d
+```
+
+Import or refresh local seed data after Core API is healthy:
+
+```bash
+npm run local:seed
 ```
 
 ## Common Commands
@@ -139,6 +155,13 @@ Start the Realtime Gateway after Core API and Redis are available:
 WISHPOOL_CORE_API_BASE_URL=http://localhost:8080 \
 WISHPOOL_REDIS_URI=redis://localhost:6379 \
 ./services/realtime-gateway/gradlew -p services/realtime-gateway run
+```
+
+Start the Web clients outside Docker Compose:
+
+```bash
+npm run dev --workspace @wishpool/parent-web
+npm run dev --workspace @wishpool/admin-web
 ```
 
 ## Documentation

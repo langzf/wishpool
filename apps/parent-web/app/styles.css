@@ -51,6 +51,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 button:focus-visible,
 a:focus-visible {
   outline: 3px solid var(--color-ring);
@@ -118,6 +123,88 @@ a:focus-visible {
   padding: 28px clamp(16px, 4vw, 40px) 48px;
 }
 
+.auth-page {
+  align-items: center;
+  display: grid;
+  min-height: 100dvh;
+  padding: 24px;
+}
+
+.auth-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+  margin: 0 auto;
+  max-width: 480px;
+  padding: 24px;
+  width: min(100%, 480px);
+}
+
+.auth-mark {
+  align-items: center;
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-on-primary);
+  display: inline-flex;
+  height: 52px;
+  justify-content: center;
+  width: 52px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.auth-form label {
+  color: #475569;
+  display: grid;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.auth-form input,
+.auth-form select {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-foreground);
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.inline-hint {
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: #1d4ed8;
+  font-weight: 800;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.form-error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  color: #991b1b;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
+.setup-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+}
+
+.setup-panel {
+  align-content: start;
+}
+
 .topbar {
   align-items: center;
   display: flex;
@@ -145,6 +232,7 @@ a:focus-visible {
   border-radius: var(--radius-md);
   display: inline-flex;
   gap: 8px;
+  justify-content: center;
   min-height: 44px;
   padding: 10px 14px;
   transition: transform 180ms ease-out, box-shadow 180ms ease-out, background 180ms ease-out;
@@ -167,6 +255,66 @@ a:focus-visible {
 .secondary-button:active,
 .icon-button:active {
   transform: translateY(1px);
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.task-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.wish-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.wish-form label {
+  color: #475569;
+  display: grid;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.wish-form input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pairing-code {
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  gap: 4px;
+  letter-spacing: 0;
+  padding: 12px;
+}
+
+.pairing-code span {
+  font-family: var(--font-body);
+  font-size: 13px;
 }
 
 .dashboard-grid {
@@ -229,7 +377,9 @@ a:focus-visible {
 
 .task-list,
 .review-list,
-.memory-list {
+.memory-list,
+.notification-list,
+.preference-list {
   display: grid;
   gap: 12px;
   margin-top: 16px;
@@ -237,7 +387,9 @@ a:focus-visible {
 
 .task-row,
 .review-row,
-.memory-row {
+.memory-row,
+.notification-row,
+.preference-row {
   align-items: center;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -246,6 +398,22 @@ a:focus-visible {
   grid-template-columns: 1fr auto;
   min-height: 72px;
   padding: 12px;
+}
+
+.empty-state {
+  align-items: flex-start;
+  background: var(--color-muted);
+  border: 1px dashed #b7c7e7;
+  border-radius: var(--radius-md);
+  color: #1f2937;
+  display: flex;
+  gap: 10px;
+  min-height: 72px;
+  padding: 12px;
+}
+
+.empty-state p {
+  margin: 6px 0 0;
 }
 
 .status-pill {
@@ -309,6 +477,18 @@ a:focus-visible {
   position: absolute;
 }
 
+.mini-icon-button {
+  align-items: center;
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  margin-left: 4px;
+  width: 28px;
+}
+
 .mobile-nav {
   display: none;
 }
@@ -333,6 +513,10 @@ a:focus-visible {
   }
 
   .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-grid {
     grid-template-columns: 1fr;
   }
 

@@ -10,9 +10,12 @@
     "packages/app-fixtures"
   ],
   "scripts": {
-    "check": "npm run lint:openapi && npm run check:db && npm run check:infra && npm run test:core-api && npm run test:workflow-worker && npm run test:realtime-gateway && npm run test:media-worker && npm run test:ai-worker && npm run test:notification-service && npm run test:admin-api && npm run check:shared && npm run check:clients",
+    "check": "npm run lint:openapi && npm run check:db && npm run check:infra && npm run check:local-runtime && npm run test:core-api && npm run test:workflow-worker && npm run test:realtime-gateway && npm run test:media-worker && npm run test:ai-worker && npm run test:notification-service && npm run test:admin-api && npm run check:shared && npm run check:clients",
     "check:shared": "npm run check --workspace @wishpool/design-tokens && npm run check --workspace @wishpool/app-fixtures",
     "check:clients": "npm run check:mobile && npm run check --workspace @wishpool/parent-web && npm run check --workspace @wishpool/admin-web",
+    "local:start": "scripts/start-local.sh",
+    "local:seed": "node scripts/seed-local-data.mjs",
+    "check:local-runtime": "scripts/check-local-runtime.sh",
     "check:mobile": "scripts/check-mobile.sh",
     "lint:openapi": "redocly lint --config .redocly.yaml packages/api-contracts/openapi/wishpool.yaml",
     "generate:openapi": "scripts/generate-openapi.sh",

@@ -20,6 +20,8 @@ tags:
     description: Family spaces, members, and parent invitations.
   - name: Children
     description: Child profiles and child-specific contexts.
+  - name: Home
+    description: Aggregated child and parent home contexts for app and web clients.
   - name: Pairing
     description: Child device pairing sessions and consumption.
   - name: Task Templates
@@ -277,6 +279,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChildProfile'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /children/{childId}/home-context:
+    get:
+      tags: [Home]
+      operationId: getChildHomeContext
+      summary: Get the child-facing home context used by mobile and tablet clients.
+      parameters:
+        - $ref: '#/components/parameters/ChildId'
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Child home context.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildHomeContext'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /families/{familyId}/parent-dashboard:
+    get:
+      tags: [Home]
+      operationId: getParentDashboardContext
+      summary: Get the parent dashboard context used by mobile and web clients.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+        - name: childId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Parent dashboard context.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParentDashboardContext'
         default:
           $ref: '#/components/responses/Error'
 
@@ -2134,6 +2188,105 @@ components:
           $ref: '#/components/schemas/DailySummary'
         currentWish:
           $ref: '#/components/schemas/Wish'
+
+    ChildHomeContext:
+      type: object
+      required: [child, today, room, unreadNotifications]
+      properties:
+        child:
+          $ref: '#/components/schemas/ChildProfile'
+        today:
+          $ref: '#/components/schemas/TodaySnapshot'
+        currentWish:
+          anyOf:
+            - $ref: '#/components/schemas/Wish'
+            - type: 'null'
+        room:
+          $ref: '#/components/schemas/RoomState'
+        latestMemory:
+          anyOf:
+            - $ref: '#/components/schemas/WeeklyMemory'
+            - type: 'null'
+        latestFeedback:
+          anyOf:
+            - $ref: '#/components/schemas/ChildFeedbackCard'
+            - type: 'null'
+        unreadNotifications:
+          type: integer
+          minimum: 0
+
+    ParentDashboardContext:
+      type: object
+      required: [family, children, selectedChild, today, pendingReviews, taskTemplates, memories, room, notificationInbox]
+      properties:
+        family:
+          $ref: '#/components/schemas/Family'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChildProfile'
+        selectedChild:
+          anyOf:
+            - $ref: '#/components/schemas/ChildProfile'
+            - type: 'null'
+        today:
+          anyOf:
+            - $ref: '#/components/schemas/TodaySnapshot'
+            - type: 'null'
+        currentWish:
+          anyOf:
+            - $ref: '#/components/schemas/Wish'
+            - type: 'null'
+        weeklyPlan:
+          anyOf:
+            - $ref: '#/components/schemas/WeeklyPlan'
+            - type: 'null'
+        pendingReviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendingReviewCard'
+        taskTemplates:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskTemplate'
+        memories:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyMemory'
+        room:
+          anyOf:
+            - $ref: '#/components/schemas/RoomState'
+            - type: 'null'
+        notificationInbox:
+          $ref: '#/components/schemas/NotificationListResponse'
+
+    ChildFeedbackCard:
+      type: object
+      required: [reviewId, taskTitle, decision, createdAt]
+      properties:
+        reviewId:
+          type: string
+          format: uuid
+        taskTitle:
+          type: string
+        decision:
+          type: string
+          enum: [approved, needs_revision]
+        emoji:
+          anyOf:
+            - type: string
+            - type: 'null'
+        text:
+          anyOf:
+            - type: string
+            - type: 'null'
+        audioMedia:
+          anyOf:
+            - $ref: '#/components/schemas/MediaAsset'
+            - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
 
     SkipTaskRequest:
       type: object

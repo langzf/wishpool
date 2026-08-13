@@ -22,6 +22,7 @@ export type TaskFixture = {
   category: string;
   submissionType: string;
   status: string;
+  scheduledDate: string;
   isCore: boolean;
   requireReview: boolean;
   rewardStarlight: number;
@@ -51,9 +52,20 @@ export type PendingReviewFixture = {
 export type WeeklyPlanFixture = {
   id: string;
   childId: string;
+  weekId: string;
   weekStartDate: string;
+  weekEndDate: string;
+  rewardMode: string;
   status: string;
-  rules: Array<{ title: string; weekdays: number[]; rewardStarlight: number }>;
+  rules: Array<{
+    title: string;
+    category: string;
+    submissionType: string;
+    weekdays: number[];
+    isCore: boolean;
+    requireReview: boolean;
+    rewardStarlight: number;
+  }>;
 };
 
 export type MemoryFixture = {
@@ -78,6 +90,21 @@ export type PrivacyRequestFixture = {
   createdAt: string;
 };
 
+export type NotificationFixture = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  status: string;
+  createdAt: string;
+};
+
+export type NotificationPreferenceFixture = {
+  notificationType: string;
+  enabled: boolean;
+  channels: Record<string, boolean>;
+};
+
 export type DashboardMetricsFixture = {
   activeChildren: number;
   pendingReviews: number;
@@ -96,6 +123,8 @@ export type FixtureSnapshot = {
   memories: MemoryFixture[];
   roomState: RoomStateFixture;
   privacyQueue: PrivacyRequestFixture[];
+  notificationInbox: NotificationFixture[];
+  notificationPreferences: NotificationPreferenceFixture[];
   dashboardMetrics: DashboardMetricsFixture;
 };
 
@@ -108,5 +137,7 @@ export declare const weeklyPlan: WeeklyPlanFixture;
 export declare const memories: MemoryFixture[];
 export declare const roomState: RoomStateFixture;
 export declare const privacyQueue: PrivacyRequestFixture[];
+export declare const notificationInbox: NotificationFixture[];
+export declare const notificationPreferences: NotificationPreferenceFixture[];
 export declare const dashboardMetrics: DashboardMetricsFixture;
 export declare function getFixtureSnapshot(): FixtureSnapshot;

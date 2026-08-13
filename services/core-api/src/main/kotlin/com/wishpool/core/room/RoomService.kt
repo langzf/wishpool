@@ -2,6 +2,7 @@ package com.wishpool.core.room
 
 import com.wishpool.core.events.DomainEventPublisher
 import com.wishpool.core.family.FamilyPolicy
+import com.wishpool.core.idempotency.IdempotencyService
 import com.wishpool.core.media.MediaService
 import com.wishpool.core.security.CurrentUser
 import com.wishpool.core.shared.BadRequestError
@@ -20,6 +21,7 @@ class RoomService(
     private val mediaService: MediaService,
     private val eventPublisher: DomainEventPublisher,
     private val objectMapper: ObjectMapper,
+    private val idempotencyService: IdempotencyService,
 ) {
     fun getRoomState(childId: UUID): RoomStateResponse {
         familyPolicy.requireCanAccessChild(currentUser.require(), childId)
@@ -45,10 +47,13 @@ class RoomService(
     }
 
     @Transactional
-    fun arrangeRoomItem(itemId: UUID, request: ArrangeRoomItemRequest): RoomItemResponse {
+    fun arrangeRoomItem(itemId: UUID, request: ArrangeRoomItemRequest, idempotencyKey: String?): RoomItemResponse {
         if (request.position.isEmpty()) throw BadRequestError("position cannot be empty.")
         val existing = findItem(itemId) ?: throw NotFoundError("Room item not found.")
-        familyPolicy.requireCanAccessChild(currentUser.require(), existing.childId)
+        val user = currentUser.require()
+        familyPolicy.requireCanAccessChild(user, existing.childId)
+        idempotencyService.find(existing.familyId, idempotencyKey, ROOM_ARRANGE_OPERATION)
+            ?.let { return toResponse(findItem(it.resourceId) ?: throw NotFoundError("Room item not found.")) }
         val positionJson = objectMapper.writeValueAsString(request.position)
         val updated = jdbcClient.sql(
             """
@@ -75,6 +80,7 @@ class RoomService(
                 "position" to request.position,
             ),
         )
+        idempotencyService.remember(updated.familyId, idempotencyKey, ROOM_ARRANGE_OPERATION, "room_item", updated.id, user.userId)
         return toResponse(updated)
     }
 
@@ -103,4 +109,8 @@ class RoomService(
             visible = item.visible,
             unlockedAt = item.unlockedAt,
         )
+
+    private companion object {
+        const val ROOM_ARRANGE_OPERATION = "room.arrange"
+    }
 }

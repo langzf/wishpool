@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design/wishpool_theme.dart';
-import 'data/wishpool_scope.dart';
-import 'features/mobile_home.dart';
+import 'features/auth_gate.dart';
 
 class WishPoolApp extends StatelessWidget {
   const WishPoolApp({super.key});
@@ -14,9 +13,7 @@ class WishPoolApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: WishPoolTheme.light(),
       darkTheme: WishPoolTheme.dark(),
-      home: WishPoolScope(
-        child: const MobileHomeScreen(),
-      ),
+      home: const AuthGate(),
     );
   }
 }

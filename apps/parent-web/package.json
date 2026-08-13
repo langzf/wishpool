@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
-    "check": "../../scripts/check-web-app.sh . @wishpool/parent-web"
+    "check": "next build && ../../scripts/check-web-app.sh . @wishpool/parent-web"
   },
   "dependencies": {
     "@wishpool/app-fixtures": "0.1.0",

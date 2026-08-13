@@ -1,4 +1,5 @@
 import { AlertTriangle, Archive, Bot, Clock3, Database, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
+import { grantMediaAccessAction, logoutAdminAction } from "@/app/actions";
 import { getAdminRuntimeConfig } from "@/lib/runtime";
 import type { AdminDashboardData, AdminQueueRow } from "@/lib/dashboard-data";
 
@@ -9,7 +10,17 @@ function QueueIcon({ queue }: Readonly<{ queue: AdminQueueRow }>) {
   return <RefreshCw size={18} aria-hidden="true" />;
 }
 
-export function AdminDashboard({ data }: Readonly<{ data: AdminDashboardData }>) {
+export function AdminDashboard({
+  data,
+  mediaAccessAuditLogId,
+  mediaAccessExpiresAt,
+  mediaAccessUrl
+}: Readonly<{
+  data: AdminDashboardData;
+  mediaAccessAuditLogId?: string;
+  mediaAccessExpiresAt?: string;
+  mediaAccessUrl?: string;
+}>) {
   const config = getAdminRuntimeConfig();
 
   return (
@@ -20,14 +31,19 @@ export function AdminDashboard({ data }: Readonly<{ data: AdminDashboardData }>)
           <h1 className="admin-title">系统治理</h1>
         </div>
         <div className="admin-actions">
-          <button className="button-secondary" type="button">
+          <a className="button-secondary" href={`${config.adminApiBaseUrl}/health`} rel="noreferrer" target="_blank">
             <Wifi size={18} aria-hidden="true" />
             健康检查
-          </button>
-          <button className="button" type="button">
+          </a>
+          <a className="button" href="/">
             <RefreshCw size={18} aria-hidden="true" />
             刷新状态
-          </button>
+          </a>
+          <form action={logoutAdminAction}>
+            <button className="button-secondary" type="submit">
+              退出
+            </button>
+          </form>
         </div>
       </header>
 
@@ -126,6 +142,36 @@ export function AdminDashboard({ data }: Readonly<{ data: AdminDashboardData }>)
           </div>
         </article>
 
+        <article className="panel span-8" id="families">
+          <h2>家庭元数据</h2>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>家庭</th>
+                  <th>状态</th>
+                  <th>儿童</th>
+                  <th>成员</th>
+                  <th>时区</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.families.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.name}</td>
+                    <td>
+                      <span className="pill pill-green">{row.status}</span>
+                    </td>
+                    <td>{row.childCount}</td>
+                    <td>{row.memberCount}</td>
+                    <td>{row.timezone}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
         <article className="panel span-4" id="storage">
           <h2>对象存储</h2>
           <p className="muted">MinIO 控制台</p>
@@ -134,6 +180,40 @@ export function AdminDashboard({ data }: Readonly<{ data: AdminDashboardData }>)
           <div className="bar-track" aria-label="媒体处理完成率 94%">
             <div className="bar-fill" style={{ width: "94%" }} />
           </div>
+        </article>
+
+        <article className="panel span-4" id="media-access">
+          <h2>媒体授权</h2>
+          <form action={grantMediaAccessAction} className="admin-form">
+            <label>
+              家庭 ID
+              <input name="familyId" placeholder={data.families[0]?.id ?? "family uuid"} />
+            </label>
+            <label>
+              媒体 ID
+              <input name="mediaAssetId" placeholder="media uuid" />
+            </label>
+            <label>
+              原因
+              <input name="reason" placeholder="排查上传失败" />
+            </label>
+            <label>
+              分钟
+              <input defaultValue="30" max="120" min="5" name="expiresInMinutes" type="number" />
+            </label>
+            <button className="button" type="submit">
+              创建授权
+            </button>
+          </form>
+          {mediaAccessUrl ? (
+            <p className="grant-result">
+              <a href={mediaAccessUrl} rel="noreferrer" target="_blank">
+                打开授权链接
+              </a>
+              {mediaAccessExpiresAt ? <span>有效期至 {mediaAccessExpiresAt}</span> : null}
+              {mediaAccessAuditLogId ? <span>审计 {mediaAccessAuditLogId}</span> : null}
+            </p>
+          ) : null}
         </article>
 
         <article className="panel span-4" id="settings">

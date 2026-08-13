@@ -3,6 +3,7 @@ package com.wishpool.core.tasks
 import com.wishpool.core.child.ChildService
 import com.wishpool.core.events.DomainEventPublisher
 import com.wishpool.core.family.FamilyPolicy
+import com.wishpool.core.idempotency.IdempotencyService
 import com.wishpool.core.security.CurrentUser
 import com.wishpool.core.shared.BadRequestError
 import com.wishpool.core.shared.ConflictError
@@ -21,6 +22,7 @@ class TaskPlanningService(
     private val familyPolicy: FamilyPolicy,
     private val childService: ChildService,
     private val eventPublisher: DomainEventPublisher,
+    private val idempotencyService: IdempotencyService,
 ) {
     fun listTaskTemplates(familyId: UUID): List<TaskTemplateResponse> {
         familyPolicy.requireParent(currentUser.require(), familyId)
@@ -39,12 +41,14 @@ class TaskPlanningService(
     }
 
     @Transactional
-    fun createTaskTemplate(request: CreateTaskTemplateRequest): TaskTemplateResponse {
+    fun createTaskTemplate(request: CreateTaskTemplateRequest, idempotencyKey: String?): TaskTemplateResponse {
         val user = currentUser.require()
         familyPolicy.requireParent(user, request.familyId)
+        idempotencyService.find(request.familyId, idempotencyKey, TASK_TEMPLATE_CREATE_OPERATION)
+            ?.let { return getTaskTemplate(it.resourceId) }
         validateCategory(request.category)
         validateSubmissionType(request.submissionType)
-        return jdbcClient.sql(
+        val template = jdbcClient.sql(
             """
             insert into task_template (
               family_id, title, category, submission_type, description, target_text, default_duration_sec, created_by
@@ -64,12 +68,16 @@ class TaskPlanningService(
             .param("created_by", user.userId)
             .query(::taskTemplateResponse)
             .single()
+        idempotencyService.remember(request.familyId, idempotencyKey, TASK_TEMPLATE_CREATE_OPERATION, "task_template", template.id, user.userId)
+        return template
     }
 
     @Transactional
-    fun saveWeeklyPlan(request: SaveWeeklyPlanRequest): WeeklyPlanResponse {
+    fun saveWeeklyPlan(request: SaveWeeklyPlanRequest, idempotencyKey: String?): WeeklyPlanResponse {
         val user = currentUser.require()
         familyPolicy.requireParent(user, request.familyId)
+        idempotencyService.find(request.familyId, idempotencyKey, WEEKLY_PLAN_SAVE_OPERATION)
+            ?.let { return getWeeklyPlan(it.resourceId) }
         val child = childService.findChild(request.childId) ?: throw NotFoundError("Child profile not found.")
         if (child.familyId != request.familyId) throw BadRequestError("Child profile does not belong to this family.")
         validatePlan(request)
@@ -91,6 +99,7 @@ class TaskPlanningService(
                 "ruleCount" to rules.size,
             ),
         )
+        idempotencyService.remember(request.familyId, idempotencyKey, WEEKLY_PLAN_SAVE_OPERATION, "weekly_plan", planId, user.userId)
         return getWeeklyPlan(planId)
     }
 
@@ -151,10 +160,12 @@ class TaskPlanningService(
     }
 
     @Transactional
-    fun skipTask(taskId: UUID, request: SkipTaskRequest): TaskInstanceResponse {
+    fun skipTask(taskId: UUID, request: SkipTaskRequest, idempotencyKey: String?): TaskInstanceResponse {
         val task = findTask(taskId) ?: throw NotFoundError("Task not found.")
         val user = currentUser.require()
         familyPolicy.requireParent(user, task.familyId)
+        idempotencyService.find(task.familyId, idempotencyKey, TASK_SKIP_OPERATION)
+            ?.let { return getTaskInstance(it.resourceId) }
         if (task.status !in setOf("todo", "needs_revision", "adjusted_by_parent")) {
             throw ConflictError("Only open tasks can be skipped.")
         }
@@ -190,13 +201,17 @@ class TaskPlanningService(
                 "actorUserId" to user.userId.toString(),
             ),
         )
+        idempotencyService.remember(skipped.familyId, idempotencyKey, TASK_SKIP_OPERATION, "task_instance", skipped.id, user.userId)
         return skipped
     }
 
     @Transactional
-    fun postponeTask(taskId: UUID, request: PostponeTaskRequest): TaskInstanceResponse {
+    fun postponeTask(taskId: UUID, request: PostponeTaskRequest, idempotencyKey: String?): TaskInstanceResponse {
         val task = findTask(taskId) ?: throw NotFoundError("Task not found.")
-        familyPolicy.requireParent(currentUser.require(), task.familyId)
+        val user = currentUser.require()
+        familyPolicy.requireParent(user, task.familyId)
+        idempotencyService.find(task.familyId, idempotencyKey, TASK_POSTPONE_OPERATION)
+            ?.let { return getTaskInstance(it.resourceId) }
         if (task.status !in setOf("todo", "needs_revision", "adjusted_by_parent")) {
             throw ConflictError("Only open tasks can be postponed.")
         }
@@ -269,8 +284,36 @@ class TaskPlanningService(
             aggregateId = postponed.id,
             payload = taskCreatedPayload(postponed, source = "carry_over"),
         )
+        idempotencyService.remember(postponed.familyId, idempotencyKey, TASK_POSTPONE_OPERATION, "task_instance", postponed.id, user.userId)
         return postponed
     }
+
+    private fun getTaskTemplate(templateId: UUID): TaskTemplateResponse =
+        jdbcClient.sql(
+            """
+            select id, family_id, title, category, submission_type, description, target_text, default_duration_sec
+            from task_template
+            where id = :id
+            """.trimIndent(),
+        )
+            .param("id", templateId)
+            .query(::taskTemplateResponse)
+            .optional()
+            .orElseThrow { NotFoundError("Task template not found.") }
+
+    private fun getTaskInstance(taskId: UUID): TaskInstanceResponse =
+        jdbcClient.sql(
+            """
+            select id, family_id, child_id, scheduled_date, title, category, submission_type,
+                   description, target_text, is_core, require_review, status, latest_submission_id
+            from task_instance
+            where id = :id
+            """.trimIndent(),
+        )
+            .param("id", taskId)
+            .query(::taskInstanceResponse)
+            .optional()
+            .orElseThrow { NotFoundError("Task not found.") }
 
     private fun upsertWeeklyPlan(request: SaveWeeklyPlanRequest, userId: UUID): UUID {
         val existingId = jdbcClient.sql(
@@ -666,6 +709,13 @@ class TaskPlanningService(
         if (submissionType !in setOf("photo", "audio", "video", "manual")) {
             throw BadRequestError("Unsupported submission type.")
         }
+    }
+
+    private companion object {
+        const val TASK_TEMPLATE_CREATE_OPERATION = "task_template.create"
+        const val WEEKLY_PLAN_SAVE_OPERATION = "weekly_plan.save"
+        const val TASK_SKIP_OPERATION = "task.skip"
+        const val TASK_POSTPONE_OPERATION = "task.postpone"
     }
 }
 

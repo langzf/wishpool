@@ -39,7 +39,11 @@ class WishScreen extends StatelessWidget {
                 const SizedBox(height: WishPoolSpacing.md),
                 Text(snapshot.wishTitle, style: theme.textTheme.headlineMedium),
                 const SizedBox(height: WishPoolSpacing.xs),
-                const Text('完成本周核心任务后，周六下午一起搭城市小屋。'),
+                Text(
+                  snapshot.wishTargetFragments <= 1 && snapshot.wishCurrentFragments == 0
+                      ? '家长创建本周心愿后，核心任务通过审核会推动碎片进度。'
+                      : '完成本周核心任务并通过家长确认后，会获得心愿碎片。',
+                ),
                 const SizedBox(height: WishPoolSpacing.lg),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(999),
@@ -51,10 +55,10 @@ class WishScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: WishPoolSpacing.sm),
-                const Text('6 / 10 心愿碎片'),
+                Text('${snapshot.wishCurrentFragments} / ${snapshot.wishTargetFragments} 心愿碎片'),
                 const SizedBox(height: WishPoolSpacing.lg),
                 FilledButton.icon(
-                  onPressed: () {},
+                  onPressed: () => _showWishRule(context),
                   icon: const Icon(Icons.card_giftcard),
                   label: const Text('查看兑现规则'),
                 ),
@@ -63,6 +67,25 @@ class WishScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showWishRule(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(snapshot.wishTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: WishPoolSpacing.sm),
+            Text('当前进度 ${(snapshot.wishProgress * 100).round()}%。当天核心任务完成并经家长确认后，会获得一块心愿碎片。'),
+          ],
+        ),
+      ),
     );
   }
 }

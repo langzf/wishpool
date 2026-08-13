@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`packages/app-fixtures` provides coherent sample data for clients, design previews, and service tests. Fixtures cover the main WishPool loop: family, child, today tasks, submissions under review, wishes, memories, room items, privacy requests, and dashboard metrics.
+`packages/app-fixtures` provides coherent sample data for clients, design previews, and service tests. Fixtures cover the main WishPool loop: family, child, scheduled today tasks, submissions under review, wishes, weekly plan rules, memories, room items, inbox notifications, notification preferences, privacy requests, family metadata, and dashboard metrics.
 
 ## Key Files
 

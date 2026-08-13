@@ -26,7 +26,7 @@ for (const dep of ['next', 'react', 'react-dom', '@wishpool/design-tokens', '@wi
 }
 "
 
-rg -n "export default function|aria-label|Navigation|lucide-react|@wishpool/app-fixtures" "$app_dir" >/dev/null
+rg --glob '!node_modules/**' --glob '!.next/**' -n "export default function|aria-label|Navigation|lucide-react|@wishpool/app-fixtures" "$app_dir" >/dev/null
 if [ -f "${app_dir}/lib/dashboard-data.ts" ]; then
   rg -n "load.*DashboardData|source: \"api\"|source: \"admin-api\"|source: \"fixture\"" "${app_dir}/lib/dashboard-data.ts" >/dev/null
 else
@@ -34,6 +34,6 @@ else
   exit 1
 fi
 blocked_pattern='TO''DO|MV''P|MP''V|P''0|P''1|终''态|阶''段'
-rg -n "$blocked_pattern" "$app_dir" && exit 1 || true
+rg --glob '!node_modules/**' --glob '!.next/**' -n "$blocked_pattern" "$app_dir" && exit 1 || true
 
 echo "validated ${app_name} source structure"

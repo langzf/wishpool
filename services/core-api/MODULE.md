@@ -27,8 +27,11 @@
 | `src/main/kotlin/com/wishpool/core/child/ChildService.kt` | Owns child profile creation, update, lookup, and role-limited access. |
 | `src/main/kotlin/com/wishpool/core/pairing/PairingController.kt` | Exposes child device pairing session creation and consumption. |
 | `src/main/kotlin/com/wishpool/core/pairing/PairingService.kt` | Owns pairing code generation, one-time consumption, child-device user creation, membership, device registration, and token issue. |
+| `src/main/kotlin/com/wishpool/core/home/HomeController.kt` | Exposes child and parent aggregate home contexts for clients. |
+| `src/main/kotlin/com/wishpool/core/home/HomeService.kt` | Composes family, child, today tasks, wish, room, memory, review, task template, and notification data into client home responses. |
+| `src/main/kotlin/com/wishpool/core/home/HomeDtos.kt` | Response DTOs for child home context, parent dashboard context, and child feedback cards. |
 | `src/main/kotlin/com/wishpool/core/tasks/TaskPlanningController.kt` | Exposes task templates, weekly plans, today snapshot, skip, and postpone routes. |
-| `src/main/kotlin/com/wishpool/core/tasks/TaskPlanningService.kt` | Owns task templates, weekly plan upsert, rule replacement, task materialization, today queries, skip, and postpone behavior. |
+| `src/main/kotlin/com/wishpool/core/tasks/TaskPlanningService.kt` | Owns task templates, idempotent weekly plan upsert, rule replacement, task materialization, today queries, skip, and postpone behavior. |
 | `src/main/kotlin/com/wishpool/core/tasks/TaskDtos.kt` | Request and response DTOs for task template, weekly plan, task instance, today snapshot, skip, and postpone APIs. |
 | `src/main/kotlin/com/wishpool/core/tasks/TaskMappers.kt` | JDBC row mappers for task planning responses. |
 | `src/main/kotlin/com/wishpool/core/media/MediaController.kt` | Exposes signed upload session creation, media finalize routes, and internal media processing endpoints. |
@@ -45,9 +48,9 @@
 | `src/main/kotlin/com/wishpool/core/ai/AiPrecheckService.kt` | Owns submission AI precheck jobs, AI worker calls or local fallback, `ai_precheck` persistence, and precheck events. |
 | `src/main/kotlin/com/wishpool/core/ai/AiWorkerClient.kt` | Calls the AI worker internal HTTP API when configured and provides deterministic local fallback otherwise. |
 | `src/main/kotlin/com/wishpool/core/memories/MemoryController.kt` | Exposes memory timeline, memory detail, and memory export routes. |
-| `src/main/kotlin/com/wishpool/core/memories/MemoryService.kt` | Owns weekly memory reads, export media request creation, workflow memory generation, memory items, and memory room unlocks. |
+| `src/main/kotlin/com/wishpool/core/memories/MemoryService.kt` | Owns weekly memory reads, idempotent export media request creation, workflow memory generation, memory items, and memory room unlocks. |
 | `src/main/kotlin/com/wishpool/core/room/RoomController.kt` | Exposes room state and room item arrangement routes. |
-| `src/main/kotlin/com/wishpool/core/room/RoomService.kt` | Owns room item reads, position updates, and room item arrangement events. |
+| `src/main/kotlin/com/wishpool/core/room/RoomService.kt` | Owns room item reads, idempotent position updates, and room item arrangement events. |
 | `src/main/kotlin/com/wishpool/core/privacy/PrivacyController.kt` | Exposes privacy export and family deletion request routes. |
 | `src/main/kotlin/com/wishpool/core/privacy/PrivacyService.kt` | Owns privacy request validation, export placeholder media, family lock/delete workflow updates, audit, and privacy events. |
 | `src/main/kotlin/com/wishpool/core/notifications/NotificationController.kt` | Exposes inbox, read-state, preference, push-token, and internal dispatch routes. |
@@ -70,6 +73,7 @@
 - The local datasource defaults to `jdbc:postgresql://localhost:5432/wishpool`.
 - Health checks are exposed through Spring Boot Actuator.
 - Implemented W3 routes follow the OpenAPI contract: `/auth/phone-codes`, `/auth/login`, `/auth/refresh`, `/me`, `/families`, `/families/{familyId}`, `/families/{familyId}/members`, `/families/{familyId}/invites`, `/families/{familyId}/children`, `/children/{childId}`, `/families/{familyId}/pairing-sessions`, and `/pairing/consume`.
+- Implemented client aggregation routes follow the OpenAPI contract: `/children/{childId}/home-context` and `/families/{familyId}/parent-dashboard`.
 - Implemented W4 routes follow the OpenAPI contract: `/task-templates`, `/plans`, `/plans/{planId}`, `/children/{childId}/today`, `/tasks/{taskId}/skip`, and `/tasks/{taskId}/postpone`.
 - Implemented W5 routes follow the OpenAPI contract: `/media/upload-sessions`, `/media/{mediaId}/finalize`, `/submissions`, and `/submissions/{submissionId}`.
 - Implemented W6 routes follow the OpenAPI contract: `/reviews/pending`, `/reviews/{submissionId}/detail`, `/reviews`, and `/reviews/{reviewId}/revoke`.
@@ -99,6 +103,8 @@
 - Privacy export creates a privacy request plus export media placeholder and emits `privacy.export_requested`; privacy deletion locks the family, marks records and media deleted through the internal workflow activity, writes audit, and emits `privacy.deletion_completed`.
 - Notification projection creates inbox rows from task, submission, AI precheck, review, reward, wish, and memory family events; the dispatcher claims pending rows and records sent, failed, or suppressed outcomes.
 - Administration routes expose metadata and audited short-lived media access without making the admin web call family-facing APIs directly.
+- Parent dashboard aggregation includes selected child, today tasks, active wish, active weekly plan, pending reviews, task templates, memories, room state, and notification inbox.
+- Child home aggregation includes today tasks, current wish, room state, latest memory, latest feedback, and unread notification count under child access policy.
 - JSON request body read failures return HTTP 400 Problem Details instead of leaking as unexpected server errors.
 
 ## Tests

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -23,12 +24,18 @@ class TaskPlanningController(
 
     @PostMapping("/task-templates")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createTaskTemplate(@Valid @RequestBody request: CreateTaskTemplateRequest): TaskTemplateResponse =
-        service.createTaskTemplate(request)
+    fun createTaskTemplate(
+        @Valid @RequestBody request: CreateTaskTemplateRequest,
+        @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?,
+    ): TaskTemplateResponse =
+        service.createTaskTemplate(request, idempotencyKey)
 
     @PostMapping("/plans")
-    fun saveWeeklyPlan(@Valid @RequestBody request: SaveWeeklyPlanRequest): WeeklyPlanResponse =
-        service.saveWeeklyPlan(request)
+    fun saveWeeklyPlan(
+        @Valid @RequestBody request: SaveWeeklyPlanRequest,
+        @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?,
+    ): WeeklyPlanResponse =
+        service.saveWeeklyPlan(request, idempotencyKey)
 
     @GetMapping("/plans/{planId}")
     fun getWeeklyPlan(@PathVariable planId: UUID): WeeklyPlanResponse =
@@ -45,13 +52,15 @@ class TaskPlanningController(
     fun skipTask(
         @PathVariable taskId: UUID,
         @Valid @RequestBody request: SkipTaskRequest,
+        @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?,
     ): TaskInstanceResponse =
-        service.skipTask(taskId, request)
+        service.skipTask(taskId, request, idempotencyKey)
 
     @PostMapping("/tasks/{taskId}/postpone")
     fun postponeTask(
         @PathVariable taskId: UUID,
         @Valid @RequestBody request: PostponeTaskRequest,
+        @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?,
     ): TaskInstanceResponse =
-        service.postponeTask(taskId, request)
+        service.postponeTask(taskId, request, idempotencyKey)
 }
