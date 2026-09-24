@@ -35,9 +35,9 @@ class MemoryService(
             select id, family_id, child_id, week_id, start_date, end_date, title, summary_json::text, status
             from weekly_memory
             where child_id = :child_id
-              and (:before_start is null or start_date < :before_start)
+              and (cast(:before_start as date) is null or start_date < cast(:before_start as date))
             order by start_date desc
-            limit :limit
+            limit cast(:limit as integer)
             """.trimIndent(),
         )
             .param("child_id", childId)

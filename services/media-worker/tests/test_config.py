@@ -21,3 +21,7 @@ def test_config_loads_defaults_and_overrides() -> None:
     assert config.poll_interval_seconds == 0.25
     assert config.claim_limit == 50
     assert config.lease_seconds == 30
+    assert config.max_attempts == 5
+    assert config.retry_backoff_seconds == 60
+    assert config.core_api_retry_backoff_seconds == 5
+    assert config.core_api_retry_max_backoff_seconds == 60

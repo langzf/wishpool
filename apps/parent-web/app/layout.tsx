@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { RealtimeRefresh } from "@/components/RealtimeRefresh";
 import "./styles.css";
 
 export const metadata: Metadata = {
@@ -12,10 +13,10 @@ export const viewport: Viewport = {
   themeColor: "#F8FAFC"
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body><RealtimeRefresh enabled />{children}</body>
     </html>
   );
 }

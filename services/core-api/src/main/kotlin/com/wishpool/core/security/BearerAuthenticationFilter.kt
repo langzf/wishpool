@@ -3,6 +3,7 @@ package com.wishpool.core.security
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import com.wishpool.core.shared.BadRequestError
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
@@ -25,8 +26,14 @@ class BearerAuthenticationFilter(
             ?.trim()
 
         if (token != null) {
-            val claims = tokenService.parseAccessToken(token)
-            if (sessionIsActive(claims.sessionId)) {
+            val claims = try {
+                tokenService.parseAccessToken(token)
+            } catch (ex: BadRequestError) {
+                null
+            } catch (ex: IllegalArgumentException) {
+                null
+            }
+            if (claims != null && sessionIsActive(claims.sessionId)) {
                 currentUser.set(AuthenticatedUser(claims.userId, claims.sessionId, claims.deviceId))
             }
         }

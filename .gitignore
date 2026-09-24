@@ -3,6 +3,8 @@
 .vscode/
 
 node_modules/
+infra/nas/.env.nas
+infra/docker-compose/.env.nas
 npm-debug.log*
 .next/
 
@@ -24,3 +26,15 @@ __pycache__/
 .pytest_cache/
 
 infra/docker-compose/.env
+
+# --- checkpoint hygiene (2026-09-24) ---
+# dev/build artifacts & scratch files
+*.log
+*.tsbuildinfo
+.next-dev*
+.dart_tool/
+.pytest_cache/
+__pycache__/
+*.pyc
+# local task briefs / dispatch logs (kept in C:\Users\18513\codex_tasks)
+.codex_tasks/

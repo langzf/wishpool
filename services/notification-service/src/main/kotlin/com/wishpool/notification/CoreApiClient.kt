@@ -9,7 +9,7 @@ import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.UUID
 
-class CoreApiClient(
+open class CoreApiClient(
     private val config: NotificationConfig,
     private val httpClient: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(5))
@@ -17,10 +17,10 @@ class CoreApiClient(
 ) {
     private val mapper = jacksonObjectMapper()
 
-    fun claimNotifications(): ClaimNotificationEventsResponse =
+    open fun claimNotifications(): ClaimNotificationEventsResponse =
         post("internal/notifications/claim", ClaimNotificationEventsRequest(config.claimLimit))
 
-    fun markDispatchResult(notificationId: UUID, request: NotificationDispatchResultRequest): NotificationEventResponse =
+    open fun markDispatchResult(notificationId: UUID, request: NotificationDispatchResultRequest): NotificationEventResponse =
         post("internal/notifications/$notificationId/dispatch-result", request)
 
     private inline fun <reified T> post(path: String, body: Any): T {

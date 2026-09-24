@@ -29,7 +29,7 @@ class OutboxService(
                 and available_at <= now()
                 and (leased_until is null or leased_until <= now())
               order by available_at, created_at
-              limit :limit
+              limit cast(:limit as integer)
               for update skip locked
             )
             update outbox_event e

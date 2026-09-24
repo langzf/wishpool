@@ -12,8 +12,8 @@ import 'wishpool_repository.dart';
 
 class WishPoolScope extends InheritedWidget {
   WishPoolScope({
-    super.key,
-    required super.child,
+    Key? key,
+    required Widget child,
     WishPoolRuntimeConfig config = WishPoolRuntimeConfig.local,
   }) : this._(
           key: key,

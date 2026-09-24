@@ -7,8 +7,10 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.routing
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import tools.jackson.module.kotlin.readValue
@@ -76,6 +78,53 @@ fun Application.adminModule(runtime: AdminRuntime) {
             if (!call.requireAdminToken(runtime.config.adminToken)) return@post
             val request = mapper.readValue<AdminMediaAccessGrantRequest>(call.receiveText())
             call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.grantMediaAccess(request)))
+        }
+        get("/admin/image-model-providers") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@get
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.imageModelProviders()))
+        }
+        post("/admin/image-model-providers") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@post
+            val request = mapper.readValue<ImageModelProviderWriteRequest>(call.receiveText())
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.createImageModelProvider(request)))
+        }
+        put("/admin/image-model-providers/{id}") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@put
+            val id = call.parameters["id"]?.let(UUID::fromString)
+                ?: return@put call.respondJson("""{"detail":"Provider id is required."}""", HttpStatusCode.BadRequest)
+            val request = mapper.readValue<ImageModelProviderWriteRequest>(call.receiveText())
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.updateImageModelProvider(id, request)))
+        }
+        post("/admin/image-model-providers/{id}/toggle") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@post
+            val id = call.parameters["id"]?.let(UUID::fromString)
+                ?: return@post call.respondJson("""{"detail":"Provider id is required."}""", HttpStatusCode.BadRequest)
+            val request = mapper.readValue<ImageModelProviderToggleRequest>(call.receiveText())
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.toggleImageModelProvider(id, request)))
+        }
+        post("/admin/image-model-providers/{id}/set-default") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@post
+            val id = call.parameters["id"]?.let(UUID::fromString)
+                ?: return@post call.respondJson("""{"detail":"Provider id is required."}""", HttpStatusCode.BadRequest)
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.setDefaultImageModelProvider(id)))
+        }
+        delete("/admin/image-model-providers/{id}") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@delete
+            val id = call.parameters["id"]?.let(UUID::fromString)
+                ?: return@delete call.respondJson("""{"detail":"Provider id is required."}""", HttpStatusCode.BadRequest)
+            runtime.coreApiClient.deleteImageModelProvider(id)
+            call.respondJson("""{"status":"deleted"}""")
+        }
+        get("/admin/image-gen-usages") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@get
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.imageGenUsages()))
+        }
+        put("/admin/image-gen-usages/{usageCode}") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@put
+            val usageCode = call.parameters["usageCode"]
+                ?: return@put call.respondJson("""{"detail":"Usage code is required."}""", HttpStatusCode.BadRequest)
+            val request = mapper.readValue<ImageGenUsageWriteRequest>(call.receiveText())
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.upsertImageGenUsage(usageCode, request)))
         }
     }
 }

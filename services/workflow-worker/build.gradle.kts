@@ -16,6 +16,9 @@ java {
 dependencies {
     implementation("io.temporal:temporal-sdk:1.38.0")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.15.4")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.4")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.4")
     implementation("tools.jackson.module:jackson-module-kotlin:3.1.4")
     implementation("org.slf4j:slf4j-simple:2.0.17")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

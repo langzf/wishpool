@@ -53,6 +53,31 @@ class CoreApiClient(
     fun grantMediaAccess(request: AdminMediaAccessGrantRequest): AdminMediaAccessGrantResponse =
         post("internal/admin/media-access-grants", request)
 
+    fun imageModelProviders(): List<ImageModelProviderResponse> =
+        get("internal/admin/image-model-providers")
+
+    fun createImageModelProvider(request: ImageModelProviderWriteRequest): ImageModelProviderResponse =
+        post("internal/admin/image-model-providers", request)
+
+    fun updateImageModelProvider(id: UUID, request: ImageModelProviderWriteRequest): ImageModelProviderResponse =
+        put("internal/admin/image-model-providers/$id", request)
+
+    fun toggleImageModelProvider(id: UUID, request: ImageModelProviderToggleRequest): ImageModelProviderResponse =
+        post("internal/admin/image-model-providers/$id/toggle", request)
+
+    fun setDefaultImageModelProvider(id: UUID): ImageModelProviderResponse =
+        post("internal/admin/image-model-providers/$id/set-default", emptyMap<String, String>())
+
+    fun deleteImageModelProvider(id: UUID) {
+        delete("internal/admin/image-model-providers/$id")
+    }
+
+    fun imageGenUsages(): List<ImageGenUsageResponse> =
+        get("internal/admin/image-gen-usages")
+
+    fun upsertImageGenUsage(usageCode: String, request: ImageGenUsageWriteRequest): ImageGenUsageResponse =
+        put("internal/admin/image-gen-usages/$usageCode", request.copy(usageCode = usageCode))
+
     private inline fun <reified T> get(path: String): T {
         val response = httpClient.send(
             HttpRequest.newBuilder(resolve(path))
@@ -82,6 +107,36 @@ class CoreApiClient(
             throw CoreApiException(response.statusCode(), response.body())
         }
         return mapper.readValue(response.body())
+    }
+
+    private inline fun <reified T> put(path: String, body: Any): T {
+        val response = httpClient.send(
+            HttpRequest.newBuilder(resolve(path))
+                .timeout(config.requestTimeout.toJavaDuration())
+                .header("Content-Type", "application/json")
+                .header("X-Internal-Token", config.internalToken)
+                .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body)))
+                .build(),
+            HttpResponse.BodyHandlers.ofString(),
+        )
+        if (response.statusCode() !in 200..299) {
+            throw CoreApiException(response.statusCode(), response.body())
+        }
+        return mapper.readValue(response.body())
+    }
+
+    private fun delete(path: String) {
+        val response = httpClient.send(
+            HttpRequest.newBuilder(resolve(path))
+                .timeout(config.requestTimeout.toJavaDuration())
+                .header("X-Internal-Token", config.internalToken)
+                .DELETE()
+                .build(),
+            HttpResponse.BodyHandlers.ofString(),
+        )
+        if (response.statusCode() !in 200..299) {
+            throw CoreApiException(response.statusCode(), response.body())
+        }
     }
 
     private fun resolve(path: String): URI =

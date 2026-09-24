@@ -1,9 +1,8 @@
 import { ParentAuthPanel, ParentSetupPanel } from "@/components/AuthPanel";
 import { ParentDashboard } from "@/components/Dashboard";
 import { Shell } from "@/components/Shell";
-import { loadParentDashboardData } from "@/lib/dashboard-data";
-import { loadParentProfile } from "@/lib/profile-data";
-import { getParentWebSession } from "@/lib/session";
+import { requireParentPageContext } from "@/lib/parent-page";
+import { renderParentPageFallback } from "@/lib/parent-page-render";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -11,7 +10,7 @@ type PageProps = {
 
 export default async function Page({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
-  const session = await getParentWebSession();
+  const { session, profile, profileError, data, dataError, needsSetup } = await requireParentPageContext();
   if (!session) {
     return (
       <ParentAuthPanel
@@ -23,23 +22,32 @@ export default async function Page({ searchParams }: PageProps) {
     );
   }
 
-  const profile = await loadParentProfile(session);
-  if (!profile.selectedFamilyId || !profile.selectedChildId || singleParam(params.setup) === "1") {
+  if (profileError || dataError || !profile) {
+    return renderParentPageFallback({ session, profile, profileError, data, dataError, needsSetup });
+  }
+  if (needsSetup || singleParam(params.setup) === "1") {
     return (
       <Shell>
         <ParentSetupPanel error={singleParam(params.setupError)} profile={profile} />
       </Shell>
     );
   }
+  if (!data) {
+    return <ParentAuthPanel error="登录状态失效或核心服务暂不可用，请重新登录。" />;
+  }
 
-  const resolvedSession = { ...session, familyId: profile.selectedFamilyId, childId: profile.selectedChildId };
-  const data = await loadParentDashboardData(resolvedSession);
   const pairingCode = singleParam(params.pairingCode);
   const pairingExpiresAt = singleParam(params.pairingExpiresAt);
 
   return (
     <Shell>
-      <ParentDashboard data={data} pairingCode={pairingCode} pairingExpiresAt={pairingExpiresAt} />
+      <ParentDashboard
+        actionError={singleParam(params.actionError)}
+        actionSuccess={singleParam(params.actionSuccess)}
+        data={data}
+        pairingCode={pairingCode}
+        pairingExpiresAt={pairingExpiresAt}
+      />
     </Shell>
   );
 }

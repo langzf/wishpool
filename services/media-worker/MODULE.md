@@ -40,7 +40,13 @@
 | `WISHPOOL_MEDIA_POLL_INTERVAL_SECONDS` | `2` | Idle polling interval. |
 | `WISHPOOL_MEDIA_CLAIM_LIMIT` | `5` | Max media items leased per claim. |
 | `WISHPOOL_MEDIA_LEASE_SECONDS` | `300` | Lease duration for claimed media. |
+| `WISHPOOL_MEDIA_MAX_ATTEMPTS` | `5` | Maximum claimed attempts before permanent failure. |
+| `WISHPOOL_MEDIA_RETRY_BACKOFF_SECONDS` | `60` | Delay before a retryable failure is claimable again. |
+| `WISHPOOL_MEDIA_CORE_API_RETRY_BACKOFF_SECONDS` | `5` | Initial delay when the Core API is temporarily unreachable. |
+| `WISHPOOL_MEDIA_CORE_API_RETRY_MAX_BACKOFF_SECONDS` | `60` | Maximum delay between Core API availability retries. |
 | `WISHPOOL_MEDIA_WORK_DIR` | `/tmp/wishpool-media-worker` | Local scratch directory. |
+
+When the Core API is temporarily unreachable, the worker remains running and retries with exponential backoff. Retry lines contain `MEDIA_WORKER_CORE_API_RETRY`; recovery is logged with `MEDIA_WORKER_CORE_API_RECOVERED`.
 
 ## Verification
 

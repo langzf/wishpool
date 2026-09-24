@@ -14,6 +14,7 @@ import java.net.URI
 @Configuration
 class S3StorageConfig(
     @Value("\${wishpool.storage.s3.endpoint}") private val endpoint: String,
+    @Value("\${wishpool.storage.s3.public-endpoint}") private val publicEndpoint: String,
     @Value("\${wishpool.storage.s3.access-key}") private val accessKey: String,
     @Value("\${wishpool.storage.s3.secret-key}") private val secretKey: String,
     @Value("\${wishpool.storage.s3.region}") private val region: String,
@@ -28,10 +29,17 @@ class S3StorageConfig(
             .serviceConfiguration(s3Configuration())
             .build()
 
-    @Bean
-    fun s3Presigner(): S3Presigner =
+    @Bean("internalS3Presigner")
+    fun internalS3Presigner(): S3Presigner =
+        s3Presigner(endpoint)
+
+    @Bean("publicS3Presigner")
+    fun publicS3Presigner(): S3Presigner =
+        s3Presigner(publicEndpoint)
+
+    private fun s3Presigner(endpointOverride: String): S3Presigner =
         S3Presigner.builder()
-            .endpointOverride(URI.create(endpoint))
+            .endpointOverride(URI.create(endpointOverride))
             .credentialsProvider(credentialsProvider())
             .region(Region.of(region))
             .serviceConfiguration(s3Configuration())

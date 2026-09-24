@@ -16,6 +16,10 @@ class MediaWorkerConfig:
     poll_interval_seconds: float
     claim_limit: int
     lease_seconds: int
+    max_attempts: int
+    retry_backoff_seconds: int
+    core_api_retry_backoff_seconds: float
+    core_api_retry_max_backoff_seconds: float
     work_dir: str
 
     @classmethod
@@ -32,5 +36,9 @@ class MediaWorkerConfig:
             poll_interval_seconds=max(float(values.get("WISHPOOL_MEDIA_POLL_INTERVAL_SECONDS", "2")), 0.25),
             claim_limit=min(max(int(values.get("WISHPOOL_MEDIA_CLAIM_LIMIT", "5")), 1), 50),
             lease_seconds=min(max(int(values.get("WISHPOOL_MEDIA_LEASE_SECONDS", "300")), 30), 3600),
+            max_attempts=min(max(int(values.get("WISHPOOL_MEDIA_MAX_ATTEMPTS", "5")), 1), 1000),
+            retry_backoff_seconds=min(max(int(values.get("WISHPOOL_MEDIA_RETRY_BACKOFF_SECONDS", "60")), 0), 86400),
+            core_api_retry_backoff_seconds=min(max(float(values.get("WISHPOOL_MEDIA_CORE_API_RETRY_BACKOFF_SECONDS", "5")), 0.25), 300),
+            core_api_retry_max_backoff_seconds=min(max(float(values.get("WISHPOOL_MEDIA_CORE_API_RETRY_MAX_BACKOFF_SECONDS", "60")), 0.25), 3600),
             work_dir=values.get("WISHPOOL_MEDIA_WORK_DIR", "/tmp/wishpool-media-worker"),
         )

@@ -23,9 +23,14 @@ class NotificationDispatcher(
         if (item.preference?.enabled == false) return "suppressed"
         val pushEnabled = item.preference?.channels?.get("push")?.asBoolean(true) ?: true
         if (!pushEnabled) return "suppressed"
-        if (!config.dispatchEnabled) return "sent"
+        // A disabled dispatcher is a local/development sink, not evidence that a
+        // provider accepted the notification. Keep the event visible for retry
+        // instead of recording a false delivery.
+        if (!config.dispatchEnabled) return "failed"
         val device = item.recipientDevice ?: return "failed"
         if (device.pushProvider.isNullOrBlank() || device.pushToken.isNullOrBlank()) return "failed"
-        return "sent"
+        // Provider adapters (APNs/FCM/vendor push) are not implemented yet.
+        // Never claim delivery merely because a token is present.
+        return "failed"
     }
 }

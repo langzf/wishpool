@@ -28,7 +28,7 @@ class SyncService(
             where family_id = :family_id
               and seq > :after_seq
             order by seq
-            limit :limit
+            limit cast(:limit as integer)
             """.trimIndent(),
         )
             .param("family_id", familyId)

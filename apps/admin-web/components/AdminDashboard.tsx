@@ -1,20 +1,33 @@
-import { AlertTriangle, Archive, Bot, Clock3, Database, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
-import { grantMediaAccessAction, logoutAdminAction } from "@/app/actions";
+import Link from "next/link";
+import {
+  Archive,
+  Bot,
+  Clock3,
+  Database,
+  FileClock,
+  GitBranch,
+  Home,
+  LockKeyhole,
+  RefreshCw,
+  Shield,
+  ShieldCheck,
+  Wifi
+} from "lucide-react";
+import { logoutAdminAction } from "@/app/actions";
+import type { AdminDashboardData } from "@/lib/dashboard-data";
 import { getAdminRuntimeConfig } from "@/lib/runtime";
-import type { AdminDashboardData, AdminQueueRow } from "@/lib/dashboard-data";
 
-function QueueIcon({ queue }: Readonly<{ queue: AdminQueueRow }>) {
-  if (queue.name.includes("media")) return <Archive size={18} aria-hidden="true" />;
-  if (queue.name.includes("ai")) return <Bot size={18} aria-hidden="true" />;
-  if (queue.name.includes("privacy")) return <ShieldCheck size={18} aria-hidden="true" />;
-  return <RefreshCw size={18} aria-hidden="true" />;
-}
+const modules = [
+  { href: "/families", title: "家庭", description: "查看家庭状态、儿童档案和成员规模。", icon: Home },
+  { href: "/privacy", title: "隐私", description: "跟踪导出、删除等隐私请求处理进度。", icon: LockKeyhole },
+  { href: "/audit", title: "审计", description: "检索管理操作和系统事件轨迹。", icon: Shield },
+  { href: "/queues", title: "队列", description: "观察异步任务积压和重试状态。", icon: FileClock },
+  { href: "/storage", title: "存储", description: "进入对象存储并创建媒体排障授权。", icon: Archive },
+  { href: "/workflows", title: "工作流", description: "打开 Temporal 运维入口处理失败任务。", icon: GitBranch }
+];
 
 export function AdminDashboard({
-  data,
-  mediaAccessAuditLogId,
-  mediaAccessExpiresAt,
-  mediaAccessUrl
+  data
 }: Readonly<{
   data: AdminDashboardData;
   mediaAccessAuditLogId?: string;
@@ -35,10 +48,10 @@ export function AdminDashboard({
             <Wifi size={18} aria-hidden="true" />
             健康检查
           </a>
-          <a className="button" href="/">
+          <Link className="button" href="/">
             <RefreshCw size={18} aria-hidden="true" />
             刷新状态
-          </a>
+          </Link>
           <form action={logoutAdminAction}>
             <button className="button-secondary" type="submit">
               退出
@@ -49,32 +62,45 @@ export function AdminDashboard({
 
       <section className="admin-grid" aria-label="管理后台总览">
         <article className="panel metric span-3">
-          <ShieldCheck size={22} color="#059669" aria-hidden="true" />
+          <span className="metric-icon metric-icon-green" aria-hidden="true">
+            <ShieldCheck size={22} />
+          </span>
           <strong>{data.activeChildren}</strong>
           <span>活跃儿童档案</span>
           <span className="muted">家庭空间正常。</span>
         </article>
         <article className="panel metric span-3">
-          <Clock3 size={22} color="#D97706" aria-hidden="true" />
+          <span className="metric-icon metric-icon-amber" aria-hidden="true">
+            <Clock3 size={22} />
+          </span>
           <strong>{data.pendingReviews}</strong>
           <span>待处理审核</span>
           <span className="muted">家长端可直接处理。</span>
         </article>
         <article className="panel metric span-3">
-          <Bot size={22} color="#2563EB" aria-hidden="true" />
+          <span className="metric-icon metric-icon-blue" aria-hidden="true">
+            <Bot size={22} />
+          </span>
           <strong>4</strong>
           <span>AI 能力接口</span>
           <span className="muted">预审、反馈、纪念册、隐私摘要。</span>
         </article>
         <article className="panel metric span-3">
-          <Database size={22} color="#2563EB" aria-hidden="true" />
+          <span className="metric-icon metric-icon-violet" aria-hidden="true">
+            <Database size={22} />
+          </span>
           <strong>{data.migrationCount}</strong>
           <span>数据库迁移</span>
           <span className="muted">Flyway 校验通过。</span>
         </article>
 
         <article className="panel span-7">
-          <h2>服务健康</h2>
+          <div className="section-header">
+            <div>
+              <h2>服务健康</h2>
+              <p className="muted">数据源：{data.source}</p>
+            </div>
+          </div>
           <div className="table-wrap">
             <table>
               <thead>
@@ -103,155 +129,20 @@ export function AdminDashboard({
           </div>
         </article>
 
-        <article className="panel span-5" id="queues">
-          <h2>异步队列</h2>
-          <div className="queue-list">
-            {data.queues.map((queue) => (
-              <div className="queue-row" key={queue.name}>
-                <div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <QueueIcon queue={queue} />
-                    <strong>{queue.name}</strong>
-                  </div>
-                  <p className="muted" style={{ margin: "6px 0 0" }}>
-                    pending {queue.pending} · retrying {queue.retrying}
-                  </p>
-                </div>
-                <span className={queue.pending > 0 ? "pill pill-amber" : "pill pill-green"}>
-                  {queue.pending > 0 ? "观察" : "清空"}
+        <section className="span-5 module-card-grid" aria-label="模块入口">
+          {modules.map((module) => {
+            const Icon = module.icon;
+            return (
+              <Link className="panel module-card" href={module.href} key={module.href}>
+                <span className="module-card-icon" aria-hidden="true">
+                  <Icon size={20} />
                 </span>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="panel span-4" id="privacy">
-          <h2>隐私请求</h2>
-          <div className="queue-list">
-            {data.privacyQueue.map((request) => (
-              <div className="queue-row" key={request.id}>
-                <div>
-                  <strong>{request.type}</strong>
-                  <p className="muted" style={{ margin: "6px 0 0" }}>
-                    {request.requesterName} · {request.createdAt}
-                  </p>
-                </div>
-                <span className="pill pill-blue">{request.status}</span>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        <article className="panel span-8" id="families">
-          <h2>家庭元数据</h2>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>家庭</th>
-                  <th>状态</th>
-                  <th>儿童</th>
-                  <th>成员</th>
-                  <th>时区</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.families.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.name}</td>
-                    <td>
-                      <span className="pill pill-green">{row.status}</span>
-                    </td>
-                    <td>{row.childCount}</td>
-                    <td>{row.memberCount}</td>
-                    <td>{row.timezone}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </article>
-
-        <article className="panel span-4" id="storage">
-          <h2>对象存储</h2>
-          <p className="muted">MinIO 控制台</p>
-          <strong>{config.minioConsoleUrl}</strong>
-          <p className="muted">媒体处理完成率</p>
-          <div className="bar-track" aria-label="媒体处理完成率 94%">
-            <div className="bar-fill" style={{ width: "94%" }} />
-          </div>
-        </article>
-
-        <article className="panel span-4" id="media-access">
-          <h2>媒体授权</h2>
-          <form action={grantMediaAccessAction} className="admin-form">
-            <label>
-              家庭 ID
-              <input name="familyId" placeholder={data.families[0]?.id ?? "family uuid"} />
-            </label>
-            <label>
-              媒体 ID
-              <input name="mediaAssetId" placeholder="media uuid" />
-            </label>
-            <label>
-              原因
-              <input name="reason" placeholder="排查上传失败" />
-            </label>
-            <label>
-              分钟
-              <input defaultValue="30" max="120" min="5" name="expiresInMinutes" type="number" />
-            </label>
-            <button className="button" type="submit">
-              创建授权
-            </button>
-          </form>
-          {mediaAccessUrl ? (
-            <p className="grant-result">
-              <a href={mediaAccessUrl} rel="noreferrer" target="_blank">
-                打开授权链接
-              </a>
-              {mediaAccessExpiresAt ? <span>有效期至 {mediaAccessExpiresAt}</span> : null}
-              {mediaAccessAuditLogId ? <span>审计 {mediaAccessAuditLogId}</span> : null}
-            </p>
-          ) : null}
-        </article>
-
-        <article className="panel span-4" id="settings">
-          <h2>工作流</h2>
-          <p className="muted">Temporal UI</p>
-          <strong>{config.temporalUiUrl}</strong>
-          <p className="muted" style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <AlertTriangle size={16} aria-hidden="true" />
-            失败任务需要保留人工介入入口。
-          </p>
-        </article>
-
-        <article className="panel span-12" id="audit">
-          <h2>审计轨迹</h2>
-          <p className="muted">数据源：{data.source}</p>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>时间</th>
-                  <th>操作者</th>
-                  <th>动作</th>
-                  <th>对象</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.auditRows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.time}</td>
-                    <td>{row.actor}</td>
-                    <td>{row.action}</td>
-                    <td>{row.target}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </article>
+                <strong>{module.title}</strong>
+                <span className="muted">{module.description}</span>
+              </Link>
+            );
+          })}
+        </section>
       </section>
     </>
   );

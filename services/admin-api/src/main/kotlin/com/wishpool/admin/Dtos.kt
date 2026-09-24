@@ -66,6 +66,50 @@ data class AdminMediaAccessGrantResponse(
     val auditLogId: UUID,
 )
 
+data class ImageModelProviderResponse(
+    val id: UUID,
+    val code: String,
+    val displayName: String,
+    val providerType: String,
+    val baseUrl: String,
+    val apiKeyMasked: String?,
+    val modelName: String,
+    val extraParams: JsonNode,
+    val isDefault: Boolean,
+    val isEnabled: Boolean,
+    val createdAt: OffsetDateTime,
+    val updatedAt: OffsetDateTime,
+)
+
+data class ImageModelProviderWriteRequest(
+    val code: String? = null,
+    val displayName: String,
+    val providerType: String,
+    val baseUrl: String,
+    val apiKey: String? = null,
+    val modelName: String,
+    val extraParams: JsonNode? = null,
+    val isDefault: Boolean = false,
+    val isEnabled: Boolean = true,
+)
+
+data class ImageModelProviderToggleRequest(
+    val isEnabled: Boolean,
+)
+
+data class ImageGenUsageResponse(
+    val usageCode: String,
+    val providerCode: String,
+    val providerDisplayName: String?,
+    val createdAt: OffsetDateTime,
+    val updatedAt: OffsetDateTime,
+)
+
+data class ImageGenUsageWriteRequest(
+    val usageCode: String,
+    val providerCode: String,
+)
+
 data class AdminHealthResponse(
     val service: String = "admin-api",
     val status: String,

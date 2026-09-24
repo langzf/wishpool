@@ -15,6 +15,8 @@ import org.springframework.dao.DuplicateKeyException
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
 @Service
@@ -23,8 +25,10 @@ class WishService(
     private val currentUser: CurrentUser,
     private val familyPolicy: FamilyPolicy,
     private val mediaService: MediaService,
+    private val imageSuggestionService: WishImageSuggestionService,
     private val eventPublisher: DomainEventPublisher,
     private val idempotencyService: IdempotencyService,
+    private val objectMapper: ObjectMapper,
 ) {
     @Transactional
     fun createWish(request: CreateWishRequest, idempotencyKey: String?): WishResponse {
@@ -32,21 +36,30 @@ class WishService(
         familyPolicy.requireParent(user, request.familyId)
         validateCreateWish(request)
         ensureChildBelongsToFamily(request.childId, request.familyId)
-        request.imageMediaId?.let { validateWishImage(it, request.familyId, request.childId) }
+        val imageMedia = request.imageMediaId?.let { validateWishImage(it, request.familyId, request.childId) }
         idempotencyService.find(request.familyId, idempotencyKey, CREATE_WISH_OPERATION)
             ?.let { return getWish(it.resourceId) }
+        val fragmentGrid = deriveFragmentGrid(request.requiredFragments)
+        val fragmentMask = buildFragmentMask(request.fragmentVisualMode, fragmentGrid.first, fragmentGrid.second)
+        val fragmentLit = buildFragmentLit(emptyList())
 
         val wish = jdbcClient.sql(
             """
             insert into wish (
               family_id, child_id, week_id, title, note, image_media_id,
-              required_fragments, reward_mode, status, created_by
+              required_fragments, reward_mode, fragment_visual_mode, fragment_grid_rows, fragment_grid_cols,
+              fragment_mask_json, fragment_lit_json,
+              status, created_by
             ) values (
               :family_id, :child_id, :week_id, :title, :note, :image_media_id,
-              :required_fragments, :reward_mode, 'draft', :created_by
+              :required_fragments, :reward_mode, :fragment_visual_mode, :fragment_grid_rows, :fragment_grid_cols,
+              cast(:fragment_mask_json as jsonb), cast(:fragment_lit_json as jsonb),
+              'draft', :created_by
             )
             returning id, family_id, child_id, week_id, title, note, image_media_id,
-                      required_fragments, earned_fragments, reward_mode, status
+                      required_fragments, earned_fragments, reward_mode, status,
+                      fragment_visual_mode, fragment_grid_rows, fragment_grid_cols,
+                      fragment_mask_json::text as fragment_mask_json, fragment_lit_json::text as fragment_lit_json
             """.trimIndent(),
         )
             .param("family_id", request.familyId)
@@ -57,9 +70,16 @@ class WishService(
             .param("image_media_id", request.imageMediaId)
             .param("required_fragments", request.requiredFragments)
             .param("reward_mode", request.rewardMode)
+            .param("fragment_visual_mode", request.fragmentVisualMode)
+            .param("fragment_grid_rows", fragmentGrid.first)
+            .param("fragment_grid_cols", fragmentGrid.second)
+            .param("fragment_mask_json", objectMapper.writeValueAsString(fragmentMask))
+            .param("fragment_lit_json", objectMapper.writeValueAsString(fragmentLit))
             .param("created_by", user.userId)
             .query(::wishRecord)
             .single()
+
+        imageMedia?.let { imageSuggestionService.upsertProfileForWish(wish, it) }
 
         eventPublisher.publishFamilyEvent(
             familyId = wish.familyId,
@@ -90,7 +110,9 @@ class WishService(
                     updated_at = now()
                 where id = :id
                 returning id, family_id, child_id, week_id, title, note, image_media_id,
-                          required_fragments, earned_fragments, reward_mode, status
+                          required_fragments, earned_fragments, reward_mode, status,
+                          fragment_visual_mode, fragment_grid_rows, fragment_grid_cols,
+                          fragment_mask_json::text as fragment_mask_json, fragment_lit_json::text as fragment_lit_json
                 """.trimIndent(),
             )
                 .param("id", wishId)
@@ -109,6 +131,43 @@ class WishService(
         )
         idempotencyService.remember(activated.familyId, idempotencyKey, ACTIVATE_WISH_OPERATION, "wish", activated.id, user.userId)
         return toResponse(activated)
+    }
+
+    @Transactional
+    fun attachWishImage(wishId: UUID, request: AttachWishImageRequest): WishResponse {
+        val user = currentUser.require()
+        val wish = findWishForUpdate(wishId) ?: throw NotFoundError("Wish not found.")
+        familyPolicy.requireParent(user, wish.familyId)
+        val media = validateWishImage(request.mediaId, wish.familyId, wish.childId)
+        val attached = jdbcClient.sql(
+            """
+            update wish
+            set image_media_id = :image_media_id,
+                updated_at = now()
+            where id = :id
+            returning id, family_id, child_id, week_id, title, note, image_media_id,
+                      required_fragments, earned_fragments, reward_mode, status,
+                      fragment_visual_mode, fragment_grid_rows, fragment_grid_cols,
+                      fragment_mask_json::text as fragment_mask_json, fragment_lit_json::text as fragment_lit_json
+            """.trimIndent(),
+        )
+            .param("id", wish.id)
+            .param("image_media_id", media.id)
+            .query(::wishRecord)
+            .single()
+
+        if (request.sourceType !in setOf("uploaded", "generated", "reused", "imported")) {
+            throw BadRequestError("Unsupported wish image sourceType.")
+        }
+        imageSuggestionService.upsertProfileForWish(attached, media, sourceType = request.sourceType)
+        eventPublisher.publishFamilyEvent(
+            familyId = attached.familyId,
+            eventType = "wish.image_attached",
+            aggregateType = "wish",
+            aggregateId = attached.id,
+            payloadJson = wishEventPayload(attached),
+        )
+        return toResponse(attached)
     }
 
     fun getWish(wishId: UUID): WishResponse {
@@ -137,6 +196,24 @@ class WishService(
         val spec = jdbcClient.sql(sql).param("child_id", childId)
         if (weekId != null) spec.param("week_id", weekId)
         return spec.query(::wishRecord).list().map(::toResponse)
+    }
+
+    fun listChildWishHistory(childId: UUID, limit: Int = 24): List<WishHistoryItemResponse> {
+        familyPolicy.requireCanAccessChild(currentUser.require(), childId)
+        val pageSize = limit.coerceIn(1, 50)
+        val wishes = jdbcClient.sql(wishSelect("where child_id = :child_id order by created_at desc limit :limit"))
+            .param("child_id", childId)
+            .param("limit", pageSize)
+            .query(::wishRecord)
+            .list()
+        val realizedCounts = realizedCountsByTitle(childId)
+        return wishes.map { wish ->
+            WishHistoryItemResponse(
+                wish = toResponse(wish),
+                redemption = findRedemptionByWish(wish.id)?.let(::toRedemptionResponse),
+                realizedCount = realizedCounts[wish.title.trim().lowercase()] ?: 0,
+            )
+        }
     }
 
     @Transactional
@@ -222,6 +299,12 @@ class WishService(
         if (request.weekId.isBlank()) throw BadRequestError("weekId cannot be blank.")
         if (request.requiredFragments <= 0) throw BadRequestError("requiredFragments must be positive.")
         if (request.rewardMode !in setOf("flexible", "strict")) throw BadRequestError("Unsupported rewardMode.")
+        if (request.fragmentVisualMode !in setOf("grid_reveal", "puzzle_lines", "irregular")) throw BadRequestError("Unsupported fragmentVisualMode.")
+        if (request.fragmentGridRows != null && request.fragmentGridRows <= 0) throw BadRequestError("fragmentGridRows must be positive.")
+        if (request.fragmentGridCols != null && request.fragmentGridCols <= 0) throw BadRequestError("fragmentGridCols must be positive.")
+        if (request.fragmentGridRows != null && request.fragmentGridCols != null && request.fragmentGridRows * request.fragmentGridCols != request.requiredFragments) {
+            throw BadRequestError("fragmentGridRows * fragmentGridCols must equal requiredFragments.")
+        }
     }
 
     private fun validateRedeemRequest(request: RedeemWishRequest) {
@@ -239,12 +322,13 @@ class WishService(
         if (count != 1) throw BadRequestError("Child profile does not belong to this family.")
     }
 
-    private fun validateWishImage(mediaId: UUID, familyId: UUID, childId: UUID) {
+    private fun validateWishImage(mediaId: UUID, familyId: UUID, childId: UUID): MediaAssetRecord {
         val media = mediaService.findMedia(mediaId) ?: throw NotFoundError("Wish image media not found.")
         if (media.familyId != familyId || media.childId != childId) throw ForbiddenError("Wish image media does not belong to this child.")
         if (media.purpose != "wish_image") throw BadRequestError("Wish image media must use wish_image purpose.")
         if (media.status !in setOf("uploaded", "ready")) throw ConflictError("Wish image media must be finalized.")
         if (!media.contentType.substringBefore(";").lowercase().startsWith("image/")) throw BadRequestError("Wish image must be an image media asset.")
+        return media
     }
 
     private fun validateRedemptionPhoto(mediaId: UUID, wish: WishRecord): MediaAssetRecord {
@@ -269,6 +353,7 @@ class WishService(
             earnedFragments = wish.earnedFragments,
             rewardMode = wish.rewardMode,
             status = wish.status,
+            fragmentVisual = fragmentVisual(wish),
         )
 
     private fun toRedemptionResponse(redemption: WishRedemptionRecord): WishRedemptionResponse =
@@ -304,6 +389,21 @@ class WishService(
             .optional()
             .orElse(null)
 
+    private fun realizedCountsByTitle(childId: UUID): Map<String, Int> =
+        jdbcClient.sql(
+            """
+            select lower(trim(w.title)) as title_key, count(*)::int as realized_count
+            from wish w
+            join wish_redemption wr on wr.wish_id = w.id
+            where w.child_id = :child_id
+            group by lower(trim(w.title))
+            """.trimIndent(),
+        )
+            .param("child_id", childId)
+            .query { rs, _ -> rs.getString("title_key") to rs.getInt("realized_count") }
+            .list()
+            .toMap()
+
     private fun getRedemption(redemptionId: UUID): WishRedemptionResponse =
         toRedemptionResponse(
             jdbcClient.sql(redemptionSelect("where id = :id"))
@@ -331,10 +431,153 @@ class WishService(
     private fun wishSelect(whereClause: String): String =
         """
         select id, family_id, child_id, week_id, title, note, image_media_id,
-               required_fragments, earned_fragments, reward_mode, status
+               required_fragments, earned_fragments, reward_mode, status,
+               fragment_visual_mode, fragment_grid_rows, fragment_grid_cols,
+               fragment_mask_json::text as fragment_mask_json, fragment_lit_json::text as fragment_lit_json
         from wish
         $whereClause
         """.trimIndent()
+
+    private fun fragmentVisual(wish: WishRecord): WishFragmentVisualResponse {
+        val derived = deriveFragmentGrid(wish.requiredFragments)
+        val storedRows = wish.fragmentGridRows
+        val storedCols = wish.fragmentGridCols
+        val fallbackRows = if (storedRows != null && storedCols != null && storedRows * storedCols == wish.requiredFragments) storedRows else derived.first
+        val fallbackCols = if (storedRows != null && storedCols != null && storedRows * storedCols == wish.requiredFragments) storedCols else derived.second
+        val mask = parseFragmentMask(wish.fragmentMaskJson)
+            ?.takeIf { it.total > 0 && it.rows > 0 && it.cols > 0 && it.rows * it.cols == it.total }
+            ?: buildFragmentMask(wish.fragmentVisualMode, fallbackRows, fallbackCols)
+        val total = mask.total
+        val revealed = wish.earnedFragments.coerceIn(0, total)
+        val litIndexes = parseLitIndexes(wish.fragmentLitJson, total).ifEmpty {
+            mask.revealOrder.take(revealed)
+        }.filter { it in 0 until total }.distinct()
+        return WishFragmentVisualResponse(
+            mode = mask.mode,
+            rows = mask.rows,
+            cols = mask.cols,
+            revealed = revealed,
+            total = total,
+            mask = mask,
+            litIndexes = litIndexes,
+        )
+    }
+
+    private fun deriveFragmentGrid(requiredFragments: Int): Pair<Int, Int> {
+        val target = requiredFragments.coerceAtLeast(1)
+        var rows = 1
+        var cols = target
+        var candidate = 1
+        while (candidate * candidate <= target) {
+            if (target % candidate == 0) {
+                rows = candidate
+                cols = target / candidate
+            }
+            candidate += 1
+        }
+        return rows to cols
+    }
+
+    private fun buildFragmentMask(mode: String, rows: Int, cols: Int): WishFragmentMaskResponse {
+        val normalizedRows = rows.coerceAtLeast(1)
+        val normalizedCols = cols.coerceAtLeast(1)
+        val total = normalizedRows * normalizedCols
+        val cells = (0 until total).map { index ->
+            WishFragmentCellResponse(
+                index = index,
+                row = index / normalizedCols,
+                col = index % normalizedCols,
+                polygon = if (mode == "irregular") irregularPolygon(index) else null,
+            )
+        }
+        return WishFragmentMaskResponse(
+            version = 1,
+            mode = if (mode in setOf("grid_reveal", "puzzle_lines", "irregular")) mode else "grid_reveal",
+            rows = normalizedRows,
+            cols = normalizedCols,
+            total = total,
+            revealOrder = (0 until total).toList(),
+            cells = cells,
+        )
+    }
+
+    private fun buildFragmentLit(litIndexes: List<Int>): Map<String, Any> =
+        mapOf(
+            "version" to 1,
+            "litIndexes" to litIndexes.distinct().sorted(),
+        )
+
+    private fun parseFragmentMask(fragmentMaskJson: String?): WishFragmentMaskResponse? {
+        val root = fragmentMaskJson?.let(::readJsonOrNull) ?: return null
+        val rows = positiveInt(root["rows"]) ?: return null
+        val cols = positiveInt(root["cols"]) ?: return null
+        val total = positiveInt(root["total"]) ?: rows * cols
+        val mode = text(root["mode"]).takeIf { it in setOf("grid_reveal", "puzzle_lines", "irregular") } ?: "grid_reveal"
+        val revealOrder = intArray(root["revealOrder"]).filter { it in 0 until total }.distinct().ifEmpty { (0 until total).toList() }
+        val cells = root["cells"]?.takeIf { it.isArray }?.mapNotNull { cell ->
+            val index = nonNegativeInt(cell["index"]) ?: return@mapNotNull null
+            WishFragmentCellResponse(
+                index = index,
+                row = nonNegativeInt(cell["row"]) ?: index / cols,
+                col = nonNegativeInt(cell["col"]) ?: index % cols,
+                polygon = polygon(cell["polygon"]),
+            )
+        }?.filter { it.index in 0 until total }?.sortedBy { it.index }.orEmpty()
+        return WishFragmentMaskResponse(
+            version = positiveInt(root["version"]) ?: 1,
+            mode = mode,
+            rows = rows,
+            cols = cols,
+            total = total,
+            revealOrder = revealOrder,
+            cells = cells.ifEmpty { buildFragmentMask(mode, rows, cols).cells },
+        )
+    }
+
+    private fun parseLitIndexes(fragmentLitJson: String?, total: Int): List<Int> {
+        val root = fragmentLitJson?.let(::readJsonOrNull) ?: return emptyList()
+        return intArray(root["litIndexes"]).filter { it in 0 until total }.distinct()
+    }
+
+    private fun readJsonOrNull(value: String): JsonNode? =
+        try {
+            objectMapper.readTree(value)
+        } catch (_: Exception) {
+            null
+        }
+
+    private fun positiveInt(node: JsonNode?): Int? =
+        node?.takeIf { it.isNumber }?.intValue()?.takeIf { it > 0 }
+
+    private fun nonNegativeInt(node: JsonNode?): Int? =
+        node?.takeIf { it.isNumber }?.intValue()?.takeIf { it >= 0 }
+
+    private fun text(node: JsonNode?): String? =
+        node?.takeIf { it.isTextual }?.asText()
+
+    private fun intArray(node: JsonNode?): List<Int> =
+        node?.takeIf { it.isArray }?.mapNotNull { value -> value.takeIf { it.isNumber }?.intValue() }.orEmpty()
+
+    private fun polygon(node: JsonNode?): List<WishFragmentPointResponse>? {
+        val points = node?.takeIf { it.isArray }?.mapNotNull { point ->
+            val x = point["x"]?.takeIf { it.isNumber }?.doubleValue() ?: return@mapNotNull null
+            val y = point["y"]?.takeIf { it.isNumber }?.doubleValue() ?: return@mapNotNull null
+            WishFragmentPointResponse(x = x.coerceIn(0.0, 1.0), y = y.coerceIn(0.0, 1.0))
+        }.orEmpty()
+        return points.takeIf { it.size >= 3 }
+    }
+
+    private fun irregularPolygon(index: Int): List<WishFragmentPointResponse> =
+        when (index % 5) {
+            0 -> listOf(point(0.02, 0.08), point(0.88, 0.0), point(1.0, 0.72), point(0.18, 1.0))
+            1 -> listOf(point(0.12, 0.0), point(1.0, 0.14), point(0.86, 1.0), point(0.0, 0.84))
+            2 -> listOf(point(0.0, 0.0), point(0.78, 0.1), point(1.0, 1.0), point(0.2, 0.88))
+            3 -> listOf(point(0.18, 0.06), point(1.0, 0.0), point(0.82, 0.92), point(0.0, 1.0))
+            else -> listOf(point(0.0, 0.2), point(0.72, 0.0), point(1.0, 0.8), point(0.24, 1.0))
+        }
+
+    private fun point(x: Double, y: Double): WishFragmentPointResponse =
+        WishFragmentPointResponse(x = x, y = y)
 
     private fun redemptionSelect(whereClause: String): String =
         """

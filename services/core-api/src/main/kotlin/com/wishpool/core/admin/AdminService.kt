@@ -58,7 +58,7 @@ class AdminService(
             $statusClause
             group by f.id, f.name, f.timezone, f.status, f.created_at
             order by f.created_at desc
-            limit :limit
+            limit cast(:limit as integer)
             """.trimIndent(),
         )
             .param("limit", effectiveLimit)
@@ -82,7 +82,7 @@ class AdminService(
             from privacy_request
             $statusClause
             order by created_at desc
-            limit :limit
+            limit cast(:limit as integer)
             """.trimIndent(),
         )
             .param("limit", effectiveLimit)
@@ -105,7 +105,7 @@ class AdminService(
             from audit_log
             $whereClause
             order by created_at desc
-            limit :limit
+            limit cast(:limit as integer)
             """.trimIndent(),
         )
             .param("limit", effectiveLimit)

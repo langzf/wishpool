@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from .config import MediaWorkerConfig
 from .storage import ObjectStorage
@@ -36,13 +36,16 @@ class MediaProcessor:
         raise MediaProcessingError("unsupported_content_type", f"Unsupported media content type: {content_type}")
 
     def _process_image(self, media: dict[str, Any], source_path: Path) -> list[dict[str, Any]]:
-        with Image.open(source_path) as image:
-            normalized = ImageOps.exif_transpose(image).convert("RGB")
-            return [
-                self._save_image_derivative(media, normalized, "thumbnail", 320),
-                self._save_image_derivative(media, normalized, "preview", 1280),
-                self._save_image_derivative(media, normalized, "ai_ready", 1600),
-            ]
+        try:
+            with Image.open(source_path) as image:
+                normalized = ImageOps.exif_transpose(image).convert("RGB")
+                return [
+                    self._save_image_derivative(media, normalized, "thumbnail", 320),
+                    self._save_image_derivative(media, normalized, "preview", 1280),
+                    self._save_image_derivative(media, normalized, "ai_ready", 1600),
+                ]
+        except UnidentifiedImageError as exc:
+            raise MediaProcessingError("invalid_media_input", f"Source is not a valid image: {exc}") from None
 
     def _save_image_derivative(
         self,

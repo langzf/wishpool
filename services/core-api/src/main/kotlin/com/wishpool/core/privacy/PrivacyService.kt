@@ -83,6 +83,20 @@ class PrivacyService(
             .param("family_id", record.familyId)
             .update()
         updatePrivacyStatus(record.id, "deleting_objects")
+        val storageKeys = jdbcClient.sql(
+            """
+            select storage_key from media_asset where family_id = :family_id
+            union
+            select md.storage_key
+            from media_derivative md
+            join media_asset ma on ma.id = md.media_asset_id
+            where ma.family_id = :family_id
+            """.trimIndent(),
+        )
+            .param("family_id", record.familyId)
+            .query(String::class.java)
+            .list()
+        mediaService.deleteObjects(storageKeys.filterNotNull())
         jdbcClient.sql("update media_asset set status = 'deleted', updated_at = now() where family_id = :family_id")
             .param("family_id", record.familyId)
             .update()

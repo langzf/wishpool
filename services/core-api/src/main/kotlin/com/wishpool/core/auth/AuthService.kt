@@ -36,7 +36,7 @@ class AuthService(
         if (request.purpose != "login") throw BadRequestError("Unsupported phone code purpose.")
         val phoneNumber = normalizePhone(request.phoneNumber)
         val token = hashing.randomToken()
-        val code = hashing.numericCode()
+        val code = if (localDebugPhoneCode) "123456" else hashing.numericCode()
         val expiresAt = OffsetDateTime.ofInstant(clock.instant().plusSeconds(phoneCodeTtlSec), ZoneOffset.UTC)
 
         jdbcClient.sql(

@@ -8,16 +8,19 @@ import com.wishpool.core.shared.BadRequestError
 import com.wishpool.core.shared.ConflictError
 import com.wishpool.core.shared.ForbiddenError
 import com.wishpool.core.shared.NotFoundError
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.awscore.exception.AwsServiceException
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import tools.jackson.databind.ObjectMapper
 import java.time.Clock
@@ -35,7 +38,8 @@ class MediaService(
     private val eventPublisher: DomainEventPublisher,
     private val objectMapper: ObjectMapper,
     private val s3Client: S3Client,
-    private val s3Presigner: S3Presigner,
+    @Qualifier("internalS3Presigner") private val internalS3Presigner: S3Presigner,
+    @Qualifier("publicS3Presigner") private val publicS3Presigner: S3Presigner,
     private val clock: Clock,
     @Value("\${wishpool.storage.s3.bucket}") private val bucket: String,
     @Value("\${wishpool.storage.s3.upload-url-ttl-sec}") private val uploadUrlTtlSec: Long,
@@ -136,6 +140,70 @@ class MediaService(
         return toResponse(finalized)
     }
 
+    fun createGeneratedWishImage(
+        familyId: UUID,
+        childId: UUID,
+        contentType: String,
+        bytes: ByteArray,
+        relatedResource: RelatedResource? = null,
+    ): MediaAssetResponse {
+        val user = currentUser.require()
+        val normalizedContentType = contentType.substringBefore(";").trim().lowercase(Locale.ROOT)
+        if (normalizedContentType.isBlank()) throw BadRequestError("contentType cannot be blank.")
+        if (!normalizedContentType.startsWith("image/")) throw BadRequestError("Generated wish image must be an image.")
+        if (bytes.isEmpty()) throw BadRequestError("Generated wish image cannot be empty.")
+        if (bytes.size > maxUploadSizeBytes) throw BadRequestError("Generated wish image exceeds the configured size limit.")
+        requireMediaAccess(user, familyId, childId, "wish_image")
+        relatedResource?.let {
+            if (it.type !in allowedRelatedTypes) throw BadRequestError("Unsupported related resource type.")
+        }
+
+        val mediaId = UUID.randomUUID()
+        val storageKey = storageKey(familyId, childId, "wish_image", mediaId, normalizedContentType)
+        s3Client.putObject(
+            PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(storageKey)
+                .contentType(normalizedContentType)
+                .contentLength(bytes.size.toLong())
+                .build(),
+            RequestBody.fromBytes(bytes),
+        )
+
+        val media = jdbcClient.sql(
+            """
+            insert into media_asset (
+              id, family_id, child_id, purpose, storage_key, content_type, size_bytes,
+              related_type, related_id, status, created_by
+            ) values (
+              :id, :family_id, :child_id, 'wish_image', :storage_key, :content_type, :size_bytes,
+              :related_type, :related_id, 'uploaded', :created_by
+            )
+            returning id, family_id, child_id, purpose, storage_key, content_type, size_bytes, status, related_type, related_id
+            """.trimIndent(),
+        )
+            .param("id", mediaId)
+            .param("family_id", familyId)
+            .param("child_id", childId)
+            .param("storage_key", storageKey)
+            .param("content_type", normalizedContentType)
+            .param("size_bytes", bytes.size.toLong())
+            .param("related_type", relatedResource?.type)
+            .param("related_id", relatedResource?.id)
+            .param("created_by", user.userId)
+            .query(::mediaAssetRecord)
+            .single()
+
+        eventPublisher.publishFamilyEvent(
+            familyId = media.familyId,
+            eventType = "media.uploaded",
+            aggregateType = "media_asset",
+            aggregateId = media.id,
+            payload = mediaEventPayload(media),
+        )
+        return toResponse(media)
+    }
+
     @Transactional
     fun markProcessingStarted(mediaId: UUID): MediaAssetResponse {
         val media = findMedia(mediaId) ?: throw NotFoundError("Media asset not found.")
@@ -167,7 +235,7 @@ class MediaService(
                 and processing_available_at <= now()
                 and (processing_leased_until is null or processing_leased_until < now())
               order by created_at
-              limit :limit
+              limit cast(:limit as integer)
               for update skip locked
             )
             update media_asset ma
@@ -197,7 +265,7 @@ class MediaService(
         return ClaimMediaProcessingResponse(
             items = claimed.map { media ->
                 MediaProcessingSourceResponse(
-                    media = toResponse(media),
+                    media = toResponse(media, internalS3Presigner),
                     derivatives = listDerivatives(media.id).map(::toDerivativeResponse),
                     processing = processingPolicy(media),
                 )
@@ -211,7 +279,7 @@ class MediaService(
             throw ConflictError("Media asset has not been finalized for processing.")
         }
         return MediaProcessingSourceResponse(
-            media = toResponse(media),
+            media = toResponse(media, internalS3Presigner),
             derivatives = listDerivatives(mediaId).map(::toDerivativeResponse),
             processing = processingPolicy(media),
         )
@@ -273,6 +341,9 @@ class MediaService(
             .orElse(null)
 
     fun toResponse(media: MediaAssetRecord): MediaAssetResponse =
+        toResponse(media, publicS3Presigner)
+
+    private fun toResponse(media: MediaAssetRecord, presigner: S3Presigner): MediaAssetResponse =
         MediaAssetResponse(
             id = media.id,
             familyId = media.familyId,
@@ -282,11 +353,25 @@ class MediaService(
             contentType = media.contentType,
             status = media.status,
             downloadUrl = media.takeIf { it.status in setOf("uploaded", "processing", "ready", "failed") }
-                ?.let { presignedGetUrl(it.storageKey) },
+                ?.let { presignedGetUrl(it.storageKey, presigner) },
         )
 
     fun createDownloadUrl(storageKey: String): String =
-        presignedGetUrl(storageKey)
+        presignedGetUrl(storageKey, publicS3Presigner)
+
+    fun deleteObjects(storageKeys: Collection<String>) {
+        storageKeys.asSequence()
+            .filter { it.isNotBlank() }
+            .distinct()
+            .forEach { storageKey ->
+                s3Client.deleteObject(
+                    DeleteObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(storageKey)
+                        .build(),
+                )
+            }
+    }
 
     fun listDerivatives(mediaId: UUID): List<MediaDerivativeRecord> =
         jdbcClient.sql(
@@ -471,6 +556,10 @@ class MediaService(
         MediaProcessingPolicyResponse(
             requiredKinds = requiredDerivativeKinds(media.contentType),
             sourceBucket = bucket,
+            attemptCount = jdbcClient.sql("select processing_attempt_count from media_asset where id = :id")
+                .param("id", media.id)
+                .query(Int::class.java)
+                .single(),
         )
 
     private fun mediaEventPayload(media: MediaAssetRecord): Map<String, Any?> =
@@ -531,6 +620,7 @@ class MediaService(
             "image/jpeg" -> "jpg"
             "image/png" -> "png"
             "image/webp" -> "webp"
+            "image/svg+xml" -> "svg"
             "image/heic" -> "heic"
             "audio/mpeg" -> "mp3"
             "audio/mp4" -> "m4a"
@@ -558,18 +648,18 @@ class MediaService(
             .contentType(contentType)
             .contentLength(sizeBytes)
             .build()
-        return s3Presigner.presignPutObject {
+        return publicS3Presigner.presignPutObject {
             it.signatureDuration(Duration.ofSeconds(uploadUrlTtlSec))
                 .putObjectRequest(request)
         }.url().toString()
     }
 
-    private fun presignedGetUrl(storageKey: String): String {
+    private fun presignedGetUrl(storageKey: String, presigner: S3Presigner): String {
         val request = GetObjectRequest.builder()
             .bucket(bucket)
             .key(storageKey)
             .build()
-        return s3Presigner.presignGetObject {
+        return presigner.presignGetObject {
             it.signatureDuration(Duration.ofSeconds(downloadUrlTtlSec))
                 .getObjectRequest(request)
         }.url().toString()

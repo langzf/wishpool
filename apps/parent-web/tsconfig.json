@@ -23,6 +23,9 @@
       }
     ],
     "paths": {
+      "@wishpool/app-fixtures": [
+        "../../packages/app-fixtures/src/index.js"
+      ],
       "@/*": [
         "./*"
       ]

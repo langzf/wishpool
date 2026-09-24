@@ -52,6 +52,7 @@ data class MediaProcessingSourceResponse(
 data class MediaProcessingPolicyResponse(
     val requiredKinds: List<String>,
     val sourceBucket: String,
+    val attemptCount: Int,
 )
 
 data class MediaDerivativeResponse(

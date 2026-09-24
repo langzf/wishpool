@@ -25,14 +25,21 @@ class CoreApiClient:
             {"derivatives": derivatives},
         )
 
-    def fail(self, media_id: str, error_code: str, error_message: str, retryable: bool = True) -> None:
+    def fail(
+        self,
+        media_id: str,
+        error_code: str,
+        error_message: str,
+        retryable: bool = True,
+        delay_seconds: int | None = None,
+    ) -> None:
         self._post(
             f"/internal/media/{media_id}/processing-failed",
             {
                 "errorCode": error_code,
                 "errorMessage": error_message,
                 "retryable": retryable,
-                "delaySeconds": 60 if retryable else 0,
+                "delaySeconds": delay_seconds if delay_seconds is not None else (60 if retryable else 0),
             },
         )
 

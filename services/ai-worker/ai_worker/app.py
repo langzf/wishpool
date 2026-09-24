@@ -12,12 +12,20 @@ from ai_worker.models import (
     MemoryNarrativeRequest,
     PrivacySummaryRequest,
     ValidationError,
+    WishImageGenerationRequest,
 )
-from ai_worker.provider import AiProvider, create_provider
+from ai_worker.provider import AiProvider, create_image_provider, create_provider
 
 
 RequestFactory = Callable[[dict[str, Any]], Any]
 ProviderMethod = Callable[[Any], Any]
+MAX_REQUEST_BODY_BYTES = 10 * 1024 * 1024
+
+
+class RequestBodyError(ValueError):
+    def __init__(self, status_code: HTTPStatus, detail: str):
+        super().__init__(detail)
+        self.status_code = status_code
 
 
 class AiWorkerApp:
@@ -39,6 +47,10 @@ class AiWorkerApp:
             "/internal/ai/summarize-privacy-request": (
                 PrivacySummaryRequest.from_dict,
                 self.provider.summarize_privacy_request,
+            ),
+            "/internal/ai/generate-wish-image": (
+                WishImageGenerationRequest.from_dict,
+                lambda req: create_image_provider(req.provider_config, self.config).generate_wish_image(req),
             ),
         }
 
@@ -75,11 +87,58 @@ def create_handler(app: AiWorkerApp) -> type[BaseHTTPRequestHandler]:
         def log_message(self, format: str, *args: Any) -> None:
             return
 
+        def _read_body(self) -> bytes:
+            transfer_encoding = self.headers.get("transfer-encoding", "")
+            if transfer_encoding and transfer_encoding.lower().split(",")[-1].strip() == "chunked":
+                return self._read_chunked_body()
+
+            content_length = self.headers.get("content-length")
+            if content_length is None:
+                return b""
+            try:
+                length = int(content_length)
+            except ValueError as exc:
+                raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid Content-Length") from exc
+            if length < 0:
+                raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Invalid Content-Length")
+            if length > MAX_REQUEST_BODY_BYTES:
+                raise RequestBodyError(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "Request body too large")
+            return self.rfile.read(length)
+
+        def _read_chunked_body(self) -> bytes:
+            body = bytearray()
+            while True:
+                size_line = self.rfile.readline()
+                if not size_line:
+                    raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Malformed chunked body")
+                try:
+                    size_text = size_line.strip().split(b";", 1)[0]
+                    chunk_size = int(size_text, 16)
+                except (ValueError, UnicodeDecodeError) as exc:
+                    raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Malformed chunk size") from exc
+                if chunk_size < 0:
+                    raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Malformed chunk size")
+                if len(body) + chunk_size > MAX_REQUEST_BODY_BYTES:
+                    raise RequestBodyError(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "Request body too large")
+                if chunk_size == 0:
+                    while True:
+                        trailer = self.rfile.readline()
+                        if not trailer or trailer in (b"\r\n", b"\n"):
+                            return bytes(body)
+                        if b":" not in trailer:
+                            raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Malformed chunk trailer")
+                chunk = self.rfile.read(chunk_size)
+                if len(chunk) != chunk_size or self.rfile.read(2) != b"\r\n":
+                    raise RequestBodyError(HTTPStatus.BAD_REQUEST, "Malformed chunked body")
+                body.extend(chunk)
+
         def _handle(self) -> None:
-            length = int(self.headers.get("content-length", "0"))
-            body = self.rfile.read(length) if length else b""
             headers = {key.lower(): value for key, value in self.headers.items()}
-            status_code, payload = app.handle(self.command, self.path.split("?", 1)[0], headers, body)
+            try:
+                body = self._read_body()
+                status_code, payload = app.handle(self.command, self.path.split("?", 1)[0], headers, body)
+            except RequestBodyError as exc:
+                status_code, payload = exc.status_code, {"detail": str(exc)}
             encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
             self.send_response(status_code)
             self.send_header("content-type", "application/json; charset=utf-8")

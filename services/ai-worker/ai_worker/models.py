@@ -193,3 +193,94 @@ class PrivacySummaryResponse(JsonModel):
     operator_summary: str
     verification_steps: list[str]
     risk_notes: list[str]
+
+
+@dataclass(frozen=True)
+class ImageProviderConfig(JsonModel):
+    code: str
+    provider_type: Literal[
+        "volcengine_ark",
+        "aliyun_bailian",
+        "siliconflow",
+        "deterministic",
+        "custom_openai_compatible",
+    ]
+    base_url: str
+    api_key: str | None
+    model_name: str
+    extra_params: dict[str, Any] = field(default_factory=dict)
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "ImageProviderConfig":
+        provider_type = _required_string(data, "provider_type")
+        if provider_type not in {"volcengine_ark", "aliyun_bailian", "siliconflow", "deterministic", "custom_openai_compatible"}:
+            raise ValidationError("provider_type is invalid")
+        extra_params = data.get("extra_params", {})
+        if extra_params is None:
+            extra_params = {}
+        if not isinstance(extra_params, dict):
+            raise ValidationError("extra_params must be an object")
+        return ImageProviderConfig(
+            code=_required_string(data, "code"),
+            provider_type=provider_type,  # type: ignore[arg-type]
+            base_url=_required_string(data, "base_url"),
+            api_key=_optional_string(data, "api_key"),
+            model_name=_required_string(data, "model_name"),
+            extra_params=extra_params,
+        )
+
+
+@dataclass(frozen=True)
+class WishImageGenerationRequest(JsonModel):
+    request_id: str
+    family_id: str
+    child_age: int | None
+    wish_title: str
+    wish_note: str | None = None
+    category: str | None = None
+    style: Literal["warm_illustration", "storybook", "clean_product"] = "warm_illustration"
+    aspect_ratio: Literal["1:1", "4:3"] = "1:1"
+    negative_prompt: str | None = None
+    provider_code: str | None = None
+    provider_config: ImageProviderConfig | None = None
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "WishImageGenerationRequest":
+        age = data.get("child_age")
+        if age is not None and (not isinstance(age, int) or age < 0 or age > 18):
+            raise ValidationError("child_age must be between 0 and 18")
+        style = data.get("style", "warm_illustration")
+        if style not in {"warm_illustration", "storybook", "clean_product"}:
+            raise ValidationError("style is invalid")
+        aspect_ratio = data.get("aspect_ratio", "1:1")
+        if aspect_ratio not in {"1:1", "4:3"}:
+            raise ValidationError("aspect_ratio is invalid")
+        provider_config = data.get("provider_config")
+        if provider_config is not None and not isinstance(provider_config, dict):
+            raise ValidationError("provider_config must be an object")
+        return WishImageGenerationRequest(
+            request_id=_required_string(data, "request_id"),
+            family_id=_required_string(data, "family_id"),
+            child_age=age,
+            wish_title=_required_string(data, "wish_title"),
+            wish_note=_optional_string(data, "wish_note"),
+            category=_optional_string(data, "category"),
+            style=style,  # type: ignore[arg-type]
+            aspect_ratio=aspect_ratio,  # type: ignore[arg-type]
+            negative_prompt=_optional_string(data, "negative_prompt"),
+            provider_code=_optional_string(data, "provider_code"),
+            provider_config=ImageProviderConfig.from_dict(provider_config) if provider_config is not None else None,
+        )
+
+
+@dataclass(frozen=True)
+class WishImageGenerationResponse(JsonModel):
+    request_id: str
+    provider: str
+    model: str
+    prompt: str
+    content_type: str
+    image_base64: str | None = None
+    image_url: str | None = None
+    latency_ms: int | None = None
+    cost_units: float | None = None

@@ -22,6 +22,10 @@ def main() -> None:
         core_api=CoreApiClient(config),
         processor=MediaProcessor(config, storage),
         poll_interval_seconds=config.poll_interval_seconds,
+        max_attempts=config.max_attempts,
+        retry_backoff_seconds=config.retry_backoff_seconds,
+        core_api_retry_backoff_seconds=config.core_api_retry_backoff_seconds,
+        core_api_retry_max_backoff_seconds=config.core_api_retry_max_backoff_seconds,
     )
     if args.once:
         worker.run_once()

@@ -38,7 +38,7 @@ class NotificationService(
               and ne.recipient_user_id = :recipient_user_id
               $statusClause
             order by ne.created_at desc
-            limit :limit
+            limit cast(:limit as integer)
             """.trimIndent(),
         )
             .param("family_id", familyId)
@@ -238,7 +238,7 @@ class NotificationService(
               from notification_event
               where status = 'pending'
               order by created_at
-              limit :limit
+              limit cast(:limit as integer)
               for update skip locked
             )
             update notification_event ne

@@ -1,8 +1,7 @@
 import { AdminAuthPanel } from "@/components/AuthPanel";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminShell } from "@/components/AdminShell";
-import { loadAdminDashboardData } from "@/lib/dashboard-data";
-import { getAdminWebSession } from "@/lib/session";
+import { requireAdminPageContext } from "@/lib/admin-page";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -10,12 +9,10 @@ type PageProps = {
 
 export default async function Page({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
-  const session = await getAdminWebSession();
-  if (!session) {
+  const { session, data } = await requireAdminPageContext();
+  if (!session || !data) {
     return <AdminAuthPanel error={singleParam(params.authError)} />;
   }
-
-  const data = await loadAdminDashboardData(session);
 
   return (
     <AdminShell>

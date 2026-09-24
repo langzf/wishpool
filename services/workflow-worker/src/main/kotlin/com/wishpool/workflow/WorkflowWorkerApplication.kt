@@ -1,6 +1,15 @@
 package com.wishpool.workflow
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.temporal.client.WorkflowClient
+import io.temporal.client.WorkflowClientOptions
+import io.temporal.common.converter.DataConverter
+import io.temporal.common.converter.DefaultDataConverter
+import io.temporal.common.converter.JacksonJsonPayloadConverter
 import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.serviceclient.WorkflowServiceStubsOptions
 import io.temporal.worker.WorkerFactory
@@ -14,7 +23,12 @@ fun main() {
             .setTarget(config.temporalTarget)
             .build(),
     )
-    val workflowClient = WorkflowClient.newInstance(service)
+    val workflowClient = WorkflowClient.newInstance(
+        service,
+        WorkflowClientOptions.newBuilder()
+            .setDataConverter(temporalDataConverter())
+            .build(),
+    )
     val factory = WorkerFactory.newInstance(workflowClient)
     val worker = factory.newWorker(config.temporalTaskQueue)
 
@@ -42,3 +56,14 @@ fun main() {
 }
 
 private val logger = LoggerFactory.getLogger("com.wishpool.workflow.WorkflowWorkerApplication")
+
+internal fun temporalDataConverter(): DataConverter {
+    val objectMapper = ObjectMapper()
+        .registerModule(Jdk8Module())
+        .registerModule(JavaTimeModule())
+        .registerModule(KotlinModule.Builder().build())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+
+    return DefaultDataConverter.newDefaultInstance()
+        .withPayloadConverterOverrides(JacksonJsonPayloadConverter(objectMapper))
+}

@@ -10,6 +10,7 @@ import com.wishpool.core.room.RoomStateResponse
 import com.wishpool.core.tasks.TaskTemplateResponse
 import com.wishpool.core.tasks.TodaySnapshotResponse
 import com.wishpool.core.tasks.WeeklyPlanResponse
+import com.wishpool.core.wishes.WishHistoryItemResponse
 import com.wishpool.core.wishes.WishResponse
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -33,6 +34,7 @@ data class ParentDashboardContextResponse(
     val weeklyPlan: WeeklyPlanResponse?,
     val pendingReviews: List<PendingReviewCardResponse>,
     val taskTemplates: List<TaskTemplateResponse>,
+    val wishHistory: List<WishHistoryItemResponse>,
     val memories: List<WeeklyMemoryResponse>,
     val room: RoomStateResponse?,
     val notificationInbox: NotificationListResponse,

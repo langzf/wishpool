@@ -220,7 +220,7 @@ class TaskPlanningService(
             """
             update task_instance
             set status = 'adjusted_by_parent',
-                skip_reason = coalesce(:reason, 'postponed'),
+                skip_reason = coalesce(cast(:reason as text), 'postponed'),
                 version = version + 1,
                 updated_at = now()
             where id = :id

@@ -1,15 +1,5 @@
-import { BookOpen, CheckSquare, Heart, Home, LayoutDashboard, Settings, Sparkles } from "lucide-react";
-
-const navItems = [
-  { label: "总览", href: "#overview", icon: LayoutDashboard, active: true },
-  { label: "审核", href: "#reviews", icon: CheckSquare },
-  { label: "计划", href: "#plan", icon: BookOpen },
-  { label: "心愿", href: "#wish", icon: Heart },
-  { label: "小屋", href: "#room", icon: Home },
-  { label: "设置", href: "#settings", icon: Settings }
-];
-
-const mobileItems = navItems.slice(0, 4);
+import { Sparkles } from "lucide-react";
+import { SideNav } from "@/components/SideNav";
 
 export function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -22,28 +12,12 @@ export function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
           WishPool
         </div>
         <nav className="nav-list">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <a className={`nav-item ${item.active ? "active" : ""}`} href={item.href} key={item.label}>
-                <Icon size={20} aria-hidden="true" />
-                <span>{item.label}</span>
-              </a>
-            );
-          })}
+          <SideNav />
         </nav>
       </aside>
       <main className="content">{children}</main>
       <nav className="mobile-nav" aria-label="家长端底部导航">
-        {mobileItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <a className={item.active ? "active" : ""} href={item.href} key={item.label}>
-              <Icon size={20} aria-hidden="true" />
-              <span>{item.label}</span>
-            </a>
-          );
-        })}
+        <SideNav mobile />
       </nav>
     </div>
   );

@@ -1,5 +1,5 @@
 import { dashboardMetrics, family, pendingReviews, privacyQueue } from "@wishpool/app-fixtures";
-import { buildAdminHeaders, getAdminRuntimeConfig } from "@/lib/runtime";
+import { buildAdminHeaders } from "@/lib/runtime";
 import { configForAdminWebSession, type AdminWebSession } from "@/lib/session";
 
 export type AdminServiceHealth = {
@@ -23,6 +23,24 @@ export type AdminAuditRow = {
   time: string;
 };
 
+export type AdminFamilyRow = {
+  id: string;
+  name: string;
+  timezone: string;
+  status: string;
+  childCount: number;
+  memberCount: number;
+  createdAt: string;
+};
+
+export type AdminPrivacyQueueRow = {
+  id: string;
+  type: string;
+  requesterName: string;
+  status: string;
+  createdAt: string;
+};
+
 export type AdminDashboardData = {
   source: "admin-api" | "fixture";
   familyName: string;
@@ -32,9 +50,20 @@ export type AdminDashboardData = {
   serviceHealth: AdminServiceHealth[];
   queues: AdminQueueRow[];
   families: AdminFamilyRow[];
-  privacyQueue: typeof privacyQueue;
+  privacyQueue: AdminPrivacyQueueRow[];
   auditRows: AdminAuditRow[];
 };
+
+export class AdminWebUnauthorizedError extends Error {
+  constructor() {
+    super("Admin web session is no longer authorized.");
+    this.name = "AdminWebUnauthorizedError";
+  }
+}
+
+export function isAdminWebUnauthorizedError(error: unknown): error is AdminWebUnauthorizedError {
+  return error instanceof AdminWebUnauthorizedError;
+}
 
 export async function loadAdminDashboardData(session?: AdminWebSession | null): Promise<AdminDashboardData> {
   const config = configForAdminWebSession(session);
@@ -61,6 +90,9 @@ export async function loadAdminDashboardData(session?: AdminWebSession | null): 
         headers: buildAdminHeaders(config.adminToken)
       })
     ]);
+    if ([dashboard, families, privacyRequests, auditLogs].some((response) => response.status === 401)) {
+      throw new AdminWebUnauthorizedError();
+    }
     if (!dashboard.ok) return fixture;
     const metrics = (await dashboard.json()) as AdminDashboardResponse;
     const familyRows = families.ok ? ((await families.json()) as AdminFamilyResponse[]) : [];
@@ -78,38 +110,95 @@ export async function loadAdminDashboardData(session?: AdminWebSession | null): 
         { name: "notification.dispatch", pending: metrics.pendingNotificationCount, retrying: 0 },
         { name: "privacy.deletion", pending: metrics.openPrivacyRequestCount, retrying: 0 }
       ],
-      families: familyRows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        timezone: row.timezone,
-        status: row.status,
-        childCount: row.childCount,
-        memberCount: row.memberCount,
-        createdAt: row.createdAt
-      })),
-      privacyQueue: privacyRows.map((request) => ({
-        id: request.id,
-        type: request.requestType,
-        requesterName: request.requestedBy,
-        status: request.status,
-        createdAt: request.createdAt
-      })),
-      auditRows: auditRows.map((row) => ({
-        id: row.id,
-        actor: row.actorUserId ?? row.actorRole,
-        action: row.action,
-        target: `${row.resourceType}${row.resourceId ? `/${row.resourceId}` : ""}`,
-        time: row.createdAt
-      })),
+      families: mapAdminFamilies(familyRows),
+      privacyQueue: mapAdminPrivacyRequests(privacyRows),
+      auditRows: mapAdminAuditLogs(auditRows),
       serviceHealth: fixture.serviceHealth.map((service) =>
         service.name === "Admin API"
           ? { ...service, status: health.ok ? "healthy" : "degraded", entry: config.adminApiBaseUrl }
           : service
       )
     };
-  } catch {
+  } catch (error) {
+    if (isAdminWebUnauthorizedError(error)) throw error;
     return fixture;
   }
+}
+
+export async function loadAdminFamiliesData(
+  session?: AdminWebSession | null
+): Promise<Pick<AdminDashboardData, "source" | "families">> {
+  const config = configForAdminWebSession(session);
+  const fixture = fixtureAdminDashboardData();
+  if (!config.adminToken) return { source: fixture.source, families: fixture.families };
+
+  try {
+    const response = await fetch(`${config.adminApiBaseUrl}/admin/families?limit=100`, {
+      cache: "no-store",
+      headers: buildAdminHeaders(config.adminToken)
+    });
+    if (response.status === 401) throw new AdminWebUnauthorizedError();
+    if (!response.ok) return { source: fixture.source, families: fixture.families };
+    const rows = (await response.json()) as AdminFamilyResponse[];
+    return { source: "admin-api", families: mapAdminFamilies(rows) };
+  } catch (error) {
+    if (isAdminWebUnauthorizedError(error)) throw error;
+    return { source: fixture.source, families: fixture.families };
+  }
+}
+
+export async function loadAdminPrivacyData(
+  session?: AdminWebSession | null
+): Promise<Pick<AdminDashboardData, "source" | "privacyQueue">> {
+  const config = configForAdminWebSession(session);
+  const fixture = fixtureAdminDashboardData();
+  if (!config.adminToken) return { source: fixture.source, privacyQueue: fixture.privacyQueue };
+
+  try {
+    const response = await fetch(`${config.adminApiBaseUrl}/admin/privacy-requests?limit=100`, {
+      cache: "no-store",
+      headers: buildAdminHeaders(config.adminToken)
+    });
+    if (response.status === 401) throw new AdminWebUnauthorizedError();
+    if (!response.ok) return { source: fixture.source, privacyQueue: fixture.privacyQueue };
+    const rows = (await response.json()) as AdminPrivacyRequestResponse[];
+    return { source: "admin-api", privacyQueue: mapAdminPrivacyRequests(rows) };
+  } catch (error) {
+    if (isAdminWebUnauthorizedError(error)) throw error;
+    return { source: fixture.source, privacyQueue: fixture.privacyQueue };
+  }
+}
+
+export async function loadAdminAuditData(
+  session?: AdminWebSession | null
+): Promise<Pick<AdminDashboardData, "source" | "auditRows">> {
+  const config = configForAdminWebSession(session);
+  const fixture = fixtureAdminDashboardData();
+  if (!config.adminToken) return { source: fixture.source, auditRows: fixture.auditRows };
+
+  try {
+    const response = await fetch(`${config.adminApiBaseUrl}/admin/audit-logs?limit=100`, {
+      cache: "no-store",
+      headers: buildAdminHeaders(config.adminToken)
+    });
+    if (response.status === 401) throw new AdminWebUnauthorizedError();
+    if (!response.ok) return { source: fixture.source, auditRows: fixture.auditRows };
+    const rows = (await response.json()) as AdminAuditLogResponse[];
+    return { source: "admin-api", auditRows: mapAdminAuditLogs(rows) };
+  } catch (error) {
+    if (isAdminWebUnauthorizedError(error)) throw error;
+    return { source: fixture.source, auditRows: fixture.auditRows };
+  }
+}
+
+export function loadAdminQueuesData(data: AdminDashboardData): Pick<AdminDashboardData, "source" | "queues"> {
+  return { source: data.source, queues: data.queues };
+}
+
+export function loadAdminStorageData(
+  data: AdminDashboardData
+): Pick<AdminDashboardData, "source" | "serviceHealth"> {
+  return { source: data.source, serviceHealth: data.serviceHealth };
 }
 
 function fixtureAdminDashboardData(): AdminDashboardData {
@@ -155,6 +244,38 @@ function fixtureAdminDashboardData(): AdminDashboardData {
   };
 }
 
+function mapAdminFamilies(rows: AdminFamilyResponse[]): AdminFamilyRow[] {
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    timezone: row.timezone,
+    status: row.status,
+    childCount: row.childCount,
+    memberCount: row.memberCount,
+    createdAt: row.createdAt
+  }));
+}
+
+function mapAdminPrivacyRequests(rows: AdminPrivacyRequestResponse[]): AdminPrivacyQueueRow[] {
+  return rows.map((request) => ({
+    id: request.id,
+    type: request.requestType,
+    requesterName: request.requestedBy,
+    status: request.status,
+    createdAt: request.createdAt
+  }));
+}
+
+function mapAdminAuditLogs(rows: AdminAuditLogResponse[]): AdminAuditRow[] {
+  return rows.map((row) => ({
+    id: row.id,
+    actor: row.actorUserId ?? row.actorRole,
+    action: row.action,
+    target: `${row.resourceType}${row.resourceId ? `/${row.resourceId}` : ""}`,
+    time: row.createdAt
+  }));
+}
+
 type AdminDashboardResponse = {
   activeChildCount: number;
   pendingReviewCount: number;
@@ -163,16 +284,6 @@ type AdminDashboardResponse = {
   processingMediaCount: number;
   runningAiJobCount: number;
   openPrivacyRequestCount: number;
-};
-
-export type AdminFamilyRow = {
-  id: string;
-  name: string;
-  timezone: string;
-  status: string;
-  childCount: number;
-  memberCount: number;
-  createdAt: string;
 };
 
 type AdminFamilyResponse = AdminFamilyRow;

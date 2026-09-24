@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:mime/mime.dart';
 
+import '../data/sync_coordinator.dart';
 import '../data/wishpool_scope.dart';
 import '../design/wishpool_theme.dart';
 import '../domain/wishpool_snapshot.dart';
@@ -115,8 +116,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
     if (_syncSubscription != null) return;
     final scope = WishPoolScope.of(context);
     final config = scope.config;
-    if (!config.hasRemoteContext || config.accessToken == null || config.familyId == null) return;
-    scope.syncCoordinator.start(familyId: config.familyId!, accessToken: config.accessToken!);
+    if (!config.hasRemoteContext) return;
+    scope.syncCoordinator.start(familyId: config.familyId, accessToken: config.accessToken);
     _syncSubscription = scope.syncCoordinator.events.listen((event) {
       if (!_shouldRefreshForEvent(event)) return;
       if (!mounted) return;
@@ -229,8 +230,9 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
 
   Future<void> _pickAndSubmitMediaTask(BuildContext context, WishPoolSnapshot snapshot, ChildTask task) async {
     if (!_hasRemoteContext(context, snapshot)) return;
+    final scope = WishPoolScope.of(context);
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         allowMultiple: false,
         type: _pickerType(task),
         withData: false,
@@ -245,15 +247,15 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
         return;
       }
 
-      await WishPoolScope.of(context).submitMediaTask(
+      await scope.submitMediaTask(
         task: task,
         file: File(path),
         contentType: contentType,
       );
-      if (!context.mounted) return;
+      if (!context.mounted || !mounted) return;
       Navigator.pop(context);
       setState(() {
-        _snapshotFuture = WishPoolScope.of(context).loadSnapshot();
+        _snapshotFuture = scope.loadSnapshot();
       });
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已提交，等待家长确认。')));
     } catch (_) {

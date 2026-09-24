@@ -307,35 +307,41 @@ class RewardService(
 
         val wish = jdbcClient.sql(
             """
+            with progress as (
+              select greatest(0, coalesce(sum(amount), 0)::int) as earned
+              from reward_ledger
+              where wish_id = :wish_id
+                and reward_type in ('wish_fragment', 'adjustment')
+            ),
+            lit_state as (
+              select jsonb_build_object(
+                'version', 1,
+                'litIndexes', coalesce(
+                  (
+                    select jsonb_agg(value::int order by ordinality)
+                    from jsonb_array_elements_text(coalesce(w.fragment_mask_json -> 'revealOrder', '[]'::jsonb))
+                      with ordinality as ordered(value, ordinality)
+                    where ordinality <= least((select earned from progress), w.required_fragments)
+                  ),
+                  (
+                    select coalesce(jsonb_agg(index_value order by index_value), '[]'::jsonb)
+                    from generate_series(0, least((select earned from progress), w.required_fragments) - 1) as index_value
+                  )
+                )
+              ) as fragment_lit_json
+              from wish w
+              where w.id = :wish_id
+            )
             update wish
-            set earned_fragments = greatest(0, (
-                  select coalesce(sum(amount), 0)::int
-                  from reward_ledger
-                  where wish_id = :wish_id
-                    and reward_type in ('wish_fragment', 'adjustment')
-                )),
+            set earned_fragments = (select earned from progress),
+                fragment_lit_json = (select fragment_lit_json from lit_state),
                 status = case
-                  when status in ('active', 'unlocked') and greatest(0, (
-                    select coalesce(sum(amount), 0)::int
-                    from reward_ledger
-                    where wish_id = :wish_id
-                      and reward_type in ('wish_fragment', 'adjustment')
-                  )) >= required_fragments then 'unlocked'
-                  when status = 'unlocked' and greatest(0, (
-                    select coalesce(sum(amount), 0)::int
-                    from reward_ledger
-                    where wish_id = :wish_id
-                      and reward_type in ('wish_fragment', 'adjustment')
-                  )) < required_fragments then 'active'
+                  when status in ('active', 'unlocked') and (select earned from progress) >= required_fragments then 'unlocked'
+                  when status = 'unlocked' and (select earned from progress) < required_fragments then 'active'
                   else status
                 end,
                 unlocked_at = case
-                  when unlocked_at is null and status = 'active' and greatest(0, (
-                    select coalesce(sum(amount), 0)::int
-                    from reward_ledger
-                    where wish_id = :wish_id
-                      and reward_type in ('wish_fragment', 'adjustment')
-                  )) >= required_fragments then now()
+                  when unlocked_at is null and status = 'active' and (select earned from progress) >= required_fragments then now()
                   else unlocked_at
                 end,
                 updated_at = now()

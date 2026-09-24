@@ -64,6 +64,7 @@ class HomeService(
         val today = selectedChild?.let { taskPlanningService.getToday(it.id, date) }
         val wish = selectedChild?.let { currentWishOrNull(it.id) }
         val weeklyPlan = selectedChild?.let { currentWeeklyPlanOrNull(familyId, it.id, date ?: LocalDate.now()) }
+        val wishHistory = selectedChild?.let { wishService.listChildWishHistory(it.id, limit = 24) }.orEmpty()
         val memories = selectedChild?.let { memoryService.listMemories(it.id, cursor = null, limit = 8).items }.orEmpty()
         return ParentDashboardContextResponse(
             family = family,
@@ -74,6 +75,7 @@ class HomeService(
             weeklyPlan = weeklyPlan,
             pendingReviews = reviewService.listPendingReviews(familyId),
             taskTemplates = taskPlanningService.listTaskTemplates(familyId),
+            wishHistory = wishHistory,
             memories = memories,
             room = selectedChild?.let { roomService.getRoomState(it.id) },
             notificationInbox = notificationService.listInbox(familyId, status = null, limit = 20),

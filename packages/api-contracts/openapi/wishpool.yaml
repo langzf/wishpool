@@ -761,6 +761,92 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /wishes/image-candidates:
+    post:
+      tags: [Wishes]
+      operationId: findWishImageCandidates
+      summary: Find reusable wish image candidates for a new wish.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WishImageCandidateRequest'
+      responses:
+        '200':
+          description: Reusable wish image candidates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishImageCandidateResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes/image-model-providers:
+    get:
+      tags: [Wishes]
+      operationId: listWishImageModelProviders
+      summary: List enabled image generation model providers for a business usage.
+      parameters:
+        - name: usageCode
+          in: query
+          required: false
+          schema:
+            type: string
+            default: wish_card
+      responses:
+        '200':
+          description: Enabled image model providers with the selected default.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessImageModelProviderList'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes/image-generations:
+    post:
+      tags: [Wishes]
+      operationId: createWishImageGeneration
+      summary: Create a wish image generation job.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWishImageGenerationRequest'
+      responses:
+        '201':
+          description: Wish image generation job.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishImageGenerationJob'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes/image-generations/{jobId}:
+    get:
+      tags: [Wishes]
+      operationId: getWishImageGeneration
+      summary: Get a wish image generation job.
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Wish image generation job.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WishImageGenerationJob'
+        default:
+          $ref: '#/components/responses/Error'
+
   /wishes/{wishId}/activate:
     post:
       tags: [Wishes]
@@ -858,6 +944,48 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Wish'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /wishes/{wishId}/image:
+    post:
+      tags: [Wishes]
+      operationId: attachWishImage
+      summary: Attach a finalized wish image to a wish.
+      parameters:
+        - $ref: '#/components/parameters/WishId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachWishImageRequest'
+      responses:
+        '200':
+          description: Wish with the attached image.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wish'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /children/{childId}/wishes/history:
+    get:
+      tags: [Wishes]
+      operationId: listChildWishHistory
+      summary: List wish history items for a child.
+      parameters:
+        - $ref: '#/components/parameters/ChildId'
+      responses:
+        '200':
+          description: Child wish history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WishHistoryItem'
         default:
           $ref: '#/components/responses/Error'
 
@@ -1413,6 +1541,196 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminMediaAccessGrant'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/image-model-providers:
+    get:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: listAdminImageModelProviders
+      summary: List image generation model provider configurations with masked API keys.
+      responses:
+        '200':
+          description: Image model providers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImageModelProvider'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: createAdminImageModelProvider
+      summary: Create an image generation model provider.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageModelProviderWriteRequest'
+      responses:
+        '200':
+          description: Created provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageModelProvider'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/image-model-providers/{id}:
+    put:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: updateAdminImageModelProvider
+      summary: Update an image generation model provider.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageModelProviderWriteRequest'
+      responses:
+        '200':
+          description: Updated provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageModelProvider'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: deleteAdminImageModelProvider
+      summary: Delete an image generation model provider.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Provider deleted.
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/image-model-providers/{id}/toggle:
+    post:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: toggleAdminImageModelProvider
+      summary: Enable or disable an image generation model provider.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageModelProviderToggleRequest'
+      responses:
+        '200':
+          description: Updated provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageModelProvider'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/image-model-providers/{id}/set-default:
+    post:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: setDefaultAdminImageModelProvider
+      summary: Set the global default image generation model provider.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Updated provider.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageModelProvider'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/image-gen-usages:
+    get:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: listAdminImageGenUsages
+      summary: List business usage to image provider mappings.
+      responses:
+        '200':
+          description: Usage mappings.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImageGenUsage'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /internal/admin/image-gen-usages/{usageCode}:
+    put:
+      tags: [Admin]
+      security:
+        - internalToken: []
+      operationId: upsertAdminImageGenUsage
+      summary: Create or update a business usage to image provider mapping.
+      parameters:
+        - name: usageCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageGenUsageWriteRequest'
+      responses:
+        '200':
+          description: Updated usage mapping.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGenUsage'
         default:
           $ref: '#/components/responses/Error'
 
@@ -2217,7 +2535,7 @@ components:
 
     ParentDashboardContext:
       type: object
-      required: [family, children, selectedChild, today, pendingReviews, taskTemplates, memories, room, notificationInbox]
+      required: [family, children, selectedChild, today, pendingReviews, taskTemplates, wishHistory, memories, room, notificationInbox]
       properties:
         family:
           $ref: '#/components/schemas/Family'
@@ -2249,6 +2567,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TaskTemplate'
+        wishHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishHistoryItem'
         memories:
           type: array
           items:
@@ -2603,10 +2925,341 @@ components:
         rewardMode:
           type: string
           enum: [flexible, strict]
+        fragmentVisualMode:
+          type: string
+          enum: [grid_reveal, puzzle_lines, irregular]
+          default: grid_reveal
+        fragmentGridRows:
+          type: integer
+          minimum: 1
+        fragmentGridCols:
+          type: integer
+          minimum: 1
+
+    AttachWishImageRequest:
+      type: object
+      required: [mediaId]
+      properties:
+        mediaId:
+          type: string
+          format: uuid
+        sourceType:
+          type: string
+          enum: [uploaded, generated, reused, imported]
+          default: generated
+
+    WishImageCandidateRequest:
+      type: object
+      required: [familyId, childId, title]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        note:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 12
+          default: 6
+
+    WishImageCandidateResponse:
+      type: object
+      required: [query, items, fallbackOptions]
+      properties:
+        query:
+          $ref: '#/components/schemas/WishImageCandidateQuery'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishImageCandidate'
+        fallbackOptions:
+          type: array
+          items:
+            type: string
+            enum: [upload, skip]
+
+    WishImageCandidateQuery:
+      type: object
+      required: [normalizedTitle, keywords]
+      properties:
+        normalizedTitle:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        category:
+          anyOf:
+            - type: string
+            - type: 'null'
+
+    WishImageCandidate:
+      type: object
+      required: [media, score, reason, lastUsedAt]
+      properties:
+        media:
+          $ref: '#/components/schemas/MediaAsset'
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        reason:
+          type: string
+        sourceWishId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        sourceWishTitle:
+          anyOf:
+            - type: string
+            - type: 'null'
+        lastUsedAt:
+          type: string
+          format: date-time
+
+    ImageModelProvider:
+      type: object
+      required: [id, code, displayName, providerType, baseUrl, modelName, extraParams, isDefault, isEnabled, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        displayName:
+          type: string
+        providerType:
+          type: string
+          enum: [volcengine_ark, aliyun_bailian, siliconflow, deterministic, custom_openai_compatible]
+        baseUrl:
+          type: string
+        apiKeyMasked:
+          anyOf:
+            - type: string
+            - type: 'null'
+        modelName:
+          type: string
+        extraParams:
+          type: object
+          additionalProperties: true
+        isDefault:
+          type: boolean
+        isEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ImageModelProviderWriteRequest:
+      type: object
+      required: [displayName, providerType, baseUrl, modelName]
+      properties:
+        code:
+          type: string
+          description: Required on create; immutable on update.
+        displayName:
+          type: string
+        providerType:
+          type: string
+          enum: [volcengine_ark, aliyun_bailian, siliconflow, deterministic, custom_openai_compatible]
+        baseUrl:
+          type: string
+        apiKey:
+          type: string
+          description: Leave blank on update to keep the existing key.
+        modelName:
+          type: string
+        extraParams:
+          type: object
+          additionalProperties: true
+        isDefault:
+          type: boolean
+          default: false
+        isEnabled:
+          type: boolean
+          default: true
+
+    ImageModelProviderToggleRequest:
+      type: object
+      required: [isEnabled]
+      properties:
+        isEnabled:
+          type: boolean
+
+    ImageGenUsage:
+      type: object
+      required: [usageCode, providerCode, createdAt, updatedAt]
+      properties:
+        usageCode:
+          type: string
+        providerCode:
+          type: string
+        providerDisplayName:
+          anyOf:
+            - type: string
+            - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ImageGenUsageWriteRequest:
+      type: object
+      required: [usageCode, providerCode]
+      properties:
+        usageCode:
+          type: string
+        providerCode:
+          type: string
+
+    BusinessImageModelProviderList:
+      type: object
+      required: [usageCode, providers]
+      properties:
+        usageCode:
+          type: string
+        selectedProviderCode:
+          anyOf:
+            - type: string
+            - type: 'null'
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageModelProvider'
+
+    CreateWishImageGenerationRequest:
+      type: object
+      required: [familyId, childId, title]
+      properties:
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        wishId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        usageCode:
+          type: string
+          default: wish_card
+        providerCode:
+          anyOf:
+            - type: string
+            - type: 'null'
+        title:
+          type: string
+        note:
+          anyOf:
+            - type: string
+            - type: 'null'
+        category:
+          anyOf:
+            - type: string
+            - type: 'null'
+        style:
+          type: string
+          enum: [warm_illustration, storybook, clean_product]
+          default: warm_illustration
+        aspectRatio:
+          type: string
+          enum: ['1:1', '4:3']
+          default: '1:1'
+
+    WishImageGenerationJob:
+      type: object
+      required: [id, familyId, childId, usageCode, title, style, aspectRatio, status, attemptCount, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        familyId:
+          type: string
+          format: uuid
+        childId:
+          type: string
+          format: uuid
+        wishId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        usageCode:
+          type: string
+        providerCode:
+          anyOf:
+            - type: string
+            - type: 'null'
+        title:
+          type: string
+        note:
+          anyOf:
+            - type: string
+            - type: 'null'
+        category:
+          anyOf:
+            - type: string
+            - type: 'null'
+        style:
+          type: string
+          enum: [warm_illustration, storybook, clean_product]
+        aspectRatio:
+          type: string
+          enum: ['1:1', '4:3']
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed_retryable, failed_final, cancelled]
+        mediaAssetId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        media:
+          anyOf:
+            - $ref: '#/components/schemas/MediaAsset'
+            - type: 'null'
+        modelProvider:
+          anyOf:
+            - type: string
+            - type: 'null'
+        modelName:
+          anyOf:
+            - type: string
+            - type: 'null'
+        attemptCount:
+          type: integer
+        errorCode:
+          anyOf:
+            - type: string
+            - type: 'null'
+        errorMessage:
+          anyOf:
+            - type: string
+            - type: 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     Wish:
       type: object
-      required: [id, familyId, childId, weekId, title, requiredFragments, earnedFragments, rewardMode, status]
+      required: [id, familyId, childId, weekId, title, requiredFragments, earnedFragments, rewardMode, status, fragmentVisual]
       properties:
         id:
           type: string
@@ -2639,6 +3292,99 @@ components:
         status:
           type: string
           enum: [draft, active, unlocked, redeemed, archived, cancelled, cancelled_by_parent]
+        fragmentVisual:
+          $ref: '#/components/schemas/WishFragmentVisual'
+
+    WishFragmentVisual:
+      type: object
+      required: [mode, rows, cols, revealed, total, mask, litIndexes]
+      properties:
+        mode:
+          type: string
+          enum: [grid_reveal, puzzle_lines, irregular]
+        rows:
+          type: integer
+          minimum: 1
+        cols:
+          type: integer
+          minimum: 1
+        revealed:
+          type: integer
+          minimum: 0
+        total:
+          type: integer
+          minimum: 1
+        mask:
+          $ref: '#/components/schemas/WishFragmentMask'
+        litIndexes:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+
+    WishFragmentMask:
+      type: object
+      required: [version, mode, rows, cols, total, revealOrder, cells]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        mode:
+          type: string
+          enum: [grid_reveal, puzzle_lines, irregular]
+        rows:
+          type: integer
+          minimum: 1
+        cols:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 1
+        revealOrder:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/WishFragmentCell'
+
+    WishFragmentCell:
+      type: object
+      required: [index, row, col]
+      properties:
+        index:
+          type: integer
+          minimum: 0
+        row:
+          type: integer
+          minimum: 0
+        col:
+          type: integer
+          minimum: 0
+        polygon:
+          anyOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/WishFragmentPoint'
+            - type: 'null'
+
+    WishFragmentPoint:
+      type: object
+      required: [x, y]
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        y:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
 
     RedeemWishRequest:
       type: object
@@ -2661,7 +3407,7 @@ components:
 
     WishRedemption:
       type: object
-      required: [id, wishId, redeemedDate, createdAt]
+      required: [id, wishId, redeemedDate, photos, createdAt]
       properties:
         id:
           type: string
@@ -2687,6 +3433,20 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    WishHistoryItem:
+      type: object
+      required: [wish, realizedCount]
+      properties:
+        wish:
+          $ref: '#/components/schemas/Wish'
+        redemption:
+          anyOf:
+            - $ref: '#/components/schemas/WishRedemption'
+            - type: 'null'
+        realizedCount:
+          type: integer
+          minimum: 0
 
     DailySummary:
       type: object

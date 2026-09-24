@@ -28,6 +28,7 @@ class WishPoolRepository {
       final notifications = await _notificationInbox();
       final preferences = await _notificationPreferences();
       final currentWish = _map(childHome['currentWish']);
+      final fragmentVisual = _map(currentWish['fragmentVisual']);
       return WishPoolSnapshot(
         source: 'core-api',
         childName: _string(_map(childHome['child'])['nickname'], fixtureSnapshot.childName),
@@ -36,6 +37,12 @@ class WishPoolRepository {
         wishProgress: _wishProgress(currentWish, fallbackOnEmpty: false),
         wishCurrentFragments: _int(currentWish['earnedFragments'], 0),
         wishTargetFragments: _positiveInt(currentWish['requiredFragments'], 1),
+        wishImageUrl: _stringOrNull(_map(currentWish['imageMedia'])['downloadUrl']),
+        wishFragmentVisualMode: _string(fragmentVisual['mode'], 'grid_reveal'),
+        wishFragmentRows: _nullablePositiveInt(fragmentVisual['rows']),
+        wishFragmentCols: _nullablePositiveInt(fragmentVisual['cols']),
+        wishFragmentMask: _fragmentMask(fragmentVisual['mask']),
+        wishLitIndexes: _intList(fragmentVisual['litIndexes']),
         childTasks: _tasks(_map(childHome['today'])['tasks'], fallbackOnEmpty: false),
         reviewCards: config.isChildDevice ? const <ReviewCardData>[] : _reviews(parentHome['pendingReviews'], fallbackOnEmpty: false),
         weeklyPlanRules: config.isChildDevice
@@ -175,6 +182,57 @@ class WishPoolRepository {
     );
     await _createSubmission(task.id, <String>[mediaId], clientMutationId);
     uploadQueue.markCompleted(clientMutationId);
+  }
+
+  Future<Map<String, Object?>> findWishImageCandidates({
+    required String title,
+    String? note,
+    int limit = 6,
+  }) async {
+    if (!config.hasRemoteContext || title.trim().isEmpty) return const <String, Object?>{'items': <Object?>[]};
+    return apiClient.postJson(
+      '/wishes/image-candidates',
+      <String, Object?>{
+        'familyId': config.familyId,
+        'childId': config.childId,
+        'title': title,
+        'note': note,
+        'limit': limit,
+      },
+      accessToken: config.accessToken,
+    );
+  }
+
+  Future<String> uploadWishImage({
+    required File file,
+    required String contentType,
+  }) async {
+    if (!config.hasRemoteContext) throw StateError('Remote context is required.');
+    if (!contentType.startsWith('image/')) throw StateError('Wish image upload requires an image file.');
+    final clientMutationId = 'mobile-wish-image-${DateTime.now().millisecondsSinceEpoch}';
+    final uploadSession = await apiClient.postJson(
+      '/media/upload-sessions',
+      <String, Object?>{
+        'familyId': config.familyId,
+        'childId': config.childId,
+        'purpose': 'wish_image',
+        'contentType': contentType,
+        'sizeBytes': await file.length(),
+      },
+      accessToken: config.accessToken,
+      idempotencyKey: 'mobile-wish-image-upload-session-$clientMutationId',
+    );
+    final mediaId = _string(uploadSession['mediaId'], '');
+    final uploadUrl = _string(uploadSession['uploadUrl'], '');
+    if (mediaId.isEmpty || uploadUrl.isEmpty) throw const FormatException('Upload session response is incomplete.');
+    await apiClient.putFileToUrl(uploadUrl, file, contentType: contentType);
+    await apiClient.postJson(
+      '/media/$mediaId/finalize',
+      const <String, Object?>{},
+      accessToken: config.accessToken,
+      idempotencyKey: 'mobile-wish-image-finalize-$mediaId',
+    );
+    return mediaId;
   }
 
   Future<void> arrangeRoomItem(RoomItemData item, {required double left, required double top}) async {
@@ -338,6 +396,51 @@ class WishPoolRepository {
     return (earned / required).clamp(0, 1).toDouble();
   }
 
+  WishFragmentMaskData? _fragmentMask(Object? value) {
+    final mask = _map(value);
+    final rows = _nullablePositiveInt(mask['rows']);
+    final cols = _nullablePositiveInt(mask['cols']);
+    final total = _nullablePositiveInt(mask['total']);
+    final rawCells = mask['cells'];
+    if (rows == null || cols == null || total == null || rows * cols != total || rawCells is! List) return null;
+    final cells = rawCells.whereType<Map>().map((cell) {
+      final index = _int(cell['index'], -1);
+      return WishFragmentCellData(
+        index: index,
+        row: _int(cell['row'], index >= 0 ? index ~/ cols : 0),
+        col: _int(cell['col'], index >= 0 ? index % cols : 0),
+        polygon: _fragmentPolygon(cell['polygon']),
+      );
+    }).where((cell) => cell.index >= 0 && cell.index < total).toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    if (cells.length != total) return null;
+    return WishFragmentMaskData(
+      version: _positiveInt(mask['version'], 1),
+      mode: _string(mask['mode'], 'grid_reveal'),
+      rows: rows,
+      cols: cols,
+      total: total,
+      revealOrder: _intList(mask['revealOrder']),
+      cells: cells,
+    );
+  }
+
+  List<WishFragmentPointData>? _fragmentPolygon(Object? value) {
+    if (value is! List) return null;
+    final points = value.whereType<Map>().map((point) {
+      return WishFragmentPointData(
+        x: _num(point['x'], 0).clamp(0, 1).toDouble(),
+        y: _num(point['y'], 0).clamp(0, 1).toDouble(),
+      );
+    }).toList();
+    return points.length >= 3 ? points : null;
+  }
+
+  List<int> _intList(Object? value) {
+    if (value is! List) return const <int>[];
+    return value.whereType<num>().map((item) => item.toInt()).where((item) => item >= 0).toSet().toList()..sort();
+  }
+
   Map<Object?, Object?> _map(Object? value) => value is Map ? value : const {};
 
   String _string(Object? value, String fallback) => value is String && value.isNotEmpty ? value : fallback;
@@ -349,6 +452,11 @@ class WishPoolRepository {
   int _positiveInt(Object? value, int fallback) {
     final parsed = _int(value, fallback);
     return parsed > 0 ? parsed : fallback;
+  }
+
+  int? _nullablePositiveInt(Object? value) {
+    final parsed = _int(value, 0);
+    return parsed > 0 ? parsed : null;
   }
 
   double _num(Object? value, double fallback) => value is num ? value.toDouble() : fallback;
