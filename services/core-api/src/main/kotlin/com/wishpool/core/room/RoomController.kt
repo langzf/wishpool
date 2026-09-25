@@ -25,4 +25,12 @@ class RoomController(
         @RequestHeader(name = "Idempotency-Key", required = false) idempotencyKey: String?,
     ): RoomItemResponse =
         roomService.arrangeRoomItem(itemId, request, idempotencyKey)
+
+    @PostMapping("/room/items/{itemId}/hide")
+    fun hideRoomItem(@PathVariable itemId: UUID): RoomItemResponse =
+        roomService.setRoomItemVisibility(itemId, false)
+
+    @PostMapping("/room/items/{itemId}/unhide")
+    fun unhideRoomItem(@PathVariable itemId: UUID): RoomItemResponse =
+        roomService.setRoomItemVisibility(itemId, true)
 }

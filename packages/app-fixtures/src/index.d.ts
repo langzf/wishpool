@@ -79,7 +79,7 @@ export type MemoryFixture = {
 export type RoomStateFixture = {
   childId: string;
   theme: string;
-  items: Array<{ id: string; kind: string; name: string; x: number; y: number; unlocked: boolean }>;
+  items: Array<{ id: string; kind: string; name: string; x: number; y: number; layer?: number; unlocked: boolean; visible?: boolean; unlockedAt?: string | null }>;
 };
 
 export type PrivacyRequestFixture = {

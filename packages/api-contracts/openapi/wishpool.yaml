@@ -303,6 +303,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChildHomeContext'
         default:
+         $ref: '#/components/responses/Error'
+
+  /children/{childId}/rewards/summary:
+    get:
+      tags: [Children]
+      operationId: getChildRewardSummary
+      summary: Get read-only reward totals for a child.
+      parameters:
+        - $ref: '#/components/parameters/ChildId'
+        - name: weekId
+          in: query
+          required: false
+          description: ISO week identifier such as 2026-W34.
+          schema:
+            type: string
+            pattern: '^\\d{4}-W\\d{2}$'
+        - name: fromDate
+          in: query
+          required: false
+          description: Inclusive lower bound for reward date.
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          required: false
+          description: Inclusive upper bound for reward date.
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Reward ledger totals for the selected child and filters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RewardSummary'
+        default:
           $ref: '#/components/responses/Error'
 
   /families/{familyId}/parent-dashboard:
@@ -1544,6 +1582,50 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /room/items/{itemId}/hide:
+    post:
+      tags: [Room]
+      operationId: hideRoomItem
+      summary: Hide a room item without deleting its history or position.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Room item hidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomItem'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /room/items/{itemId}/unhide:
+    post:
+      tags: [Room]
+      operationId: unhideRoomItem
+      summary: Restore a hidden room item without changing its position.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Room item visible.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomItem'
+        default:
+          $ref: '#/components/responses/Error'
+
   /internal/admin/image-model-providers:
     get:
       tags: [Admin]
@@ -1984,6 +2066,30 @@ components:
             $ref: '#/components/schemas/Problem'
 
   schemas:
+    RewardSummary:
+      type: object
+      required: [childId, weekId, fromDate, toDate, starLight, wishFragment, adjustment, total]
+      properties:
+        childId:
+          type: string
+          format: uuid
+        weekId:
+          type: [string, 'null']
+        fromDate:
+          type: [string, 'null']
+          format: date
+        toDate:
+          type: [string, 'null']
+          format: date
+        starLight:
+          type: integer
+        wishFragment:
+          type: integer
+        adjustment:
+          type: integer
+        total:
+          type: integer
+
     Problem:
       type: object
       required: [type, title, status, traceId]
@@ -3568,7 +3674,17 @@ components:
       properties:
         position:
           type: object
-          additionalProperties: true
+          required: [x, y, layer]
+          properties:
+            x:
+              type: integer
+              description: Percentage coordinate, one of 4, 12, ..., 92.
+            y:
+              type: integer
+              description: Percentage coordinate, one of 2, 12, ..., 72.
+            layer:
+              type: integer
+              enum: [1]
 
     FamilyEvent:
       type: object

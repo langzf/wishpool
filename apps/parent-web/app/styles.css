@@ -1349,7 +1349,18 @@ a:focus-visible {
   min-height: 44px;
   padding: 8px 10px;
   position: absolute;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  z-index: 1;
 }
+
+.room-item-hidden { opacity: 0.48; }
+.room-drag-handle { align-items: center; cursor: grab; display: inline-flex; gap: 6px; touch-action: none; }
+.room-drag-handle:active { cursor: grabbing; }
+.room-slot { background: rgba(37, 99, 235, 0.14); border: 2px dashed rgba(37, 99, 235, 0.65); border-radius: 50%; height: 28px; pointer-events: none; position: absolute; transform: translate(-50%, -50%); width: 28px; z-index: 0; }
+.room-slot-active { background: rgba(22, 163, 74, 0.3); border-color: #16a34a; }
+.room-unlocked-badge { background: #f59e0b; border-radius: 999px; color: #fff; font-size: 11px; padding: 2px 5px; }
+.room-drag-hint, .room-feedback { color: var(--color-muted-text); margin: 10px 0 0; }
 
 .mini-icon-button {
   align-items: center;

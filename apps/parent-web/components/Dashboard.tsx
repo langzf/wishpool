@@ -9,9 +9,9 @@ import {
   Home,
   Images,
   Radio,
+  Sparkles,
   ShieldCheck,
   SkipForward,
-  Sparkles
 } from "lucide-react";
 import { createPairingSessionAction, logoutParentAction, postponeTaskAction, skipTaskAction } from "@/app/actions";
 import { FragmentGrid } from "@/components/FragmentGrid";
@@ -89,16 +89,17 @@ export function ParentDashboard({
           <span className="muted">核心任务保持稳定节奏。</span>
         </article>
         <article className="panel metric span-3">
-          <Sparkles size={22} color="#D97706" aria-hidden="true" />
-          <span className="metric-value">{data.dashboardMetrics.starlightIssuedThisWeek}</span>
-          <strong>本周星光</strong>
-          <span className="muted">审核通过后自动入账。</span>
-        </article>
-        <article className="panel metric span-3">
           <Gift size={22} color="#2563EB" aria-hidden="true" />
           <span className="metric-value">{wishProgress}%</span>
           <strong>心愿进度</strong>
           <span className="muted">{data.currentWish.title}</span>
+        </article>
+
+        <article className="panel metric span-3">
+          <Sparkles size={22} color="#D97706" aria-hidden="true" />
+          <span className="metric-value">{data.rewardSummary ? data.rewardSummary.starLight : "未提供"}</span>
+          <strong>累计星光</strong>
+          <span className="muted">来自奖励流水汇总</span>
         </article>
 
         <article className="panel span-4">
@@ -144,7 +145,7 @@ export function ParentDashboard({
                     <div>
                       <strong>{task.title}</strong>
                       <p className="muted" style={{ margin: "6px 0 0" }}>
-                        星光 +{task.rewardStarlight} · {task.submissionType}
+                        {task.submissionType}
                       </p>
                     </div>
                     <div className="task-actions">

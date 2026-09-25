@@ -112,7 +112,7 @@ export default async function PlanPage({ searchParams }: PageProps) {
                     <div>
                       <strong>{task.title}</strong>
                       <p className="muted" style={{ margin: "6px 0 0" }}>
-                        星光 +{task.rewardStarlight} · {task.submissionType}
+                        {task.submissionType}
                       </p>
                     </div>
                     <div className="task-actions">

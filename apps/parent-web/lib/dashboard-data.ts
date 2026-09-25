@@ -16,16 +16,22 @@ import type { FragmentMask } from "@/components/FragmentGrid";
 
 export type ParentDashboardData = {
   source: "api" | "fixture";
-  child: typeof child;
+  child: ParentChild;
   currentWish: WishSummary;
   wishHistory: WishHistoryItem[];
-  dashboardMetrics: typeof dashboardMetrics;
+  dashboardMetrics: {
+    activeChildren: number;
+    pendingReviews: number;
+    weeklyCompletionRate: number;
+    mediaProcessingReadyRate: number;
+  };
+  rewardSummary: ParentRewardSummary | null;
   memories: typeof memories;
   pendingReviews: typeof pendingReviews;
   roomState: typeof roomState;
   taskTemplates: TaskTemplateResponse[];
-  todayTasks: typeof todayTasks;
-  weeklyPlan: typeof weeklyPlan;
+  todayTasks: ParentTask[];
+  weeklyPlan: ParentWeeklyPlan;
   notificationInbox: typeof notificationInbox;
   notificationPreferences: ParentNotificationPreference[];
   coreApiHealthy: boolean;
@@ -62,18 +68,20 @@ export async function loadParentDashboardData(session?: ParentWebSession | null)
     const childQuery = config.childId ? `?childId=${encodeURIComponent(config.childId)}` : "";
     const dashboard = await coreGetJson<ParentDashboardContext>(`/families/${config.familyId}/parent-dashboard${childQuery}`, config.accessToken);
     const preferences = await loadNotificationPreferences(config.familyId, config.accessToken);
-    const selectedChild = mapChild(dashboard.selectedChild) ?? fixture.child;
+    const rewardSummary = await loadRewardSummary(config.childId ?? dashboard.selectedChild?.id ?? "", config.accessToken);
+    const selectedChild = mapChild(dashboard.selectedChild);
+    if (!selectedChild) throw new ParentDashboardUnavailableError("未找到当前孩子资料，请稍后重试。");
     return {
       child: selectedChild,
       currentWish: mapWish(dashboard.currentWish) ?? emptyWish(selectedChild.id),
       wishHistory: (dashboard.wishHistory ?? []).map(mapWishHistoryItem),
       dashboardMetrics: {
-        ...fixture.dashboardMetrics,
+        mediaProcessingReadyRate: fixture.dashboardMetrics.mediaProcessingReadyRate,
         activeChildren: dashboard.children.length,
         pendingReviews: dashboard.pendingReviews.length,
-        weeklyCompletionRate: completionRate(dashboard.today),
-        starlightIssuedThisWeek: totalApprovedTasks(dashboard.today) * 6
+        weeklyCompletionRate: completionRate(dashboard.today)
       },
+      rewardSummary,
       memories: dashboard.memories.map(mapMemory),
       pendingReviews: dashboard.pendingReviews.map((review) => mapReview(review, selectedChild.nickname)),
       roomState: mapRoomState(dashboard.room, selectedChild.id) ?? roomState,
@@ -98,10 +106,23 @@ export async function loadParentDashboardData(session?: ParentWebSession | null)
 function fixtureDashboardData(coreApiHealthy: boolean, coreApiError?: string): ParentDashboardData {
   return {
     source: "fixture",
-    child,
+    child: {
+      id: child.id,
+      familyId: child.familyId,
+      nickname: child.nickname,
+      birthYear: "未提供",
+      roomTheme: child.roomTheme,
+      status: child.status
+    },
     currentWish: fixtureCurrentWish(child.id),
     wishHistory: fixtureWishHistory(child.id),
-    dashboardMetrics,
+    dashboardMetrics: {
+      activeChildren: dashboardMetrics.activeChildren,
+      pendingReviews: dashboardMetrics.pendingReviews,
+      weeklyCompletionRate: dashboardMetrics.weeklyCompletionRate,
+      mediaProcessingReadyRate: dashboardMetrics.mediaProcessingReadyRate
+    },
+    rewardSummary: null,
     memories,
     pendingReviews,
     roomState,
@@ -169,10 +190,21 @@ export function loadNotificationsData(data: ParentDashboardData) {
   };
 }
 
+export type ParentRewardSummary = {
+  childId: string;
+  weekId?: string | null;
+  fromDate?: string | null;
+  toDate?: string | null;
+  starLight: number;
+  wishFragment: number;
+  adjustment: number;
+  total: number;
+};
+
 type ParentDashboardContext = {
   family: { id: string; name: string; timezone: string; status: string };
-  children: Array<{ id: string; familyId: string; nickname: string; roomTheme: string; status: string }>;
-  selectedChild: { id: string; familyId: string; nickname: string; roomTheme: string; status: string } | null;
+  children: Array<{ id: string; familyId: string; nickname: string; birthYear?: number | null; roomTheme: string; status: string }>;
+  selectedChild: { id: string; familyId: string; nickname: string; birthYear?: number | null; roomTheme: string; status: string } | null;
   today: { tasks: TaskInstance[]; dailySummary?: { coreRequired: number; coreApproved: number; coreSkipped: number } | null } | null;
   currentWish: WishResponse | null;
   wishHistory?: WishHistoryItemResponse[];
@@ -208,6 +240,36 @@ type WishResponse = {
   weekId?: string;
   imageMedia?: MediaAssetResponse | null;
   fragmentVisual?: WishFragmentVisualResponse | null;
+};
+
+type ParentChild = {
+  id: string;
+  familyId: string;
+  nickname: string;
+  birthYear: number | string;
+  roomTheme: string;
+  status: string;
+};
+
+type ParentTask = {
+  id: string;
+  title: string;
+  category: string;
+  submissionType: string;
+  status: string;
+  scheduledDate: string;
+  isCore: boolean;
+  requireReview: boolean;
+};
+type ParentWeeklyPlan = Omit<typeof weeklyPlan, "rules"> & {
+  rules: Array<{
+    title: string;
+    category: string;
+    submissionType: string;
+    weekdays: number[];
+    isCore: boolean;
+    requireReview: boolean;
+  }>;
 };
 
 type WishFragmentVisualResponse = {
@@ -318,6 +380,7 @@ type RoomStateResponse = {
     type: string;
     title: string;
     visible: boolean;
+    unlockedAt?: string | null;
     position?: Record<string, unknown> | null;
   }>;
 };
@@ -362,11 +425,9 @@ function mapChild(value: ParentDashboardContext["selectedChild"]) {
     id: value.id,
     familyId: value.familyId,
     nickname: value.nickname,
-    age: 7,
+    birthYear: value.birthYear ?? "未提供",
     roomTheme: value.roomTheme,
     status: value.status,
-    starlightBalance: 0,
-    wishFragmentBalance: 0
   };
 }
 
@@ -379,8 +440,7 @@ function mapTask(task: TaskInstance) {
     status: task.status,
     scheduledDate: task.scheduledDate,
     isCore: task.isCore,
-    requireReview: task.requireReview,
-    rewardStarlight: task.isCore ? 8 : 4
+    requireReview: task.requireReview
   };
 }
 
@@ -390,7 +450,7 @@ function mapWish(wish: WishResponse | null) {
     id: wish.id,
     childId: wish.childId,
     title: wish.title,
-    description: wish.note ?? "本周心愿正在收集小星光。",
+    description: wish.note ?? "未提供",
     status: wish.status,
     targetFragments: wish.requiredFragments,
     currentFragments: wish.earnedFragments,
@@ -431,8 +491,8 @@ function emptyWish(childId: string) {
   return {
     id: "",
     childId,
-    title: "还没有本周心愿",
-    description: "创建一个本周心愿后，孩子完成核心任务会推进碎片进度。",
+    title: "未提供",
+    description: "未提供",
     status: "draft",
     targetFragments: 1,
     currentFragments: 0,
@@ -447,7 +507,7 @@ function mapReview(review: PendingReviewResponse, childName: string) {
     childName,
     taskTitle: review.task.title,
     submittedAt: review.submission.submittedAt,
-    aiSummary: review.aiSummary ?? "AI 预审暂未完成，请查看提交内容。",
+    aiSummary: review.aiSummary ?? "未提供",
     riskLevel: "low",
     mediaType: review.submission.submissionType,
     category: review.task.category,
@@ -459,7 +519,10 @@ function mapReview(review: PendingReviewResponse, childName: string) {
 }
 
 function mapMemory(memory: ParentDashboardContext["memories"][number]) {
-  const summary = typeof memory.summary?.summary === "string" ? memory.summary.summary : "本周成长记录已生成。";
+  if (typeof memory.summary?.summary !== "string") {
+    return { id: memory.id, title: memory.title, weekStartDate: memory.weekId, summary: "未提供", highlights: [] };
+  }
+  const summary = memory.summary?.summary as string;
   return {
     id: memory.id,
     title: memory.title,
@@ -486,7 +549,6 @@ function mapWeeklyPlan(plan: WeeklyPlanResponse | null) {
       weekdays: rule.weekdays,
       isCore: rule.isCore,
       requireReview: rule.requireReview,
-      rewardStarlight: 6
     }))
   };
 }
@@ -518,7 +580,10 @@ function mapRoomState(state: RoomStateResponse | null, childId: string) {
         name: item.title,
         x: numberValue(position.x, numberValue(position.left, 16 + index * 18)),
         y: numberValue(position.y, numberValue(position.top, 32 + index * 10)),
-        unlocked: item.visible
+        unlocked: item.visible,
+        visible: item.visible,
+        unlockedAt: item.unlockedAt ?? null,
+        layer: numberValue(position.layer, 1)
       };
     })
   };
@@ -648,8 +713,17 @@ function completionRate(todayData: ParentDashboardContext["today"]) {
   return todayData.tasks.filter((task) => task.status === "approved" || task.status === "skipped").length / todayData.tasks.length;
 }
 
-function totalApprovedTasks(todayData: ParentDashboardContext["today"]) {
-  return todayData?.tasks.filter((task) => task.status === "approved").length ?? 0;
+async function loadRewardSummary(childId: string, accessToken: string): Promise<ParentRewardSummary | null> {
+  try {
+    const summary = await coreGetJson<ParentRewardSummary>(
+      `/children/${encodeURIComponent(childId)}/rewards/summary`,
+      accessToken,
+    );
+    return Number.isFinite(summary.starLight) ? summary : null;
+  } catch (error) {
+    if (error instanceof Error && error.name === "CoreApiUnauthorizedError") throw error;
+    return null;
+  }
 }
 
 function numberValue(value: unknown, fallback: number) {
