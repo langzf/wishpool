@@ -69,8 +69,8 @@ export default async function PlanPage({ searchParams }: PageProps) {
       </header>
 
       <section className="dashboard-grid" aria-label="本周计划">
-        {singleParam(params.actionError) ? <div className="form-error span-12"><span>{singleParam(params.actionError)}</span><a className="secondary-button" href="/plan">重新加载</a></div> : null}
-        {singleParam(params.actionSuccess) ? <p className="form-success span-12">{singleParam(params.actionSuccess)}</p> : null}
+        {singleParam(params.actionError) ? <div aria-live="assertive" className="form-error span-12" role="alert"><span>{singleParam(params.actionError)}</span><a className="secondary-button" href="/plan">重新加载</a></div> : null}
+        {singleParam(params.actionSuccess) ? <p aria-live="polite" className="form-success span-12" role="status">{singleParam(params.actionSuccess)}</p> : null}
         <article className="panel span-12 plan-command">
           <div>
             <p className="muted">本周计划驾驶台</p>

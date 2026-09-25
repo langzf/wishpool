@@ -58,9 +58,9 @@ export default async function MemoryDetailPage({ params, searchParams }: PagePro
         </div>
       </header>
 
-      {loadError ? <p className="form-error">详情加载失败：{loadError}</p> : null}
-      {actionError ? <p className="form-error">{actionError}</p> : null}
-      {actionSuccess ? <p className="form-success">{actionSuccess}</p> : null}
+      {loadError ? <p aria-live="assertive" className="form-error" role="alert">详情加载失败：{loadError}</p> : null}
+      {actionError ? <p aria-live="assertive" className="form-error" role="alert">{actionError}</p> : null}
+      {actionSuccess ? <p aria-live="polite" className="form-success" role="status">{actionSuccess}</p> : null}
 
       {!loadError && detail ? (
         <section className="dashboard-grid">

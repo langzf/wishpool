@@ -30,8 +30,8 @@ export default async function MemoriesPage({ searchParams }: PageProps) {
       </header>
 
       <section className="dashboard-grid" aria-label="成长纪念册">
-        {singleParam(params.actionError) ? <p className="form-error span-12">{singleParam(params.actionError)}</p> : null}
-        {singleParam(params.actionSuccess) ? <p className="form-success span-12">{singleParam(params.actionSuccess)}</p> : null}
+        {singleParam(params.actionError) ? <p aria-live="assertive" className="form-error span-12" role="alert">{singleParam(params.actionError)}</p> : null}
+        {singleParam(params.actionSuccess) ? <p aria-live="polite" className="form-success span-12" role="status">{singleParam(params.actionSuccess)}</p> : null}
         <article className="panel span-12">
           <div className="memory-list">
             {memories.length === 0 ? (

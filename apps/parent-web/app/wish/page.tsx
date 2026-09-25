@@ -54,8 +54,8 @@ export default async function WishPage({ searchParams }: PageProps) {
       </header>
 
       <section className="dashboard-grid wish-page" aria-label="心愿">
-        {singleParam(params.actionError) ? <p className="form-error span-12">{singleParam(params.actionError)}</p> : null}
-        {singleParam(params.actionSuccess) ? <p className="form-success span-12">{singleParam(params.actionSuccess)}</p> : null}
+        {singleParam(params.actionError) ? <p aria-live="assertive" className="form-error span-12" role="alert">{singleParam(params.actionError)}</p> : null}
+        {singleParam(params.actionSuccess) ? <p aria-live="polite" className="form-success span-12" role="status">{singleParam(params.actionSuccess)}</p> : null}
 
         <article className="wish-hero panel span-8">
           <div className="wish-section-heading">

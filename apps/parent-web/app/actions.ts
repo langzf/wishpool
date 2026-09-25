@@ -572,7 +572,7 @@ export async function updateNotificationPreferenceAction(...args: unknown[]) {
   try {
     const config = await requireParentActionConfig();
     if (!config.familyId) throw new Error("请选择家庭后再更新通知偏好。");
-    const clearQuietHours = valueFromForm(formData, "clearQuietHours") === "true";
+    const clearQuietHours = valueFromForm(formData, "clearQuietHours") === "true" && valueFromForm(formData, "savePreference") !== "true";
     const quietHoursStart = valueFromForm(formData, "quietHoursStart");
     const quietHoursEnd = valueFromForm(formData, "quietHoursEnd");
     const quietHoursTimezone = valueFromForm(formData, "quietHoursTimezone") ?? "Asia/Shanghai";

@@ -17,8 +17,8 @@ export default async function RoomPage({ searchParams }: PageProps) {
   return <Shell>
     <header className="topbar"><div><p className="muted">查看和调整 {data.child.nickname} 的成长小屋摆放</p><h1 className="page-title">小屋</h1></div></header>
     <section className="dashboard-grid" aria-label="小屋摆放预览">
-      {singleParam(params.actionError) ? <p className="form-error span-12">{singleParam(params.actionError)}</p> : null}
-      {singleParam(params.actionSuccess) ? <p className="form-success span-12">{singleParam(params.actionSuccess)}</p> : null}
+      {singleParam(params.actionError) ? <p aria-live="assertive" className="form-error span-12" role="alert">{singleParam(params.actionError)}</p> : null}
+      {singleParam(params.actionSuccess) ? <p aria-live="polite" className="form-success span-12" role="status">{singleParam(params.actionSuccess)}</p> : null}
       <article className="panel span-12"><h2>小屋摆放预览</h2><RoomBoard items={roomState.items} label={`${data.child.nickname} 的小屋`} /></article>
     </section>
   </Shell>;

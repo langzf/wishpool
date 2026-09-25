@@ -65,8 +65,8 @@ export default async function ReviewDetailPage({ params, searchParams }: PagePro
           <p className="muted">查看原始提交内容后，再决定是否通过。</p>
         </div>
       </header>
-      {loadError ? <p className="form-error">详情加载失败：{loadError}</p> : null}
-      {actionError ? <p className="form-error">{actionError}</p> : null}
+      {loadError ? <p aria-live="assertive" className="form-error" role="alert">详情加载失败：{loadError}</p> : null}
+      {actionError ? <p aria-live="assertive" className="form-error" role="alert">{actionError}</p> : null}
       {!loadError ? (
         <section className="dashboard-grid">
           <article className="panel span-7">

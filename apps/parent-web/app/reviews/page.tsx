@@ -16,8 +16,8 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
   const param = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
   return <Shell>
     <header className="topbar"><div><p className="muted">AI 预审后的提交会集中在这里</p><h1 className="page-title">待审核</h1></div></header>
-    {param(params.actionError) ? <p className="form-error">{param(params.actionError)}</p> : null}
-    {param(params.actionSuccess) ? <p className="form-success">{param(params.actionSuccess)}</p> : null}
+    {param(params.actionError) ? <p aria-live="assertive" className="form-error" role="alert">{param(params.actionError)}</p> : null}
+    {param(params.actionSuccess) ? <p aria-live="polite" className="form-success" role="status">{param(params.actionSuccess)}</p> : null}
     <section className="dashboard-grid" aria-label="待审核列表"><article className="panel span-12"><ReviewsList reviews={pendingReviews} enabled={ctx.data.source === "api"} /></article></section>
   </Shell>;
 }

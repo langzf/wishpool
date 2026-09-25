@@ -143,7 +143,7 @@ export function WishCreateForm({ familyId, childId, weekId, rewardMode, onDirtyC
         {uploadError ? <p className="wish-upload-status error">{uploadError}</p> : null}{generationMessage ? <p className={generating ? "wish-upload-status" : "wish-upload-status"}>{generating ? <Loader2 className="wish-spin" size={18} /> : <Sparkles size={18} />}{generationMessage}</p> : null}
         <div className="wish-image-actions"><button className="secondary-button" onClick={() => setLibraryOpen((value) => !value)} type="button"><ImagePlus size={16} />{libraryOpen ? "收起图片" : "选择已有图片"}</button><button className="secondary-button" disabled={!title.trim() || generating || uploading} onClick={generateImage} type="button"><Sparkles size={16} />{generating ? "生成中…" : "AI 生成"}</button><label className="secondary-button wish-upload-button"><Upload size={16} />上传图片<input accept="image/*" onChange={uploadFile} ref={fileRef} type="file" /></label><button className="secondary-button" onClick={() => { clearImage(); setSkipImage(true); }} type="button"><X size={16} />暂不使用</button></div>
       </section>
-      {submitError ? <p aria-live="polite" className="form-error">{submitError}</p> : null}
+      {submitError ? <p aria-live="assertive" className="form-error" role="alert">{submitError}</p> : null}
       <button className="primary-button wish-submit-button" disabled={uploading || generating || isSubmitting} type="submit">{isSubmitting ? <Loader2 className="wish-spin" size={17} /> : <Sparkles size={17} />}{isSubmitting ? "保存中…" : "创建并激活"}</button>
     </form>
   );

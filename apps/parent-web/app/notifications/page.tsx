@@ -32,8 +32,8 @@ export default async function NotificationsPage({ searchParams }: PageProps) {
     <Shell>
       <header className="topbar"><div><p className="muted">审核、任务变更和心愿动态会汇总在这里</p><h1 className="page-title">通知</h1></div></header>
       <section className="dashboard-grid" aria-label="通知">
-        {singleParam(params.actionError) ? <p className="form-error span-12">{singleParam(params.actionError)}</p> : null}
-        {singleParam(params.actionSuccess) ? <p className="form-success span-12">{singleParam(params.actionSuccess)}</p> : null}
+        {singleParam(params.actionError) ? <p aria-live="assertive" className="form-error span-12" role="alert">{singleParam(params.actionError)}</p> : null}
+        {singleParam(params.actionSuccess) ? <p aria-live="polite" className="form-success span-12" role="status">{singleParam(params.actionSuccess)}</p> : null}
         <article className="panel span-8">
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}><h2>通知收件箱</h2>
             {data.source === "api" && unreadNotifications.length > 0 ? <form action={markNotificationsReadAction}><input name="returnTo" type="hidden" value="/notifications" />{unreadNotifications.map((notification) => <input key={notification.id} name="notificationIds" type="hidden" value={notification.id} />)}<button className="secondary-button" type="submit"><Bell size={16} aria-hidden="true" />全部已读</button></form> : null}
@@ -46,6 +46,7 @@ export default async function NotificationsPage({ searchParams }: PageProps) {
           <div className="preference-list">{notificationPreferences.map((preference) => {
             const quietHours = preference.quietHours;
             return data.source === "api" ? <form action={updateNotificationPreferenceAction} className="preference-row" key={preference.notificationType} style={{ display: "block" }}>
+              <input name="clearQuietHours" type="hidden" value="true" />
               <input name="returnTo" type="hidden" value="/notifications" /><input name="notificationType" type="hidden" value={preference.notificationType} />
               <strong>{labels[preference.notificationType] ?? "家庭提醒"}</strong><small className="preference-meta" style={{ display: "block", marginTop: 4 }}>{preference.saved ? "已从服务端加载" : "尚未保存"}</small>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 10 }}><label><input defaultChecked={preference.enabled} name="enabled" type="checkbox" value="true" /> 启用</label><label><input defaultChecked={preference.channels.inbox} name="inbox" type="checkbox" value="true" /> 站内信</label><label><input defaultChecked={preference.channels.push} name="push" type="checkbox" value="true" /> 推送</label></div>

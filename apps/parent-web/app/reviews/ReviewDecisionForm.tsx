@@ -54,5 +54,5 @@ export function ReviewDecisionForm({ submissionId, returnTo, feedbackText = "" }
 function SubmitButton({ className, disabled, children }: Readonly<{ className: string; disabled: boolean; children: React.ReactNode }>) {
   const status = useFormStatus();
   const pending = disabled || status.pending;
-  return <button className={className} type="submit" disabled={pending}>{pending ? "提交中…" : children}</button>;
+  return <button aria-busy={pending ? "true" : undefined} className={className} type="submit" disabled={pending}>{pending ? "提交中…" : children}</button>;
 }

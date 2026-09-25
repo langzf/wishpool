@@ -1783,3 +1783,13 @@ a:focus-visible {
   .wish-page .fragment-card-caption h3 { font-size: 26px; }
   .wish-page .fragment-progress-badge { right: 12px; top: 12px; }
 }
+.button:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid #F59E0B;
+  outline-offset: 3px;
+}

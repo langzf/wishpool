@@ -8,12 +8,14 @@ export function WishCreateDialog(props: ComponentProps<typeof WishCreateForm>) {
   const [open, setOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const requestCloseRef = useRef<() => void>(() => undefined);
 
   function requestClose() {
     if (hasUnsavedChanges && !window.confirm("当前有未保存的内容，关闭后将丢失；已生成的图片也无法找回，确定关闭吗？")) return;
     setHasUnsavedChanges(false);
     setOpen(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
   }
   requestCloseRef.current = requestClose;
 
@@ -38,12 +40,12 @@ export function WishCreateDialog(props: ComponentProps<typeof WishCreateForm>) {
 
   return (
     <>
-      <button aria-haspopup="dialog" className="primary-button wish-create-trigger" onClick={() => { setHasUnsavedChanges(false); setOpen(true); }} type="button">
+      <button aria-controls="wish-create-dialog" aria-haspopup="dialog" className="primary-button wish-create-trigger" onClick={() => { setHasUnsavedChanges(false); setOpen(true); }} ref={triggerRef} type="button">
         <Plus size={17} aria-hidden="true" /> 新建心愿
       </button>
       {open ? (
         <div className="wish-modal-backdrop" role="presentation" onMouseDown={closeOnBackdrop}>
-          <section aria-describedby="wish-create-dialog-description" aria-labelledby="wish-create-dialog-title" aria-modal="true" className="wish-modal" role="dialog">
+          <section aria-describedby="wish-create-dialog-description" aria-labelledby="wish-create-dialog-title" aria-modal="true" className="wish-modal" id="wish-create-dialog" role="dialog">
             <header className="wish-modal-header">
               <div>
                 <p className="wish-modal-kicker">为孩子设计下一份期待</p>

@@ -74,8 +74,8 @@ export function ParentDashboard({
       </header>
 
       <section className="dashboard-grid" aria-label="家长工作台概览">
-        {actionError ? <p className="form-error span-12">{actionError}</p> : null}
-        {actionSuccess ? <p className="form-success span-12">{actionSuccess}</p> : null}
+        {actionError ? <p aria-live="assertive" className="form-error span-12" role="alert">{actionError}</p> : null}
+        {actionSuccess ? <p aria-live="polite" className="form-success span-12" role="status">{actionSuccess}</p> : null}
         <article className="panel metric span-3">
           <ShieldCheck size={22} color="#2563EB" aria-hidden="true" />
           <span className="metric-value">{data.dashboardMetrics.pendingReviews}</span>

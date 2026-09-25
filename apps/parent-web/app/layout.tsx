@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { RealtimeRefresh } from "@/components/RealtimeRefresh";
+import { FormPendingEnhancer } from "@/components/FormPendingEnhancer";
 import "./styles.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body><RealtimeRefresh enabled />{children}</body>
+      <body><RealtimeRefresh enabled /><FormPendingEnhancer />{children}</body>
     </html>
   );
 }
