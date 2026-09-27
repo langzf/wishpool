@@ -1,33 +1,11 @@
 import { coreGetJson } from "@/lib/core-client";
 import type { ParentWebSession } from "@/lib/session";
+import type { ChildProfile as ApiChildProfile } from "../../../packages/api-contracts/contract-ts/src/models/ChildProfile";
+import type { FamilyMemberContext as ApiFamilyMemberContext } from "../../../packages/api-contracts/contract-ts/src/models/FamilyMemberContext";
+import type { MeResponse as ApiMeResponse } from "../../../packages/api-contracts/contract-ts/src/models/MeResponse";
 
-export type FamilyContext = {
-  family: {
-    id: string;
-    name: string;
-    timezone: string;
-    status: string;
-  };
-  member: {
-    id: string;
-    familyId: string;
-    userId: string;
-    role: string;
-    childId?: string | null;
-    displayName: string;
-    status: string;
-  };
-};
-
-export type ChildProfile = {
-  id: string;
-  familyId: string;
-  nickname: string;
-  birthYear?: number | null;
-  avatarAsset?: string | null;
-  roomTheme: string;
-  status: string;
-};
+export type FamilyContext = ApiFamilyMemberContext;
+export type ChildProfile = ApiChildProfile;
 
 export type ParentProfileData = {
   userName: string;
@@ -36,10 +14,7 @@ export type ParentProfileData = {
   selectedChildId?: string;
 };
 
-type MeResponse = {
-  user: { displayName: string };
-  families: FamilyContext[];
-};
+type MeResponse = ApiMeResponse;
 
 export async function loadParentProfile(session: ParentWebSession): Promise<ParentProfileData> {
   const me = await coreGetJson<MeResponse>("/me", session.accessToken);

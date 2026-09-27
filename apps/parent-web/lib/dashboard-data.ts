@@ -13,6 +13,7 @@ import {
 import { coreGetJson } from "@/lib/core-client";
 import { configForParentWebSession, type ParentWebSession } from "@/lib/session";
 import type { FragmentMask } from "@/components/FragmentGrid";
+import type { RewardSummary } from "../../../packages/api-contracts/contract-ts/src/models/RewardSummary";
 
 export type ParentDashboardData = {
   source: "api" | "fixture";
@@ -190,16 +191,7 @@ export function loadNotificationsData(data: ParentDashboardData) {
   };
 }
 
-export type ParentRewardSummary = {
-  childId: string;
-  weekId?: string | null;
-  fromDate?: string | null;
-  toDate?: string | null;
-  starLight: number;
-  wishFragment: number;
-  adjustment: number;
-  total: number;
-};
+export type ParentRewardSummary = RewardSummary;
 
 type ParentDashboardContext = {
   family: { id: string; name: string; timezone: string; status: string };
@@ -719,7 +711,7 @@ async function loadRewardSummary(childId: string, accessToken: string): Promise<
       `/children/${encodeURIComponent(childId)}/rewards/summary`,
       accessToken,
     );
-    return Number.isFinite(summary.starLight) ? summary : null;
+    return Number.isFinite(summary.starLight) && typeof summary.total === "number" ? summary : null;
   } catch (error) {
     if (error instanceof Error && error.name === "CoreApiUnauthorizedError") throw error;
     return null;

@@ -1,5 +1,6 @@
 import { buildAuthHeaders, getApiRuntimeConfig } from "@/lib/api";
 import { getParentWebSession, saveParentWebSession } from "@/lib/session";
+import type { AuthTokenPair } from "../../../packages/api-contracts/contract-ts/src/models/AuthTokenPair";
 
 export class CoreApiUnauthorizedError extends Error {
   constructor(message = "Core API authentication expired.") {
@@ -50,7 +51,9 @@ export async function coreRequestJson<T>(
   return parseCoreResponse<T>(response);
 }
 
-export type RefreshedAuthTokenPair = { accessToken: string; refreshToken: string; expiresInSec: number; user?: { displayName?: string }; primaryFamilyId?: string | null };
+export type RefreshedAuthTokenPair = Pick<AuthTokenPair, "accessToken" | "refreshToken" | "expiresInSec" | "primaryFamilyId"> & {
+  user?: Pick<AuthTokenPair["user"], "displayName">;
+};
 const refreshInFlight = new Map<string, Promise<RefreshedAuthTokenPair>>();
 
 export function refreshParentSession(refreshToken: string): Promise<RefreshedAuthTokenPair> {

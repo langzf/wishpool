@@ -2,8 +2,9 @@
 
 import { Gift } from "lucide-react";
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import type { RoomItem as ApiRoomItem } from "../../../../packages/api-contracts/contract-ts/src/models/RoomItem";
 
-type RoomItem = { id: string; kind: string; name: string; x: number; y: number; layer?: number; unlocked: boolean; visible?: boolean; unlockedAt?: string | null };
+type RoomItem = Pick<ApiRoomItem, "id"> & { kind: ApiRoomItem["type"]; name: ApiRoomItem["title"]; x: number; y: number; layer?: number; unlocked: boolean; visible?: ApiRoomItem["visible"]; unlockedAt?: string | null };
 type Props = { items: RoomItem[]; label: string };
 type Slot = { x: number; y: number; layer: 1 };
 

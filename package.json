@@ -19,6 +19,7 @@
     "check:mobile": "scripts/check-mobile.sh",
     "lint:openapi": "redocly lint --config .redocly.yaml packages/api-contracts/openapi/wishpool.yaml",
     "generate:openapi": "scripts/generate-openapi.sh",
+    "check:openapi-contracts": "bash scripts/check-openapi-contracts.sh",
     "check:db": "scripts/check-db-migrations.sh",
     "check:infra": "docker compose -f infra/docker-compose/docker-compose.yml config --quiet",
     "test:core-api": "./services/core-api/gradlew -p services/core-api test",

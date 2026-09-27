@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { getApiRuntimeConfig, type ApiRuntimeConfig } from "@/lib/api";
+import type { AuthTokenPair } from "../../../packages/api-contracts/contract-ts/src/models/AuthTokenPair";
 
 const maxAge = 60 * 60 * 24 * 30;
 
@@ -14,7 +15,7 @@ const cookieNames = {
 export type ParentWebSession = {
   accessToken: string;
   refreshToken?: string;
-  familyId?: string;
+  familyId?: Exclude<AuthTokenPair["primaryFamilyId"], null>;
   childId?: string;
   userName?: string;
 };

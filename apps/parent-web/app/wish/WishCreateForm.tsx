@@ -3,9 +3,11 @@
 import { Check, ImagePlus, Loader2, RefreshCw, Sparkles, Upload, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition, type ChangeEvent } from "react";
 import { createWishAction, createWishImageGeneration, createWishUploadSession, finalizeWishUpload, getWishImageGenerationJob } from "@/app/actions";
+import type { ImageModelProvider } from "../../../../packages/api-contracts/contract-ts/src/models/ImageModelProvider";
+import type { WishImageCandidate } from "../../../../packages/api-contracts/contract-ts/src/models/WishImageCandidate";
 
-type Candidate = { media: { id: string; contentType?: string; downloadUrl?: string | null }; score: number; reason: string; sourceWishTitle?: string | null };
-type Provider = { code: string; displayName: string; modelName: string; isDefault: boolean };
+type Candidate = Pick<WishImageCandidate, "score" | "reason" | "sourceWishTitle"> & { media: Pick<WishImageCandidate["media"], "id" | "contentType" | "downloadUrl"> };
+type Provider = Pick<ImageModelProvider, "code" | "displayName" | "modelName" | "isDefault">;
 type Props = { familyId: string; childId: string; weekId: string; rewardMode: string; onDirtyChange?: (dirty: boolean) => void };
 
 const modes = [
