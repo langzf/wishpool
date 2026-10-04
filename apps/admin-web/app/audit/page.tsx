@@ -2,67 +2,10 @@ import { AdminAuthPanel } from "@/components/AuthPanel";
 import { AdminShell } from "@/components/AdminShell";
 import { requireAdminPageContext } from "@/lib/admin-page";
 import { loadAdminAuditData } from "@/lib/dashboard-data";
-
-type PageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
-
+type PageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 export default async function AuditPage({ searchParams }: PageProps) {
-  const params = (await searchParams) ?? {};
-  const { session, data } = await requireAdminPageContext();
-  if (!session || !data) {
-    return <AdminAuthPanel error={singleParam(params.authError)} />;
-  }
-
-  const auditData = await loadAdminAuditData(session);
-
-  return (
-    <AdminShell>
-      <header className="admin-topbar">
-        <div>
-          <p className="muted">数据源：{auditData.source}</p>
-          <h1 className="admin-title">审计轨迹</h1>
-        </div>
-      </header>
-
-      <section className="admin-grid" aria-label="审计轨迹">
-        <article className="panel span-12">
-          <div className="section-header">
-            <h2>审计日志</h2>
-            <span className="pill pill-blue">{auditData.auditRows.length} 条记录</span>
-          </div>
-          {auditData.auditRows.length > 0 ? (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>时间</th>
-                    <th>操作者</th>
-                    <th>动作</th>
-                    <th>对象</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditData.auditRows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.time}</td>
-                      <td>{row.actor}</td>
-                      <td>{row.action}</td>
-                      <td>{row.target}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="empty-state">暂无审计日志。</p>
-          )}
-        </article>
-      </section>
-    </AdminShell>
-  );
-}
-
-function singleParam(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
+  const params=(await searchParams)??{}; const get=(k:string)=>{const v=params[k];return Array.isArray(v)?v[0]:v;}; const {session,data}=await requireAdminPageContext();
+  if(!session||!data)return <AdminAuthPanel error={get("authError")}/>; const query=new URLSearchParams(); for(const k of ["familyId","action","actorUserId","actorRole","resourceType","from","to","limit","offset"]){const v=get(k);if(v)query.set(k,v);} if(!query.has("limit"))query.set("limit","20");
+  const auditData=await loadAdminAuditData(session,query.toString()); const limit=Number(get("limit")??20),offset=Number(get("offset")??0); const page=(n:number)=>{const q=new URLSearchParams(query);q.set("offset",String(n));return `/audit?${q.toString()}`;};
+  return <AdminShell><header className="admin-topbar"><div><p className="muted">数据源：admin-api</p><h1 className="admin-title">审计轨迹</h1></div></header><section className="admin-grid"><article className="panel span-12"><div className="section-header"><h2>审计日志</h2><span className="pill pill-blue">共 {auditData.total} 条记录</span></div><form className="admin-filters"><input name="actorUserId" placeholder="操作者 ID" defaultValue={get("actorUserId")}/><input name="familyId" placeholder="家庭 ID" defaultValue={get("familyId")}/><input name="resourceType" placeholder="资源类型" defaultValue={get("resourceType")}/><select name="action" defaultValue={get("action")??""}><option value="">全部动作</option><option>review.approved</option><option>review.needs_revision</option><option>media.access_grant_created</option><option>media.access_grant_revoked</option></select><input type="date" name="from" defaultValue={get("from")}/><input type="date" name="to" defaultValue={get("to")}/><select name="limit" defaultValue={String(limit)}><option>20</option><option>50</option><option>100</option></select><button type="submit">筛选</button></form>{auditData.error?<p className="empty-state">{auditData.error}（数据源：admin-api 不可用）</p>:auditData.auditRows.length?<div className="table-wrap"><table><thead><tr><th>时间</th><th>操作者</th><th>动作</th><th>对象</th></tr></thead><tbody>{auditData.auditRows.map(r=><tr key={r.id}><td>{r.time}</td><td>{r.actor}</td><td>{r.action}</td><td>{r.target}</td></tr>)}</tbody></table></div>:<p className="empty-state">暂无审计日志。</p>}<nav><a href={offset?page(Math.max(0,offset-limit)):undefined}>上一页</a> <span>第 {Math.floor(offset/limit)+1} 页</span> <a href={offset+limit<auditData.total?page(offset+limit):undefined}>下一页</a></nav></article></section></AdminShell>;
 }

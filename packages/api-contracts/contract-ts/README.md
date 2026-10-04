@@ -62,7 +62,9 @@ All URIs are relative to *http://localhost:8080*
 *AdminApi* | [**listAdminFamilies**](docs/AdminApi.md#listadminfamilies) | **GET** /internal/admin/families | List family metadata for administration.
 *AdminApi* | [**listAdminImageGenUsages**](docs/AdminApi.md#listadminimagegenusages) | **GET** /internal/admin/image-gen-usages | List business usage to image provider mappings.
 *AdminApi* | [**listAdminImageModelProviders**](docs/AdminApi.md#listadminimagemodelproviders) | **GET** /internal/admin/image-model-providers | List image generation model provider configurations with masked API keys.
+*AdminApi* | [**listAdminMediaAccessGrants**](docs/AdminApi.md#listadminmediaaccessgrants) | **GET** /internal/admin/media-access-grants | 
 *AdminApi* | [**listAdminPrivacyRequests**](docs/AdminApi.md#listadminprivacyrequests) | **GET** /internal/admin/privacy-requests | List privacy requests for administration.
+*AdminApi* | [**revokeAdminMediaAccessGrant**](docs/AdminApi.md#revokeadminmediaaccessgrantoperation) | **POST** /internal/admin/media-access-grants/{grantId}/revoke | 
 *AdminApi* | [**setDefaultAdminImageModelProvider**](docs/AdminApi.md#setdefaultadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/set-default | Set the global default image generation model provider.
 *AdminApi* | [**toggleAdminImageModelProvider**](docs/AdminApi.md#toggleadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/toggle | Enable or disable an image generation model provider.
 *AdminApi* | [**updateAdminImageModelProvider**](docs/AdminApi.md#updateadminimagemodelprovider) | **PUT** /internal/admin/image-model-providers/{id} | Update an image generation model provider.
@@ -145,6 +147,7 @@ All URIs are relative to *http://localhost:8080*
 - [AdminDashboard](docs/AdminDashboard.md)
 - [AdminFamilySummary](docs/AdminFamilySummary.md)
 - [AdminMediaAccessGrant](docs/AdminMediaAccessGrant.md)
+- [AdminMediaAccessGrantPage](docs/AdminMediaAccessGrantPage.md)
 - [AdminMediaAccessGrantRequest](docs/AdminMediaAccessGrantRequest.md)
 - [AdminPrivacyRequest](docs/AdminPrivacyRequest.md)
 - [AiPrecheck](docs/AiPrecheck.md)
@@ -223,6 +226,7 @@ All URIs are relative to *http://localhost:8080*
 - [RetryOutboxEventRequest](docs/RetryOutboxEventRequest.md)
 - [Review](docs/Review.md)
 - [ReviewSubmissionRequest](docs/ReviewSubmissionRequest.md)
+- [RevokeAdminMediaAccessGrantRequest](docs/RevokeAdminMediaAccessGrantRequest.md)
 - [RevokeReviewRequest](docs/RevokeReviewRequest.md)
 - [RewardSummary](docs/RewardSummary.md)
 - [RoomItem](docs/RoomItem.md)

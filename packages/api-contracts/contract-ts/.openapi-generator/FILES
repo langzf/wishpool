@@ -6,6 +6,7 @@ docs/AdminAuditLog.md
 docs/AdminDashboard.md
 docs/AdminFamilySummary.md
 docs/AdminMediaAccessGrant.md
+docs/AdminMediaAccessGrantPage.md
 docs/AdminMediaAccessGrantRequest.md
 docs/AdminPrivacyRequest.md
 docs/AiPrecheck.md
@@ -96,6 +97,7 @@ docs/RetryOutboxEventRequest.md
 docs/Review.md
 docs/ReviewSubmissionRequest.md
 docs/ReviewsApi.md
+docs/RevokeAdminMediaAccessGrantRequest.md
 docs/RevokeReviewRequest.md
 docs/RewardSummary.md
 docs/RoomApi.md
@@ -164,6 +166,7 @@ src/models/AdminAuditLog.ts
 src/models/AdminDashboard.ts
 src/models/AdminFamilySummary.ts
 src/models/AdminMediaAccessGrant.ts
+src/models/AdminMediaAccessGrantPage.ts
 src/models/AdminMediaAccessGrantRequest.ts
 src/models/AdminPrivacyRequest.ts
 src/models/AiPrecheck.ts
@@ -242,6 +245,7 @@ src/models/RelatedResource.ts
 src/models/RetryOutboxEventRequest.ts
 src/models/Review.ts
 src/models/ReviewSubmissionRequest.ts
+src/models/RevokeAdminMediaAccessGrantRequest.ts
 src/models/RevokeReviewRequest.ts
 src/models/RewardSummary.ts
 src/models/RoomItem.ts

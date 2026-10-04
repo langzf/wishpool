@@ -12,7 +12,9 @@ All URIs are relative to *http://localhost:8080*
 | [**listAdminFamilies**](AdminApi.md#listadminfamilies) | **GET** /internal/admin/families | List family metadata for administration. |
 | [**listAdminImageGenUsages**](AdminApi.md#listadminimagegenusages) | **GET** /internal/admin/image-gen-usages | List business usage to image provider mappings. |
 | [**listAdminImageModelProviders**](AdminApi.md#listadminimagemodelproviders) | **GET** /internal/admin/image-model-providers | List image generation model provider configurations with masked API keys. |
+| [**listAdminMediaAccessGrants**](AdminApi.md#listadminmediaaccessgrants) | **GET** /internal/admin/media-access-grants |  |
 | [**listAdminPrivacyRequests**](AdminApi.md#listadminprivacyrequests) | **GET** /internal/admin/privacy-requests | List privacy requests for administration. |
+| [**revokeAdminMediaAccessGrant**](AdminApi.md#revokeadminmediaaccessgrantoperation) | **POST** /internal/admin/media-access-grants/{grantId}/revoke |  |
 | [**setDefaultAdminImageModelProvider**](AdminApi.md#setdefaultadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/set-default | Set the global default image generation model provider. |
 | [**toggleAdminImageModelProvider**](AdminApi.md#toggleadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/toggle | Enable or disable an image generation model provider. |
 | [**updateAdminImageModelProvider**](AdminApi.md#updateadminimagemodelprovider) | **PUT** /internal/admin/image-model-providers/{id} | Update an image generation model provider. |
@@ -565,6 +567,94 @@ This endpoint does not need any parameter.
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
+## listAdminMediaAccessGrants
+
+> AdminMediaAccessGrantPage listAdminMediaAccessGrants(familyId, mediaAssetId, active, from, to, limit, offset)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { ListAdminMediaAccessGrantsRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // To configure API key authorization: internalToken
+    apiKey: "YOUR API KEY",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // string (optional)
+    familyId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // string (optional)
+    mediaAssetId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // boolean (optional)
+    active: true,
+    // Date (optional)
+    from: 2013-10-20T19:20:30+01:00,
+    // Date (optional)
+    to: 2013-10-20T19:20:30+01:00,
+    // number (optional)
+    limit: 56,
+    // number (optional)
+    offset: 56,
+  } satisfies ListAdminMediaAccessGrantsRequest;
+
+  try {
+    const data = await api.listAdminMediaAccessGrants(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **familyId** | `string` |  | [Optional] [Defaults to `undefined`] |
+| **mediaAssetId** | `string` |  | [Optional] [Defaults to `undefined`] |
+| **active** | `boolean` |  | [Optional] [Defaults to `undefined`] |
+| **from** | `Date` |  | [Optional] [Defaults to `undefined`] |
+| **to** | `Date` |  | [Optional] [Defaults to `undefined`] |
+| **limit** | `number` |  | [Optional] [Defaults to `50`] |
+| **offset** | `number` |  | [Optional] [Defaults to `0`] |
+
+### Return type
+
+[**AdminMediaAccessGrantPage**](AdminMediaAccessGrantPage.md)
+
+### Authorization
+
+[internalToken](../README.md#internalToken)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Media access grants. |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
 ## listAdminPrivacyRequests
 
 > Array&lt;AdminPrivacyRequest&gt; listAdminPrivacyRequests(limit, status)
@@ -633,6 +723,79 @@ example().catch(console.error);
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **200** | Privacy request rows. |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## revokeAdminMediaAccessGrant
+
+> AdminMediaAccessGrant revokeAdminMediaAccessGrant(grantId, revokeAdminMediaAccessGrantRequest)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { RevokeAdminMediaAccessGrantOperationRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // To configure API key authorization: internalToken
+    apiKey: "YOUR API KEY",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // string
+    grantId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // RevokeAdminMediaAccessGrantRequest
+    revokeAdminMediaAccessGrantRequest: ...,
+  } satisfies RevokeAdminMediaAccessGrantOperationRequest;
+
+  try {
+    const data = await api.revokeAdminMediaAccessGrant(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **grantId** | `string` |  | [Defaults to `undefined`] |
+| **revokeAdminMediaAccessGrantRequest** | [RevokeAdminMediaAccessGrantRequest](RevokeAdminMediaAccessGrantRequest.md) |  | |
+
+### Return type
+
+[**AdminMediaAccessGrant**](AdminMediaAccessGrant.md)
+
+### Authorization
+
+[internalToken](../README.md#internalToken)
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Revoked grant. |  -  |
 | **0** | Error response. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

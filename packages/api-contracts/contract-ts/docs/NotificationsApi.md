@@ -84,7 +84,7 @@ example().catch(console.error);
 
 ## listNotifications
 
-> NotificationListResponse listNotifications(familyId, status, limit)
+> NotificationListResponse listNotifications(familyId, status, limit, offset, actorUserId, actorRole, resourceType, from, to)
 
 List the current user\&#39;s inbox notifications.
 
@@ -112,6 +112,18 @@ async function example() {
     status: status_example,
     // number (optional)
     limit: 56,
+    // number (optional)
+    offset: 56,
+    // string (optional)
+    actorUserId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // string (optional)
+    actorRole: actorRole_example,
+    // string (optional)
+    resourceType: resourceType_example,
+    // Date (optional)
+    from: 2013-10-20T19:20:30+01:00,
+    // Date (optional)
+    to: 2013-10-20T19:20:30+01:00,
   } satisfies ListNotificationsRequest;
 
   try {
@@ -134,6 +146,12 @@ example().catch(console.error);
 | **familyId** | `string` |  | [Defaults to `undefined`] |
 | **status** | `pending`, `sent`, `failed`, `read` |  | [Optional] [Defaults to `undefined`] [Enum: pending, sent, failed, read] |
 | **limit** | `number` |  | [Optional] [Defaults to `50`] |
+| **offset** | `number` |  | [Optional] [Defaults to `0`] |
+| **actorUserId** | `string` |  | [Optional] [Defaults to `undefined`] |
+| **actorRole** | `string` |  | [Optional] [Defaults to `undefined`] |
+| **resourceType** | `string` |  | [Optional] [Defaults to `undefined`] |
+| **from** | `Date` |  | [Optional] [Defaults to `undefined`] |
+| **to** | `Date` |  | [Optional] [Defaults to `undefined`] |
 
 ### Return type
 

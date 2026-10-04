@@ -74,7 +74,7 @@ class ApiExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ProblemDetail> {
         val problem = problem(HttpStatus.BAD_REQUEST, "Malformed request body", request)
-        problem.detail = ex.mostSpecificCause.message ?: "Request body could not be read."
+        problem.detail = if (ex.mostSpecificCause.message?.contains("reason") == true) "撤销原因不能为空" else "请求体格式无效。"
         return ResponseEntity.status(problem.status).body(problem)
     }
 
@@ -84,7 +84,7 @@ class ApiExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ProblemDetail> {
         val problem = problem(HttpStatus.BAD_REQUEST, "Bad request", request)
-        problem.detail = ex.message
+        problem.detail = if (ex.name == "from" || ex.name == "to") "时间格式无效，请使用 ISO-8601（如 2026-10-01T00:00:00Z）" else ex.message
         return ResponseEntity.status(problem.status).body(problem)
     }
 

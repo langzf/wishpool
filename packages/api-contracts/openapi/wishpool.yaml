@@ -1241,6 +1241,12 @@ paths:
             default: 50
             minimum: 1
             maximum: 100
+        - {name: offset, in: query, required: false, schema: {type: integer, minimum: 0, default: 0}}
+        - {name: actorUserId, in: query, required: false, schema: {type: string, format: uuid}}
+        - {name: actorRole, in: query, required: false, schema: {type: string}}
+        - {name: resourceType, in: query, required: false, schema: {type: string}}
+        - {name: from, in: query, required: false, schema: {type: string, format: date-time}}
+        - {name: to, in: query, required: false, schema: {type: string, format: date-time}}
       responses:
         '200':
           description: Inbox notifications.
@@ -1603,6 +1609,25 @@ paths:
                 $ref: '#/components/schemas/AdminMediaAccessGrant'
         default:
           $ref: '#/components/responses/Error'
+    get:
+      tags: [Admin]
+      security: [{internalToken: []}]
+      operationId: listAdminMediaAccessGrants
+      parameters: [{name: familyId, in: query, schema: {type: string, format: uuid}}, {name: mediaAssetId, in: query, schema: {type: string, format: uuid}}, {name: active, in: query, schema: {type: boolean}}, {name: from, in: query, schema: {type: string, format: date-time}}, {name: to, in: query, schema: {type: string, format: date-time}}, {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}, {name: offset, in: query, schema: {type: integer, minimum: 0, default: 0}}]
+      responses:
+        '200': {description: Media access grants., content: {application/json: {schema: {$ref: '#/components/schemas/AdminMediaAccessGrantPage'}}}}
+        default: {$ref: '#/components/responses/Error'}
+
+  /internal/admin/media-access-grants/{grantId}/revoke:
+    post:
+      tags: [Admin]
+      security: [{internalToken: []}]
+      operationId: revokeAdminMediaAccessGrant
+      parameters: [{name: grantId, in: path, required: true, schema: {type: string, format: uuid}}]
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [reason], properties: {reason: {type: string}}}}}}
+      responses:
+        '200': {description: Revoked grant., content: {application/json: {schema: {$ref: '#/components/schemas/AdminMediaAccessGrant'}}}}
+        default: {$ref: '#/components/responses/Error'}
 
   /room/items/{itemId}/hide:
     post:
@@ -4340,8 +4365,9 @@ components:
 
     AdminMediaAccessGrant:
       type: object
-      required: [mediaAssetId, familyId, accessUrl, expiresAt, auditLogId]
+      required: [id, mediaAssetId, familyId, accessUrl, expiresAt, auditLogId, reason, createdAt]
       properties:
+        id: {type: string, format: uuid}
         mediaAssetId:
           type: string
           format: uuid
@@ -4350,13 +4376,26 @@ components:
           format: uuid
         accessUrl:
           type: string
-          format: uri
         expiresAt:
           type: string
           format: date-time
         auditLogId:
           type: string
           format: uuid
+        reason: {type: string}
+        revokedAt: {type: string, format: date-time, nullable: true}
+        revokedReason: {type: string, nullable: true}
+        createdAt: {type: string, format: date-time}
+
+    AdminMediaAccessGrantPage:
+      type: object
+      required: [items, total, offset, limit, hasMore]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/AdminMediaAccessGrant'}}
+        total: {type: integer, format: int64}
+        offset: {type: integer}
+        limit: {type: integer}
+        hasMore: {type: boolean}
 
     PrivacyRequestCreate:
       type: object

@@ -34,6 +34,11 @@ import {
     AdminMediaAccessGrantToJSON,
 } from '../models/AdminMediaAccessGrant';
 import {
+    type AdminMediaAccessGrantPage,
+    AdminMediaAccessGrantPageFromJSON,
+    AdminMediaAccessGrantPageToJSON,
+} from '../models/AdminMediaAccessGrantPage';
+import {
     type AdminMediaAccessGrantRequest,
     AdminMediaAccessGrantRequestFromJSON,
     AdminMediaAccessGrantRequestToJSON,
@@ -73,6 +78,11 @@ import {
     ProblemFromJSON,
     ProblemToJSON,
 } from '../models/Problem';
+import {
+    type RevokeAdminMediaAccessGrantRequest,
+    RevokeAdminMediaAccessGrantRequestFromJSON,
+    RevokeAdminMediaAccessGrantRequestToJSON,
+} from '../models/RevokeAdminMediaAccessGrantRequest';
 
 export interface CreateAdminImageModelProviderRequest {
     imageModelProviderWriteRequest: ImageModelProviderWriteRequest;
@@ -97,9 +107,24 @@ export interface ListAdminFamiliesRequest {
     status?: ListAdminFamiliesStatusEnum;
 }
 
+export interface ListAdminMediaAccessGrantsRequest {
+    familyId?: string;
+    mediaAssetId?: string;
+    active?: boolean;
+    from?: Date;
+    to?: Date;
+    limit?: number;
+    offset?: number;
+}
+
 export interface ListAdminPrivacyRequestsRequest {
     limit?: number;
     status?: string;
+}
+
+export interface RevokeAdminMediaAccessGrantOperationRequest {
+    grantId: string;
+    revokeAdminMediaAccessGrantRequest: RevokeAdminMediaAccessGrantRequest;
 }
 
 export interface SetDefaultAdminImageModelProviderRequest {
@@ -313,6 +338,39 @@ export interface AdminApiInterface {
     listAdminImageModelProviders(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ImageModelProvider>>;
 
     /**
+     * Creates request options for listAdminMediaAccessGrants without sending the request
+     * @param {string} [familyId] 
+     * @param {string} [mediaAssetId] 
+     * @param {boolean} [active] 
+     * @param {Date} [from] 
+     * @param {Date} [to] 
+     * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    listAdminMediaAccessGrantsRequestOpts(requestParameters: ListAdminMediaAccessGrantsRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} [familyId] 
+     * @param {string} [mediaAssetId] 
+     * @param {boolean} [active] 
+     * @param {Date} [from] 
+     * @param {Date} [to] 
+     * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    listAdminMediaAccessGrantsRaw(requestParameters: ListAdminMediaAccessGrantsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminMediaAccessGrantPage>>;
+
+    /**
+     */
+    listAdminMediaAccessGrants(requestParameters: ListAdminMediaAccessGrantsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminMediaAccessGrantPage>;
+
+    /**
      * Creates request options for listAdminPrivacyRequests without sending the request
      * @param {number} [limit] 
      * @param {string} [status] 
@@ -336,6 +394,29 @@ export interface AdminApiInterface {
      * List privacy requests for administration.
      */
     listAdminPrivacyRequests(requestParameters: ListAdminPrivacyRequestsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AdminPrivacyRequest>>;
+
+    /**
+     * Creates request options for revokeAdminMediaAccessGrant without sending the request
+     * @param {string} grantId 
+     * @param {RevokeAdminMediaAccessGrantRequest} revokeAdminMediaAccessGrantRequest 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    revokeAdminMediaAccessGrantRequestOpts(requestParameters: RevokeAdminMediaAccessGrantOperationRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} grantId 
+     * @param {RevokeAdminMediaAccessGrantRequest} revokeAdminMediaAccessGrantRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    revokeAdminMediaAccessGrantRaw(requestParameters: RevokeAdminMediaAccessGrantOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminMediaAccessGrant>>;
+
+    /**
+     */
+    revokeAdminMediaAccessGrant(requestParameters: RevokeAdminMediaAccessGrantOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminMediaAccessGrant>;
 
     /**
      * Creates request options for setDefaultAdminImageModelProvider without sending the request
@@ -818,6 +899,73 @@ export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
     }
 
     /**
+     * Creates request options for listAdminMediaAccessGrants without sending the request
+     */
+    async listAdminMediaAccessGrantsRequestOpts(requestParameters: ListAdminMediaAccessGrantsRequest): Promise<runtime.RequestOpts> {
+        const queryParameters: any = {};
+
+        if (requestParameters['familyId'] != null) {
+            queryParameters['familyId'] = requestParameters['familyId'];
+        }
+
+        if (requestParameters['mediaAssetId'] != null) {
+            queryParameters['mediaAssetId'] = requestParameters['mediaAssetId'];
+        }
+
+        if (requestParameters['active'] != null) {
+            queryParameters['active'] = requestParameters['active'];
+        }
+
+        if (requestParameters['from'] != null) {
+            queryParameters['from'] = (requestParameters['from'] as any).toISOString();
+        }
+
+        if (requestParameters['to'] != null) {
+            queryParameters['to'] = (requestParameters['to'] as any).toISOString();
+        }
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
+
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Internal-Token"] = await this.configuration.apiKey("X-Internal-Token"); // internalToken authentication
+        }
+
+
+        let urlPath = `/internal/admin/media-access-grants`;
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     */
+    async listAdminMediaAccessGrantsRaw(requestParameters: ListAdminMediaAccessGrantsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminMediaAccessGrantPage>> {
+        const requestOptions = await this.listAdminMediaAccessGrantsRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AdminMediaAccessGrantPageFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async listAdminMediaAccessGrants(requestParameters: ListAdminMediaAccessGrantsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminMediaAccessGrantPage> {
+        const response = await this.listAdminMediaAccessGrantsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Creates request options for listAdminPrivacyRequests without sending the request
      */
     async listAdminPrivacyRequestsRequestOpts(requestParameters: ListAdminPrivacyRequestsRequest): Promise<runtime.RequestOpts> {
@@ -863,6 +1011,63 @@ export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
      */
     async listAdminPrivacyRequests(requestParameters: ListAdminPrivacyRequestsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AdminPrivacyRequest>> {
         const response = await this.listAdminPrivacyRequestsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for revokeAdminMediaAccessGrant without sending the request
+     */
+    async revokeAdminMediaAccessGrantRequestOpts(requestParameters: RevokeAdminMediaAccessGrantOperationRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['grantId'] == null) {
+            throw new runtime.RequiredError(
+                'grantId',
+                'Required parameter "grantId" was null or undefined when calling revokeAdminMediaAccessGrant().'
+            );
+        }
+
+        if (requestParameters['revokeAdminMediaAccessGrantRequest'] == null) {
+            throw new runtime.RequiredError(
+                'revokeAdminMediaAccessGrantRequest',
+                'Required parameter "revokeAdminMediaAccessGrantRequest" was null or undefined when calling revokeAdminMediaAccessGrant().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Internal-Token"] = await this.configuration.apiKey("X-Internal-Token"); // internalToken authentication
+        }
+
+
+        let urlPath = `/internal/admin/media-access-grants/{grantId}/revoke`;
+        urlPath = urlPath.replace('{grantId}', encodeURIComponent(String(requestParameters['grantId'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: RevokeAdminMediaAccessGrantRequestToJSON(requestParameters['revokeAdminMediaAccessGrantRequest']),
+        };
+    }
+
+    /**
+     */
+    async revokeAdminMediaAccessGrantRaw(requestParameters: RevokeAdminMediaAccessGrantOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AdminMediaAccessGrant>> {
+        const requestOptions = await this.revokeAdminMediaAccessGrantRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AdminMediaAccessGrantFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async revokeAdminMediaAccessGrant(requestParameters: RevokeAdminMediaAccessGrantOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminMediaAccessGrant> {
+        const response = await this.revokeAdminMediaAccessGrantRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

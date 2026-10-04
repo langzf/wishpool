@@ -3,6 +3,7 @@ package com.wishpool.core.admin
 import tools.jackson.databind.JsonNode
 import java.time.OffsetDateTime
 import java.util.UUID
+import jakarta.validation.constraints.NotBlank
 
 data class AdminDashboardResponse(
     val generatedAt: OffsetDateTime,
@@ -50,6 +51,7 @@ data class AdminAuditLogResponse(
     val metadata: JsonNode,
     val createdAt: OffsetDateTime,
 )
+data class AdminAuditLogsPage(val items: List<AdminAuditLogResponse>, val total: Long, val offset: Int, val limit: Int, val hasMore: Boolean)
 
 data class AdminMediaAccessGrantRequest(
     val familyId: UUID,
@@ -59,12 +61,20 @@ data class AdminMediaAccessGrantRequest(
 )
 
 data class AdminMediaAccessGrantResponse(
+    val id: UUID? = null,
     val mediaAssetId: UUID,
     val familyId: UUID,
     val accessUrl: String,
     val expiresAt: OffsetDateTime,
     val auditLogId: UUID,
+    val reason: String? = null,
+    val revokedAt: OffsetDateTime? = null,
+    val revokedReason: String? = null,
+    val createdAt: OffsetDateTime? = null,
 )
+data class AdminMediaAccessGrantRevokeRequest(@field:NotBlank(message = "撤销原因不能为空") val reason: String)
+data class AdminMediaAccessGrantRecord(val id: UUID, val familyId: UUID, val mediaAssetId: UUID, val actorRole: String, val reason: String, val expiresAt: OffsetDateTime, val revokedAt: OffsetDateTime?, val revokedReason: String?, val auditLogId: UUID, val createdAt: OffsetDateTime)
+data class AdminMediaAccessGrantPage(val items: List<AdminMediaAccessGrantResponse>, val total: Long, val offset: Int, val limit: Int, val hasMore: Boolean)
 
 data class AdminFamilySummaryRecord(
     val id: UUID,

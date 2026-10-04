@@ -43,3 +43,17 @@ fun adminAuditLogRecord(objectMapper: ObjectMapper): (ResultSet, Int) -> AdminAu
         createdAt = rs.getObject("created_at", OffsetDateTime::class.java),
     )
 }
+
+fun adminMediaAccessGrantRecord(rs: ResultSet, rowNum: Int): AdminMediaAccessGrantRecord =
+    AdminMediaAccessGrantRecord(
+        id = rs.getObject("id", UUID::class.java),
+        familyId = rs.getObject("family_id", UUID::class.java),
+        mediaAssetId = rs.getObject("media_asset_id", UUID::class.java),
+        actorRole = rs.getString("granted_by_actor_role"),
+        reason = rs.getString("reason"),
+        expiresAt = rs.getObject("expires_at", OffsetDateTime::class.java),
+        revokedAt = rs.getObject("revoked_at", OffsetDateTime::class.java),
+        revokedReason = rs.getString("revoked_reason"),
+        auditLogId = rs.getObject("audit_log_id", UUID::class.java),
+        createdAt = rs.getObject("created_at", OffsetDateTime::class.java),
+    )

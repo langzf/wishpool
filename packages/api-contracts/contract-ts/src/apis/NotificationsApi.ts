@@ -57,6 +57,12 @@ export interface ListNotificationsRequest {
     familyId: string;
     status?: ListNotificationsStatusEnum;
     limit?: number;
+    offset?: number;
+    actorUserId?: string;
+    actorRole?: string;
+    resourceType?: string;
+    from?: Date;
+    to?: Date;
 }
 
 export interface MarkNotificationsReadRequest {
@@ -106,6 +112,12 @@ export interface NotificationsApiInterface {
      * @param {string} familyId 
      * @param {'pending' | 'sent' | 'failed' | 'read'} [status] 
      * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @param {string} [actorUserId] 
+     * @param {string} [actorRole] 
+     * @param {string} [resourceType] 
+     * @param {Date} [from] 
+     * @param {Date} [to] 
      * @throws {RequiredError}
      * @memberof NotificationsApiInterface
      */
@@ -117,6 +129,12 @@ export interface NotificationsApiInterface {
      * @param {string} familyId 
      * @param {'pending' | 'sent' | 'failed' | 'read'} [status] 
      * @param {number} [limit] 
+     * @param {number} [offset] 
+     * @param {string} [actorUserId] 
+     * @param {string} [actorRole] 
+     * @param {string} [resourceType] 
+     * @param {Date} [from] 
+     * @param {Date} [to] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof NotificationsApiInterface
@@ -283,6 +301,30 @@ export class NotificationsApi extends runtime.BaseAPI implements NotificationsAp
 
         if (requestParameters['limit'] != null) {
             queryParameters['limit'] = requestParameters['limit'];
+        }
+
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
+        }
+
+        if (requestParameters['actorUserId'] != null) {
+            queryParameters['actorUserId'] = requestParameters['actorUserId'];
+        }
+
+        if (requestParameters['actorRole'] != null) {
+            queryParameters['actorRole'] = requestParameters['actorRole'];
+        }
+
+        if (requestParameters['resourceType'] != null) {
+            queryParameters['resourceType'] = requestParameters['resourceType'];
+        }
+
+        if (requestParameters['from'] != null) {
+            queryParameters['from'] = (requestParameters['from'] as any).toISOString();
+        }
+
+        if (requestParameters['to'] != null) {
+            queryParameters['to'] = (requestParameters['to'] as any).toISOString();
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

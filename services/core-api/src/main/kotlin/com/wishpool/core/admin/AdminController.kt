@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
+import java.time.OffsetDateTime
 
 @RestController
 class AdminController(
@@ -57,9 +58,21 @@ class AdminController(
         @RequestParam(required = false) familyId: UUID?,
         @RequestParam(required = false) action: String?,
         @RequestParam(defaultValue = "50") limit: Int,
+        @RequestParam(defaultValue = "0") offset: Int,
+        @RequestParam(required = false) actorUserId: UUID?,
+        @RequestParam(required = false) actorRole: String?,
+        @RequestParam(required = false) resourceType: String?,
+        @RequestParam(required = false) from: OffsetDateTime?,
+        @RequestParam(required = false) to: OffsetDateTime?,
     ): List<AdminAuditLogResponse> {
         internalAuthService.requireToken(internalToken)
-        return service.listAuditLogs(familyId, action, limit)
+        return service.listAuditLogs(familyId, action, limit, offset, actorUserId, actorRole, resourceType, from, to)
+    }
+
+    @GetMapping("/internal/admin/audit-logs/paged")
+    fun listAuditLogsPaged(@RequestHeader("X-Internal-Token", required = false) token: String?, @RequestParam(required = false) familyId: UUID?, @RequestParam(required = false) action: String?, @RequestParam(defaultValue = "50") limit: Int, @RequestParam(defaultValue = "0") offset: Int, @RequestParam(required = false) actorUserId: UUID?, @RequestParam(required = false) actorRole: String?, @RequestParam(required = false) resourceType: String?, @RequestParam(required = false) from: OffsetDateTime?, @RequestParam(required = false) to: OffsetDateTime?): AdminAuditLogsPage {
+        internalAuthService.requireToken(token)
+        return service.listAuditLogsPage(familyId, action, limit, offset, actorUserId, actorRole, resourceType, from, to)
     }
 
     @PostMapping("/internal/admin/media-access-grants")
@@ -69,6 +82,29 @@ class AdminController(
     ): AdminMediaAccessGrantResponse {
         internalAuthService.requireToken(internalToken)
         return service.grantMediaAccess(request)
+    }
+
+    @GetMapping("/internal/admin/media-access-grants")
+    fun listMediaAccessGrants(
+        @RequestHeader("X-Internal-Token", required = false) token: String?,
+        @RequestParam(required = false) familyId: UUID?,
+        @RequestParam(required = false) mediaAssetId: UUID?,
+        @RequestParam(required = false) active: Boolean?,
+        @RequestParam(defaultValue = "50") limit: Int,
+        @RequestParam(defaultValue = "0") offset: Int,
+    ): AdminMediaAccessGrantPage {
+        internalAuthService.requireToken(token)
+        return service.listMediaAccessGrants(familyId, mediaAssetId, active, limit, offset)
+    }
+
+    @PostMapping("/internal/admin/media-access-grants/{grantId}/revoke")
+    fun revokeMediaAccessGrant(
+        @RequestHeader("X-Internal-Token", required = false) token: String?,
+        @PathVariable grantId: UUID,
+        @Valid @RequestBody request: AdminMediaAccessGrantRevokeRequest,
+    ): AdminMediaAccessGrantResponse {
+        internalAuthService.requireToken(token)
+        return service.revokeMediaAccessGrant(grantId, request)
     }
 
     @GetMapping("/internal/admin/image-model-providers")

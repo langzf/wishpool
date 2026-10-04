@@ -59,12 +59,20 @@ data class AdminMediaAccessGrantRequest(
 )
 
 data class AdminMediaAccessGrantResponse(
+    val id: UUID? = null,
     val mediaAssetId: UUID,
     val familyId: UUID,
     val accessUrl: String,
     val expiresAt: OffsetDateTime,
     val auditLogId: UUID,
+    val reason: String? = null,
+    val revokedAt: OffsetDateTime? = null,
+    val revokedReason: String? = null,
+    val createdAt: OffsetDateTime? = null,
 )
+data class AdminMediaAccessGrantRevokeRequest(val reason: String)
+data class AdminMediaAccessGrantPage(val items: List<AdminMediaAccessGrantResponse>, val total: Long, val offset: Int, val limit: Int, val hasMore: Boolean)
+data class AdminAuditLogsPage(val items: List<AdminAuditLogResponse>, val total: Long, val offset: Int, val limit: Int, val hasMore: Boolean)
 
 data class ImageModelProviderResponse(
     val id: UUID,

@@ -61,8 +61,19 @@ export async function grantMediaAccessAction(formData: FormData) {
   redirect(
     `/storage?mediaAccessUrl=${encodeURIComponent(grant.accessUrl ?? "")}` +
       `&mediaAccessExpiresAt=${encodeURIComponent(grant.expiresAt ?? "")}` +
-      `&mediaAccessAuditLogId=${encodeURIComponent(grant.auditLogId ?? "")}#media-access`,
+      `&mediaAccessAuditLogId=${encodeURIComponent(grant.auditLogId ?? "")}` +
+      `&actionSuccess=${encodeURIComponent("授权已签发")}#media-access`,
   );
+}
+
+export async function revokeMediaAccessAction(formData: FormData) {
+  const id = valueFromForm(formData, "grantId");
+  const reason = valueFromForm(formData, "revokeReason");
+  if (!id || !reason) redirect(`/storage?actionError=${encodeURIComponent("撤销原因不能为空")}`);
+  const config = await requireAdminActionConfig();
+  const response = await fetch(`${config.adminApiBaseUrl}/admin/media-access-grants/${id}/revoke`, { method: "POST", cache: "no-store", headers: { ...buildAdminHeaders(config.adminToken), "Content-Type": "application/json" }, body: JSON.stringify({ reason }) });
+  if (!response.ok) redirect(`/storage?actionError=${encodeURIComponent("撤销失败，请稍后重试")}`);
+  redirect(`/storage?actionSuccess=${encodeURIComponent("授权已撤销")}`);
 }
 
 export async function saveImageModelProviderAction(formData: FormData) {

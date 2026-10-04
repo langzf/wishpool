@@ -24,6 +24,12 @@ export interface AdminMediaAccessGrant {
      * @type {string}
      * @memberof AdminMediaAccessGrant
      */
+    id: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof AdminMediaAccessGrant
+     */
     mediaAssetId: string;
     /**
      * 
@@ -49,17 +55,44 @@ export interface AdminMediaAccessGrant {
      * @memberof AdminMediaAccessGrant
      */
     auditLogId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof AdminMediaAccessGrant
+     */
+    reason: string;
+    /**
+     * 
+     * @type {Date}
+     * @memberof AdminMediaAccessGrant
+     */
+    revokedAt?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof AdminMediaAccessGrant
+     */
+    revokedReason?: string;
+    /**
+     * 
+     * @type {Date}
+     * @memberof AdminMediaAccessGrant
+     */
+    createdAt: Date;
 }
 
 /**
  * Check if a given object implements the AdminMediaAccessGrant interface.
  */
 export function instanceOfAdminMediaAccessGrant(value: object): value is AdminMediaAccessGrant {
+    if (!('id' in value) || value['id'] === undefined) return false;
     if (!('mediaAssetId' in value) || value['mediaAssetId'] === undefined) return false;
     if (!('familyId' in value) || value['familyId'] === undefined) return false;
     if (!('accessUrl' in value) || value['accessUrl'] === undefined) return false;
     if (!('expiresAt' in value) || value['expiresAt'] === undefined) return false;
     if (!('auditLogId' in value) || value['auditLogId'] === undefined) return false;
+    if (!('reason' in value) || value['reason'] === undefined) return false;
+    if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     return true;
 }
 
@@ -73,11 +106,16 @@ export function AdminMediaAccessGrantFromJSONTyped(json: any, ignoreDiscriminato
     }
     return {
         
+        'id': json['id'],
         'mediaAssetId': json['mediaAssetId'],
         'familyId': json['familyId'],
         'accessUrl': json['accessUrl'],
         'expiresAt': (new Date(json['expiresAt'])),
         'auditLogId': json['auditLogId'],
+        'reason': json['reason'],
+        'revokedAt': json['revokedAt'] == null ? undefined : (new Date(json['revokedAt'])),
+        'revokedReason': json['revokedReason'] == null ? undefined : json['revokedReason'],
+        'createdAt': (new Date(json['createdAt'])),
     };
 }
 
@@ -92,11 +130,16 @@ export function AdminMediaAccessGrantToJSONTyped(value?: AdminMediaAccessGrant |
 
     return {
         
+        'id': value['id'],
         'mediaAssetId': value['mediaAssetId'],
         'familyId': value['familyId'],
         'accessUrl': value['accessUrl'],
         'expiresAt': value['expiresAt'].toISOString(),
         'auditLogId': value['auditLogId'],
+        'reason': value['reason'],
+        'revokedAt': value['revokedAt'] == null ? value['revokedAt'] : value['revokedAt'].toISOString(),
+        'revokedReason': value['revokedReason'],
+        'createdAt': value['createdAt'].toISOString(),
     };
 }
 

@@ -43,15 +43,22 @@ class CoreApiClient(
     fun privacyRequests(limit: Int, status: String?): List<AdminPrivacyRequestResponse> =
         get("internal/admin/privacy-requests?limit=${limit.coerceIn(1, 100)}${status.queryParam("status")}")
 
-    fun auditLogs(familyId: UUID?, action: String?, limit: Int): List<AdminAuditLogResponse> =
+    fun auditLogs(familyId: UUID?, action: String?, limit: Int, offset: Int = 0, actorUserId: UUID? = null, actorRole: String? = null, resourceType: String? = null, from: String? = null, to: String? = null): AdminAuditLogsPage =
         get(
-            "internal/admin/audit-logs?limit=${limit.coerceIn(1, 100)}" +
+            "internal/admin/audit-logs/paged?limit=${limit.coerceIn(1, 100)}&offset=${offset.coerceAtLeast(0)}" +
                 familyId?.let { "&familyId=$it" }.orEmpty() +
-                action.queryParam("action"),
+                action.queryParam("action") + actorUserId?.let { "&actorUserId=$it" }.orEmpty() + actorRole.queryParam("actorRole") + resourceType.queryParam("resourceType") + from.queryParam("from") + to.queryParam("to"),
         )
 
     fun grantMediaAccess(request: AdminMediaAccessGrantRequest): AdminMediaAccessGrantResponse =
         post("internal/admin/media-access-grants", request)
+
+    fun listMediaAccessGrants(familyId: UUID?, mediaAssetId: UUID?, active: Boolean?, limit: Int, offset: Int): AdminMediaAccessGrantPage =
+        get("internal/admin/media-access-grants?limit=${limit.coerceIn(1, 100)}&offset=${offset.coerceAtLeast(0)}" +
+            familyId?.let { "&familyId=$it" }.orEmpty() + mediaAssetId?.let { "&mediaAssetId=$it" }.orEmpty() + active?.let { "&active=$it" }.orEmpty())
+
+    fun revokeMediaAccessGrant(id: UUID, request: AdminMediaAccessGrantRevokeRequest): AdminMediaAccessGrantResponse =
+        post("internal/admin/media-access-grants/$id/revoke", request)
 
     fun imageModelProviders(): List<ImageModelProviderResponse> =
         get("internal/admin/image-model-providers")

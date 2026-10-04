@@ -169,25 +169,23 @@ export async function loadAdminPrivacyData(
   }
 }
 
-export async function loadAdminAuditData(
-  session?: AdminWebSession | null
-): Promise<Pick<AdminDashboardData, "source" | "auditRows">> {
+export async function loadAdminAuditData(session?: AdminWebSession | null, query = ""): Promise<{ source: "admin-api"; auditRows: AdminAuditRow[]; total: number; error?: string }> {
   const config = configForAdminWebSession(session);
-  const fixture = fixtureAdminDashboardData();
-  if (!config.adminToken) return { source: fixture.source, auditRows: fixture.auditRows };
+  if (!config.adminToken) return { source: "admin-api", auditRows: [], total: 0, error: "请先登录管理后台" };
 
   try {
-    const response = await fetch(`${config.adminApiBaseUrl}/admin/audit-logs?limit=100`, {
+    const response = await fetch(`${config.adminApiBaseUrl}/admin/audit-logs?${query}`, {
       cache: "no-store",
       headers: buildAdminHeaders(config.adminToken)
     });
     if (response.status === 401) throw new AdminWebUnauthorizedError();
-    if (!response.ok) return { source: fixture.source, auditRows: fixture.auditRows };
-    const rows = (await response.json()) as AdminAuditLogResponse[];
-    return { source: "admin-api", auditRows: mapAdminAuditLogs(rows) };
+    if (response.status === 403) throw new AdminWebUnauthorizedError();
+    if (!response.ok) return { source: "admin-api", auditRows: [], total: 0, error: "管理接口暂时不可用，请稍后重试" };
+    const page = (await response.json()) as { items: AdminAuditLogResponse[]; total: number };
+    return { source: "admin-api", auditRows: mapAdminAuditLogs(page.items), total: page.total };
   } catch (error) {
     if (isAdminWebUnauthorizedError(error)) throw error;
-    return { source: fixture.source, auditRows: fixture.auditRows };
+    return { source: "admin-api", auditRows: [], total: 0, error: "管理接口暂时不可用，请稍后重试" };
   }
 }
 

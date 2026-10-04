@@ -79,6 +79,24 @@ fun Application.adminModule(runtime: AdminRuntime) {
             val request = mapper.readValue<AdminMediaAccessGrantRequest>(call.receiveText())
             call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.grantMediaAccess(request)))
         }
+        get("/admin/media-access-grants") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@get
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.listMediaAccessGrants(
+                familyId = call.request.queryParameters["familyId"]?.let(UUID::fromString),
+                mediaAssetId = call.request.queryParameters["mediaAssetId"]?.let(UUID::fromString),
+                active = call.request.queryParameters["active"]?.toBooleanStrictOrNull(),
+                limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 50,
+                offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: 0,
+            )))
+        }
+        post("/admin/media-access-grants/{grantId}/revoke") {
+            if (!call.requireAdminToken(runtime.config.adminToken)) return@post
+            val grantId = call.parameters["grantId"]?.let(UUID::fromString)
+                ?: return@post call.respondJson("""{"detail":"授权 ID 无效。"}""", HttpStatusCode.BadRequest)
+            val request = try { mapper.readValue<AdminMediaAccessGrantRevokeRequest>(call.receiveText()) }
+            catch (_: Exception) { return@post call.respondJson("""{"detail":"撤销原因不能为空"}""", HttpStatusCode.BadRequest) }
+            call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.revokeMediaAccessGrant(grantId, request)))
+        }
         get("/admin/image-model-providers") {
             if (!call.requireAdminToken(runtime.config.adminToken)) return@get
             call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.imageModelProviders()))

@@ -6,11 +6,16 @@
 
 Name | Type
 ------------ | -------------
+`id` | string
 `mediaAssetId` | string
 `familyId` | string
 `accessUrl` | string
 `expiresAt` | Date
 `auditLogId` | string
+`reason` | string
+`revokedAt` | Date
+`revokedReason` | string
+`createdAt` | Date
 
 ## Example
 
@@ -19,11 +24,16 @@ import type { AdminMediaAccessGrant } from '@wishpool/api-client'
 
 // TODO: Update the object below with actual values
 const example = {
+  "id": null,
   "mediaAssetId": null,
   "familyId": null,
   "accessUrl": null,
   "expiresAt": null,
   "auditLogId": null,
+  "reason": null,
+  "revokedAt": null,
+  "revokedReason": null,
+  "createdAt": null,
 } satisfies AdminMediaAccessGrant
 
 console.log(example)

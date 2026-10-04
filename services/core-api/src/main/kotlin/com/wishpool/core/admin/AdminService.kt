@@ -92,11 +92,20 @@ class AdminService(
             .map(::toPrivacyRequest)
     }
 
-    fun listAuditLogs(familyId: UUID?, action: String?, limit: Int): List<AdminAuditLogResponse> {
-        val effectiveLimit = limit.coerceIn(1, 100)
+    fun listAuditLogs(familyId: UUID?, action: String?, limit: Int, offset: Int = 0, actorUserId: UUID? = null, actorRole: String? = null, resourceType: String? = null, from: OffsetDateTime? = null, to: OffsetDateTime? = null): List<AdminAuditLogResponse> = listAuditLogsPage(familyId, action, limit, offset, actorUserId, actorRole, resourceType, from, to).items
+    fun listAuditLogsPage(familyId: UUID?, action: String?, limit: Int, offset: Int, actorUserId: UUID?, actorRole: String?, resourceType: String?, from: OffsetDateTime?, to: OffsetDateTime?): AdminAuditLogsPage {
+        val effectiveLimit = limit
+        if (limit !in 1..100) throw BadRequestError("每页条数必须在 1 到 100 之间")
+        if (offset < 0) throw BadRequestError("偏移量不能小于 0")
+        if (from != null && to != null && from.isAfter(to)) throw BadRequestError("开始时间不能晚于结束时间")
         val clauses = mutableListOf<String>()
         if (familyId != null) clauses += "family_id = :family_id"
         if (!action.isNullOrBlank()) clauses += "action = :action"
+        if (actorUserId != null) clauses += "actor_user_id = :actor_user_id"
+        if (!actorRole.isNullOrBlank()) clauses += "actor_role = :actor_role"
+        if (!resourceType.isNullOrBlank()) clauses += "resource_type = :resource_type"
+        if (from != null) clauses += "created_at >= :from_time"
+        if (to != null) clauses += "created_at < :to_time"
         val whereClause = if (clauses.isEmpty()) "" else "where ${clauses.joinToString(" and ")}"
         var query = jdbcClient.sql(
             """
@@ -105,16 +114,32 @@ class AdminService(
             from audit_log
             $whereClause
             order by created_at desc
-            limit cast(:limit as integer)
+            limit cast(:limit as integer) offset cast(:offset as integer)
             """.trimIndent(),
         )
             .param("limit", effectiveLimit)
+            .param("offset", offset)
         if (familyId != null) query = query.param("family_id", familyId)
         if (!action.isNullOrBlank()) query = query.param("action", action)
-        return query
+        if (actorUserId != null) query = query.param("actor_user_id", actorUserId)
+        if (!actorRole.isNullOrBlank()) query = query.param("actor_role", actorRole)
+        if (!resourceType.isNullOrBlank()) query = query.param("resource_type", resourceType)
+        if (from != null) query = query.param("from_time", from)
+        if (to != null) query = query.param("to_time", to)
+        val items = query
             .query(adminAuditLogRecord(objectMapper))
             .list()
             .map(::toAuditLog)
+        var countQuery = jdbcClient.sql("select count(*) from audit_log $whereClause")
+        if (familyId != null) countQuery = countQuery.param("family_id", familyId)
+        if (!action.isNullOrBlank()) countQuery = countQuery.param("action", action)
+        if (actorUserId != null) countQuery = countQuery.param("actor_user_id", actorUserId)
+        if (!actorRole.isNullOrBlank()) countQuery = countQuery.param("actor_role", actorRole)
+        if (!resourceType.isNullOrBlank()) countQuery = countQuery.param("resource_type", resourceType)
+        if (from != null) countQuery = countQuery.param("from_time", from)
+        if (to != null) countQuery = countQuery.param("to_time", to)
+        val total = countQuery.query(Long::class.java).single()
+        return AdminAuditLogsPage(items, total, offset, limit, offset + items.size < total)
     }
 
     @Transactional
@@ -142,8 +167,8 @@ class AdminService(
             insert into audit_log (
               id, family_id, actor_role, action, resource_type, resource_id, metadata_json
             ) values (
-              :id, :family_id, 'admin_support', 'admin.media_access_granted',
-              'media_asset', :resource_id, cast(:metadata_json as jsonb)
+              :id, :family_id, 'admin_support', 'media.access_grant_created',
+              'media_access_grant', :resource_id, cast(:metadata_json as jsonb)
             )
             """.trimIndent(),
         )
@@ -161,14 +186,51 @@ class AdminService(
             )
             .update()
         val expiresAt = OffsetDateTime.ofInstant(clock.instant().plusSeconds(expiresInMinutes * 60), ZoneOffset.UTC)
+        val grantId = UUID.randomUUID()
+        jdbcClient.sql("insert into media_access_grant (id,family_id,media_asset_id,granted_by_actor_role,reason,expires_at,audit_log_id) values (:id,:family_id,:media_asset_id,'admin_support',:reason,:expires_at,:audit_log_id)").param("id", grantId).param("family_id", request.familyId).param("media_asset_id", request.mediaAssetId).param("reason", request.reason.trim().take(500)).param("expires_at", expiresAt).param("audit_log_id", auditLogId).update()
         return AdminMediaAccessGrantResponse(
+            id = grantId,
             mediaAssetId = media.id,
             familyId = media.familyId,
             accessUrl = mediaService.createDownloadUrl(media.storageKey),
             expiresAt = expiresAt,
             auditLogId = auditLogId,
+            reason = request.reason.trim().take(500), createdAt = OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC),
         )
     }
+
+    fun listMediaAccessGrants(familyId: UUID?, mediaAssetId: UUID?, active: Boolean?, limit: Int, offset: Int): AdminMediaAccessGrantPage {
+        if (limit !in 1..100) throw BadRequestError("每页条数必须在 1 到 100 之间")
+        if (offset < 0) throw BadRequestError("偏移量不能小于 0")
+        val clauses = mutableListOf<String>()
+        if (familyId != null) clauses += "family_id = :family_id"
+        if (mediaAssetId != null) clauses += "media_asset_id = :media_asset_id"
+        if (active == true) clauses += "revoked_at is null and expires_at > now()"
+        if (active == false) clauses += "(revoked_at is not null or expires_at <= now())"
+        val where = if (clauses.isEmpty()) "" else "where ${clauses.joinToString(" and ")}"
+        var q = jdbcClient.sql("select id,family_id,media_asset_id,granted_by_actor_role,reason,expires_at,revoked_at,revoked_reason,audit_log_id,created_at from media_access_grant $where order by created_at desc,id desc limit cast(:limit as integer) offset cast(:offset as integer)").param("limit", limit).param("offset", offset)
+        var c = jdbcClient.sql("select count(*) from media_access_grant $where")
+        if (familyId != null) { q = q.param("family_id", familyId); c = c.param("family_id", familyId) }
+        if (mediaAssetId != null) { q = q.param("media_asset_id", mediaAssetId); c = c.param("media_asset_id", mediaAssetId) }
+        val items = q.query(::adminMediaAccessGrantRecord).list().map(::toMediaGrant)
+        val total = c.query(Long::class.java).single()
+        return AdminMediaAccessGrantPage(items, total, offset, limit, offset + items.size < total)
+    }
+
+    @Transactional
+    fun revokeMediaAccessGrant(grantId: UUID, request: AdminMediaAccessGrantRevokeRequest): AdminMediaAccessGrantResponse {
+        if (request.reason.isBlank()) throw BadRequestError("撤销原因不能为空。")
+        val existing = jdbcClient.sql("select id,family_id,media_asset_id,granted_by_actor_role,reason,expires_at,revoked_at,revoked_reason,audit_log_id,created_at from media_access_grant where id=:id").param("id", grantId).query(::adminMediaAccessGrantRecord).optional().orElseThrow { NotFoundError("媒体授权不存在。") }
+        if (existing.revokedAt != null) return toMediaGrant(existing)
+        val revokedAt = OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)
+        val reason = request.reason.trim().take(500)
+        val auditId = UUID.randomUUID()
+        jdbcClient.sql("update media_access_grant set revoked_at=:revoked_at,revoked_reason=:reason where id=:id and revoked_at is null").param("revoked_at", revokedAt).param("reason", reason).param("id", grantId).update()
+        jdbcClient.sql("insert into audit_log (id,family_id,actor_role,action,resource_type,resource_id,metadata_json) values (:id,:family,'admin_support','media.access_grant_revoked','media_access_grant',:resource,cast(:metadata as jsonb))").param("id", auditId).param("family", existing.familyId).param("resource", grantId).param("metadata", objectMapper.writeValueAsString(mapOf("reason" to reason))).update()
+        return toMediaGrant(existing.copy(revokedAt = revokedAt, revokedReason = reason))
+    }
+
+    private fun toMediaGrant(r: AdminMediaAccessGrantRecord) = AdminMediaAccessGrantResponse(r.id, r.mediaAssetId, r.familyId, "", r.expiresAt, r.auditLogId, r.reason, r.revokedAt, r.revokedReason, r.createdAt)
 
     private fun count(sql: String): Long =
         jdbcClient.sql(sql)
