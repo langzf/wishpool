@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { MemoryItem } from './MemoryItem';
+import {
+    MemoryItemFromJSON,
+    MemoryItemFromJSONTyped,
+    MemoryItemToJSON,
+    MemoryItemToJSONTyped,
+} from './MemoryItem';
+
 /**
  * 
  * @export
@@ -51,10 +59,10 @@ export interface WeeklyMemory {
     summary?: { [key: string]: any; };
     /**
      * 
-     * @type {Array<{ [key: string]: any; }>}
+     * @type {Array<MemoryItem>}
      * @memberof WeeklyMemory
      */
-    items?: Array<{ [key: string]: any; }>;
+    items?: Array<MemoryItem>;
     /**
      * 
      * @type {WeeklyMemoryStatusEnum}
@@ -102,7 +110,7 @@ export function WeeklyMemoryFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'weekId': json['weekId'],
         'title': json['title'],
         'summary': json['summary'] == null ? undefined : json['summary'],
-        'items': json['items'] == null ? undefined : json['items'],
+        'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(MemoryItemFromJSON)),
         'status': json['status'],
     };
 }
@@ -123,7 +131,7 @@ export function WeeklyMemoryToJSONTyped(value?: WeeklyMemory | null, ignoreDiscr
         'weekId': value['weekId'],
         'title': value['title'],
         'summary': value['summary'],
-        'items': value['items'],
+        'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(MemoryItemToJSON)),
         'status': value['status'],
     };
 }

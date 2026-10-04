@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/wishpool_scope.dart';
 import '../design/wishpool_theme.dart';
 import '../domain/wishpool_snapshot.dart';
+import '../infrastructure/child_mode_lock.dart';
 import '../shared/fixture_data.dart';
 
 class ParentDashboardScreen extends StatelessWidget {
@@ -10,12 +11,16 @@ class ParentDashboardScreen extends StatelessWidget {
     super.key,
     required this.snapshot,
     this.onSignOut,
+    this.onSwitchToChildDevice,
     this.onDataChanged,
+    this.onChildModeLockSettings,
   });
 
   final WishPoolSnapshot snapshot;
   final VoidCallback? onSignOut;
+  final VoidCallback? onSwitchToChildDevice;
   final VoidCallback? onDataChanged;
+  final VoidCallback? onChildModeLockSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +30,17 @@ class ParentDashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
       children: [
         Text('家长审核', style: theme.textTheme.headlineLarge),
+        const SizedBox(height: WishPoolSpacing.md),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('儿童模式锁'),
+            subtitle: const Text('设置后，孩子退出儿童模式需输入家长密码'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: onChildModeLockSettings ??
+                () => showChildModeLockSettings(context, ChildModeLockStore()),
+          ),
+        ),
         const SizedBox(height: WishPoolSpacing.md),
         if (snapshot.reviewCards.isEmpty)
           const _InfoCard(
@@ -78,7 +94,11 @@ class ParentDashboardScreen extends StatelessWidget {
                       padding: const EdgeInsets.only(top: WishPoolSpacing.xs),
                       child: Row(
                         children: [
-                          Icon(rule.isCore ? Icons.flag_outlined : Icons.lightbulb_outline, size: 18),
+                          Icon(
+                              rule.isCore
+                                  ? Icons.flag_outlined
+                                  : Icons.lightbulb_outline,
+                              size: 18),
                           const SizedBox(width: WishPoolSpacing.xs),
                           Expanded(child: Text(rule.title)),
                           Text('${rule.weekdays.length} 天'),
@@ -97,6 +117,12 @@ class ParentDashboardScreen extends StatelessWidget {
         ),
         if (onSignOut != null) ...[
           const SizedBox(height: WishPoolSpacing.md),
+          OutlinedButton.icon(
+            onPressed: onSwitchToChildDevice,
+            icon: const Icon(Icons.child_care_outlined),
+            label: const Text('切换为儿童设备'),
+          ),
+          const SizedBox(height: WishPoolSpacing.sm),
           OutlinedButton.icon(
             onPressed: onSignOut,
             icon: const Icon(Icons.logout_outlined),
@@ -117,7 +143,8 @@ class ParentDashboardScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('本周计划', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            Text('本周计划',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             SizedBox(height: 12),
             Text('本周计划由任务模板保存并生成每日任务。手机端可处理当天跳过、延后和审核，批量编辑在家长 Web 完成。'),
           ],
@@ -185,9 +212,11 @@ class _TaskAdjustRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(task.title, style: Theme.of(context).textTheme.titleMedium),
+                Text(task.title,
+                    style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 2),
-                Text('${task.submissionType}提交 · ${task.status}', style: Theme.of(context).textTheme.bodySmall),
+                Text('${task.submissionType}提交 · ${task.status}',
+                    style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -211,10 +240,12 @@ class _TaskAdjustRow extends StatelessWidget {
       await WishPoolScope.of(context).skipTask(task);
       if (!context.mounted) return;
       onChanged?.call();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已跳过今天的任务')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('已跳过今天的任务')));
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('任务调整失败，请稍后再试')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('任务调整失败，请稍后再试')));
     }
   }
 
@@ -223,10 +254,12 @@ class _TaskAdjustRow extends StatelessWidget {
       await WishPoolScope.of(context).postponeTask(task);
       if (!context.mounted) return;
       onChanged?.call();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已顺延到下一天')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('已顺延到下一天')));
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('任务调整失败，请稍后再试')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('任务调整失败，请稍后再试')));
     }
   }
 }
@@ -254,7 +287,8 @@ class _ReviewCard extends StatelessWidget {
               children: [
                 Icon(_iconFor(card.mediaType), color: WishPoolColors.primary),
                 const SizedBox(width: WishPoolSpacing.xs),
-                Expanded(child: Text(card.title, style: theme.textTheme.titleLarge)),
+                Expanded(
+                    child: Text(card.title, style: theme.textTheme.titleLarge)),
               ],
             ),
             const SizedBox(height: WishPoolSpacing.sm),
@@ -297,13 +331,39 @@ class _ReviewCard extends StatelessWidget {
     await WishPoolScope.of(context).approveReview(card.submissionId);
     if (!context.mounted) return;
     onReviewed?.call();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已通过，反馈会同步给孩子')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('已通过，反馈会同步给孩子')));
   }
 
   Future<void> _requestRevision(BuildContext context) async {
-    await WishPoolScope.of(context).requestRevision(card.submissionId);
+    final controller = TextEditingController(text: '照片太模糊了，重拍一张吧');
+    final feedback = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('填写退回原因'),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: '告诉孩子下一步怎么做'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('取消')),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, controller.text),
+              child: const Text('退回')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (feedback == null || feedback.trim().isEmpty) return;
+    if (!context.mounted) return;
+    await WishPoolScope.of(context)
+        .requestRevision(card.submissionId, feedback: feedback);
     if (!context.mounted) return;
     onReviewed?.call();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已退回修改，孩子端会收到提示')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('已退回修改，孩子端会收到提示')));
   }
 }

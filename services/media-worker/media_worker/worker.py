@@ -45,10 +45,18 @@ class MediaWorker:
         for item in items:
             media = item["media"]
             media_id = media["id"]
+            started_at = time.perf_counter()
             try:
                 derivatives = self.processor.process(item)
                 self.core_api.complete(media_id, derivatives)
-                logger.info("Processed media asset %s with %s derivatives", media_id, len(derivatives))
+                elapsed_ms = (time.perf_counter() - started_at) * 1000
+                logger.info(
+                    "MEDIA_PROCESSED asset=%s elapsed_ms=%.1f derivative_kinds=%s derivative_count=%s",
+                    media_id,
+                    elapsed_ms,
+                    ",".join(item["kind"] for item in derivatives),
+                    len(derivatives),
+                )
             except MediaProcessingError as exc:
                 code, retryable, delay = self._failure_policy(item, exc.code)
                 self.core_api.fail(media_id, code, str(exc), retryable=retryable, delay_seconds=delay)

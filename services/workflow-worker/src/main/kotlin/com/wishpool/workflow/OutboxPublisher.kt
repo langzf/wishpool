@@ -17,9 +17,33 @@ class OutboxPublisher(
 
     fun start() {
         if (!running.compareAndSet(false, true)) return
+        var retryDelay = config.outboxPollInterval
         while (running.get()) {
-            runOnce()
-            Thread.sleep(config.outboxPollInterval.toMillis())
+            try {
+                runOnce()
+                if (retryDelay != config.outboxPollInterval) {
+                    logger.info("Outbox publisher recovered; resuming normal polling.")
+                }
+                retryDelay = config.outboxPollInterval
+                Thread.sleep(config.outboxPollInterval.toMillis())
+            } catch (ex: InterruptedException) {
+                Thread.currentThread().interrupt()
+                running.set(false)
+            } catch (ex: Exception) {
+                logger.warn(
+                    "Outbox publisher cannot reach core API or claim events; retrying in {} ms.",
+                    retryDelay.toMillis(),
+                    ex,
+                )
+                try {
+                    Thread.sleep(retryDelay.toMillis())
+                } catch (interrupted: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    running.set(false)
+                }
+                retryDelay = (retryDelay.multipliedBy(2))
+                    .coerceAtMost(Duration.ofSeconds(30))
+            }
         }
     }
 

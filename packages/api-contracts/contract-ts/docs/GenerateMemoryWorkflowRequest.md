@@ -6,6 +6,7 @@
 
 Name | Type
 ------------ | -------------
+`wishId` | string
 `triggeredByEventId` | string
 
 ## Example
@@ -15,6 +16,7 @@ import type { GenerateMemoryWorkflowRequest } from '@wishpool/api-client'
 
 // TODO: Update the object below with actual values
 const example = {
+  "wishId": null,
   "triggeredByEventId": null,
 } satisfies GenerateMemoryWorkflowRequest
 

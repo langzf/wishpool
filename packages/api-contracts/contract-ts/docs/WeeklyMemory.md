@@ -11,7 +11,7 @@ Name | Type
 `weekId` | string
 `title` | string
 `summary` | { [key: string]: any; }
-`items` | Array&lt;{ [key: string]: any; }&gt;
+`items` | [Array&lt;MemoryItem&gt;](MemoryItem.md)
 `status` | string
 
 ## Example

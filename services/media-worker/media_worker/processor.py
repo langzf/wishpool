@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image, ImageOps, UnidentifiedImageError
+import imageio_ffmpeg
 
 from .config import MediaWorkerConfig
 from .storage import ObjectStorage
@@ -95,7 +96,9 @@ class MediaProcessor:
         transcoded = work_root / "transcoded.mp4"
 
         run_ffmpeg("-ss", "00:00:01", "-i", str(source_path), "-frames:v", "1", "-vf", "scale=640:-2", str(thumbnail))
-        run_ffmpeg("-ss", "00:00:03", "-i", str(source_path), "-frames:v", "1", "-vf", "scale=1280:-2", str(keyframe))
+        # Short child recordings may be close to three seconds; sampling at
+        # one second guarantees a frame for the keyframe derivative.
+        run_ffmpeg("-ss", "00:00:01", "-i", str(source_path), "-frames:v", "1", "-vf", "scale=1280:-2", str(keyframe))
         run_ffmpeg("-i", str(source_path), "-t", "8", "-vf", "scale=960:-2", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "28", str(preview))
         run_ffmpeg("-i", str(source_path), "-vf", "scale=1280:-2", "-c:v", "libx264", "-preset", "veryfast", "-crf", "24", "-c:a", "aac", "-b:a", "128k", str(transcoded))
         run_ffmpeg("-i", str(source_path), "-t", "20", "-vf", "fps=1,scale=768:-2", "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "30", str(ai_ready))
@@ -141,7 +144,7 @@ def upload_file(
 
 
 def run_ffmpeg(*args: str) -> None:
-    command = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", *args]
+    command = [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-hide_banner", "-loglevel", "error", *args]
     completed = subprocess.run(command, check=False, capture_output=True, text=True)
     if completed.returncode != 0:
         raise MediaProcessingError("ffmpeg_failed", completed.stderr.strip() or "ffmpeg failed")

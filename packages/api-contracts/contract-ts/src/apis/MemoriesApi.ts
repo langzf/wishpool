@@ -34,6 +34,11 @@ import {
     ProblemToJSON,
 } from '../models/Problem';
 import {
+    type RoomItem,
+    RoomItemFromJSON,
+    RoomItemToJSON,
+} from '../models/RoomItem';
+import {
     type WeeklyMemory,
     WeeklyMemoryFromJSON,
     WeeklyMemoryToJSON,
@@ -43,6 +48,10 @@ export interface ExportMemoryOperationRequest {
     memoryId: string;
     exportMemoryRequest: ExportMemoryRequest;
     idempotencyKey?: string;
+}
+
+export interface FeatureMemoryRequest {
+    memoryId: string;
 }
 
 export interface GetMemoryRequest {
@@ -87,6 +96,29 @@ export interface MemoriesApiInterface {
      * Request memory export.
      */
     exportMemory(requestParameters: ExportMemoryOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MemoryExport>;
+
+    /**
+     * Creates request options for featureMemory without sending the request
+     * @param {string} memoryId 
+     * @throws {RequiredError}
+     * @memberof MemoriesApiInterface
+     */
+    featureMemoryRequestOpts(requestParameters: FeatureMemoryRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @summary Feature a memory into the child\'s room (idempotent)
+     * @param {string} memoryId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof MemoriesApiInterface
+     */
+    featureMemoryRaw(requestParameters: FeatureMemoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RoomItem>>;
+
+    /**
+     * Feature a memory into the child\'s room (idempotent)
+     */
+    featureMemory(requestParameters: FeatureMemoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RoomItem>;
 
     /**
      * Creates request options for getMemory without sending the request
@@ -207,6 +239,59 @@ export class MemoriesApi extends runtime.BaseAPI implements MemoriesApiInterface
      */
     async exportMemory(requestParameters: ExportMemoryOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MemoryExport> {
         const response = await this.exportMemoryRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for featureMemory without sending the request
+     */
+    async featureMemoryRequestOpts(requestParameters: FeatureMemoryRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['memoryId'] == null) {
+            throw new runtime.RequiredError(
+                'memoryId',
+                'Required parameter "memoryId" was null or undefined when calling featureMemory().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/memories/{memoryId}/feature`;
+        urlPath = urlPath.replace('{memoryId}', encodeURIComponent(String(requestParameters['memoryId'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     * Feature a memory into the child\'s room (idempotent)
+     */
+    async featureMemoryRaw(requestParameters: FeatureMemoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RoomItem>> {
+        const requestOptions = await this.featureMemoryRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => RoomItemFromJSON(jsonValue));
+    }
+
+    /**
+     * Feature a memory into the child\'s room (idempotent)
+     */
+    async featureMemory(requestParameters: FeatureMemoryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RoomItem> {
+        const response = await this.featureMemoryRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

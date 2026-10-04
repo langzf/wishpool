@@ -7,6 +7,8 @@ class ChildTask {
     required this.reward,
     required this.submissionType,
     required this.submissionTypeCode,
+    this.statusCode = 'todo',
+    this.feedback,
   });
 
   final String id;
@@ -16,6 +18,20 @@ class ChildTask {
   final int reward;
   final String submissionType;
   final String submissionTypeCode;
+  final String statusCode;
+  final String? feedback;
+}
+
+class ChildFeedbackData {
+  const ChildFeedbackData(
+      {required this.taskTitle,
+      required this.decision,
+      this.text,
+      required this.createdAt});
+  final String taskTitle;
+  final String decision;
+  final String? text;
+  final String createdAt;
 }
 
 class WeeklyPlanRuleData {
@@ -168,9 +184,12 @@ const weeklyPlanRules = [
 ];
 
 const roomItems = [
-  RoomItemData(id: 'bed-tree', title: '树屋小床', left: 20, top: 210, unlocked: true),
-  RoomItemData(id: 'lamp-star', title: '星光台灯', left: 160, top: 86, unlocked: true),
-  RoomItemData(id: 'shelf-memory', title: '纪念册书架', left: 190, top: 260, unlocked: false),
+  RoomItemData(
+      id: 'bed-tree', title: '树屋小床', left: 20, top: 210, unlocked: true),
+  RoomItemData(
+      id: 'lamp-star', title: '星光台灯', left: 160, top: 86, unlocked: true),
+  RoomItemData(
+      id: 'shelf-memory', title: '纪念册书架', left: 190, top: 260, unlocked: false),
 ];
 
 const notificationInbox = [

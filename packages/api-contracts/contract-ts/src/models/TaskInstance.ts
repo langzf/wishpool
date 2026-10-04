@@ -112,6 +112,12 @@ export interface TaskInstance {
      * @memberof TaskInstance
      */
     latestSubmissionId?: string | null;
+    /**
+     * Actual sum of star_light ledger entries; null until the task is approved.
+     * @type {number}
+     * @memberof TaskInstance
+     */
+    rewardAmount?: number | null;
 }
 
 
@@ -172,6 +178,7 @@ export function TaskInstanceFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'requireReview': json['requireReview'],
         'status': json['status'],
         'latestSubmissionId': json['latestSubmissionId'] === undefined ? undefined : json['latestSubmissionId'] === null ? null : json['latestSubmissionId'],
+        'rewardAmount': json['rewardAmount'] === undefined ? undefined : json['rewardAmount'] === null ? null : json['rewardAmount'],
     };
 }
 
@@ -199,6 +206,7 @@ export function TaskInstanceToJSONTyped(value?: TaskInstance | null, ignoreDiscr
         'requireReview': value['requireReview'],
         'status': value['status'],
         'latestSubmissionId': value['latestSubmissionId'],
+        'rewardAmount': value['rewardAmount'],
     };
 }
 

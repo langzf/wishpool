@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
+import java.time.Duration
 import java.util.UUID
 
 @Service
@@ -31,9 +32,45 @@ class AiPrecheckService(
         val media = listSubmissionMedia(request.submissionId)
         val jobId = createJob(submission)
         markJobRunning(jobId)
-        val aiResponse = aiWorkerClient.precheckSubmission(toWorkerRequest(submission, media))
+        markSubmissionStatus(submission.id, "ai_processing")
+        val startedAt = System.nanoTime()
+        val aiResponse = try {
+            aiWorkerClient.precheckSubmission(toWorkerRequest(submission, media))
+        } catch (ex: Exception) {
+            markJobFailed(jobId, ex::class.simpleName ?: "provider_error")
+            markSubmissionStatus(submission.id, "review_pending")
+            recordInvocation(
+                jobId = jobId,
+                provider = "wishpool-ai-worker",
+                model = "deterministic-precheck",
+                latencyMs = elapsedMillis(startedAt),
+                status = "failed",
+                errorCode = ex::class.simpleName ?: "provider_error",
+            )
+            // A provider outage must leave the submission reviewable. The workflow
+            // activity is considered completed after recording the failure; the
+            // parent review path remains available without an AI result.
+            return AiPrecheckResponse(
+                id = UUID(0, 0),
+                submissionId = submission.id,
+                type = "submission_precheck_failed",
+                summary = "AI precheck failed; manual review is still available.",
+                confidence = null,
+                flags = objectMapper.readTree("[]"),
+                model = mapOf("provider" to "wishpool-ai-worker", "status" to "failed"),
+            )
+        }
+        recordInvocation(
+            jobId = jobId,
+            provider = "wishpool-ai-worker",
+            model = "deterministic-precheck",
+            latencyMs = elapsedMillis(startedAt),
+            status = "succeeded",
+            errorCode = null,
+        )
         val precheck = upsertPrecheck(submission, jobId, aiResponse)
         markJobSucceeded(jobId)
+        markSubmissionStatus(submission.id, "review_pending")
         eventPublisher.publishFamilyEvent(
             familyId = submission.familyId,
             eventType = "submission.ai_prechecked",
@@ -163,6 +200,48 @@ class AiPrecheckService(
             .param("id", jobId)
             .update()
     }
+
+    private fun markJobFailed(jobId: UUID, errorCode: String) {
+        jdbcClient.sql(
+            "update ai_job set status = 'failed', error_code = :error_code, updated_at = now() where id = :id",
+        )
+            .param("id", jobId)
+            .param("error_code", errorCode.take(200))
+            .update()
+    }
+
+    private fun markSubmissionStatus(submissionId: UUID, status: String) {
+        jdbcClient.sql("update submission set status = :status, updated_at = now() where id = :id")
+            .param("id", submissionId)
+            .param("status", status)
+            .update()
+    }
+
+    private fun recordInvocation(
+        jobId: UUID,
+        provider: String,
+        model: String,
+        latencyMs: Int,
+        status: String,
+        errorCode: String?,
+    ) {
+        jdbcClient.sql(
+            """
+            insert into model_invocation_log (ai_job_id, provider, model, latency_ms, status, error_code)
+            values (:ai_job_id, :provider, :model, :latency_ms, :status, :error_code)
+            """.trimIndent(),
+        )
+            .param("ai_job_id", jobId)
+            .param("provider", provider)
+            .param("model", model)
+            .param("latency_ms", latencyMs)
+            .param("status", status)
+            .param("error_code", errorCode)
+            .update()
+    }
+
+    private fun elapsedMillis(startedAt: Long): Int =
+        Duration.ofNanos(System.nanoTime() - startedAt).toMillis().toInt().coerceAtLeast(0)
 
     private fun upsertPrecheck(
         submission: SubmissionAiContext,

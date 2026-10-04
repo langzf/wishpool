@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../auth/session.dart';
@@ -5,6 +8,7 @@ import '../data/auth_repository.dart';
 import '../data/wishpool_scope.dart';
 import '../design/wishpool_theme.dart';
 import '../infrastructure/auth_session_store.dart';
+import '../infrastructure/child_mode_lock.dart';
 import '../infrastructure/runtime_config.dart';
 import '../infrastructure/wishpool_api_client.dart';
 import 'mobile_home.dart';
@@ -18,10 +22,12 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   final _store = const AuthSessionStore();
+  final _childModeLock = ChildModeLockStore();
   late final WishPoolRuntimeConfig _baseConfig;
   late final AuthRepository _authRepository;
   WishPoolSession? _session;
   bool _loading = true;
+  bool _signingOut = false;
 
   @override
   void initState() {
@@ -63,7 +69,12 @@ class _AuthGateState extends State<AuthGate> {
       ),
       child: MobileHomeScreen(
         childMode: session.isChildDevice,
-        onSignOut: _signOut,
+        onSignOut: () => _requestSignOut(session),
+        // The parent dashboard is already hidden for child_device sessions;
+        // keep this callback available so a refreshed parent role cannot lose
+        // the local lock entry point due to a stale role flag.
+        onChildModeLockSettings: () =>
+            showChildModeLockSettings(context, _childModeLock),
       ),
     );
   }
@@ -76,12 +87,39 @@ class _AuthGateState extends State<AuthGate> {
       return;
     }
     try {
-      final restored = stored == null ? await _authRepository.enrichSession(envSession!) : await _authRepository.refresh(stored);
+      final restored = stored == null
+          ? await _authRepository.enrichSession(envSession!)
+          : await _authRepository.refresh(stored);
       await _saveSession(restored);
     } catch (_) {
-      await _store.clear();
-      if (!mounted) return;
-      setState(() => _loading = false);
+      // A refresh can fail while the device is offline. Keep the local
+      // session so the child can still see and retry its durable upload queue.
+      // The next API call will use the stored token; an explicit 401 is the
+      // only case that should force the user back through authentication.
+      if (stored != null && !await _isAuthenticationFailure(stored)) {
+        await _saveSession(stored);
+      } else {
+        await _store.clear();
+        if (!mounted) return;
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<bool> _isAuthenticationFailure(WishPoolSession stored) async {
+    try {
+      await _authRepository.refresh(stored);
+      return false;
+    } on WishPoolApiException catch (error) {
+      return error.statusCode == 401 || error.statusCode == 403;
+    } on SocketException {
+      return false;
+    } on HttpException {
+      return false;
+    } on TimeoutException {
+      return false;
+    } catch (_) {
+      return true;
     }
   }
 
@@ -113,6 +151,30 @@ class _AuthGateState extends State<AuthGate> {
       _session = null;
       _loading = false;
     });
+  }
+
+  Future<void> _requestSignOut(WishPoolSession session) async {
+    if (_signingOut) return;
+    _signingOut = true;
+    // The local lock protects switching away from either device role.
+    try {
+      if (await _childModeLock.isEnabled) {
+        if (!mounted || !await requestParentPin(context, _childModeLock)) {
+          return;
+        }
+
+        // The PIN dialog is a route in the Navigator overlay.  Do not remove
+        // the authenticated WishPoolScope in the same frame as Navigator.pop:
+        // its dependents must finish deactivation before AuthGate swaps the
+        // authenticated subtree for the login subtree.  Otherwise Flutter's
+        // InheritedElement teardown can hit `_dependents.isEmpty`.
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted) return;
+      }
+      await _signOut();
+    } finally {
+      _signingOut = false;
+    }
   }
 }
 
@@ -157,15 +219,23 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             Text('WishPool', style: theme.textTheme.headlineLarge),
             const SizedBox(height: WishPoolSpacing.xs),
-            Text(_childMode ? '绑定儿童设备' : '家长手机号登录', style: theme.textTheme.titleLarge),
+            Text(_childMode ? '绑定儿童设备' : '家长手机号登录',
+                style: theme.textTheme.titleLarge),
             const SizedBox(height: WishPoolSpacing.lg),
             SegmentedButton<bool>(
               segments: const [
-                ButtonSegment(value: false, icon: Icon(Icons.phone_iphone), label: Text('家长')),
-                ButtonSegment(value: true, icon: Icon(Icons.child_care), label: Text('儿童')),
+                ButtonSegment(
+                    value: false,
+                    icon: Icon(Icons.phone_iphone),
+                    label: Text('家长')),
+                ButtonSegment(
+                    value: true,
+                    icon: Icon(Icons.child_care),
+                    label: Text('儿童')),
               ],
               selected: {_childMode},
-              onSelectionChanged: (value) => setState(() => _childMode = value.first),
+              onSelectionChanged: (value) =>
+                  setState(() => _childMode = value.first),
             ),
             const SizedBox(height: WishPoolSpacing.lg),
             if (_childMode) ...[
@@ -180,8 +250,13 @@ class _AuthScreenState extends State<AuthScreen> {
               const SizedBox(height: WishPoolSpacing.md),
               FilledButton.icon(
                 onPressed: _submitting ? null : _consumePairingCode,
-                icon: const Icon(Icons.link_outlined),
-                label: const Text('绑定设备'),
+                icon: _submitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.link_outlined),
+                label: Text(_submitting ? '正在绑定…' : '绑定设备'),
               ),
             ] else ...[
               TextField(
@@ -222,7 +297,7 @@ class _AuthScreenState extends State<AuthScreen> {
               FilledButton.icon(
                 onPressed: _submitting ? null : _loginWithPhone,
                 icon: const Icon(Icons.login_outlined),
-                label: const Text('登录'),
+                label: Text(_submitting ? '正在登录…' : '登录'),
               ),
             ],
           ],
@@ -233,7 +308,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _requestPhoneCode() async {
     await _run(() async {
-      final code = await widget.repository.requestPhoneCode(_phoneController.text);
+      final code =
+          await widget.repository.requestPhoneCode(_phoneController.text);
       setState(() {
         _verificationToken = code.verificationToken;
         _debugCode = code.debugCode;
@@ -258,7 +334,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _consumePairingCode() async {
     await _run(() async {
-      final session = await widget.repository.pairChildDevice(_pairingController.text);
+      final session =
+          await widget.repository.pairChildDevice(_pairingController.text);
       widget.onAuthenticated(session);
     });
   }
@@ -267,15 +344,35 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _submitting = true);
     try {
       await action();
+    } on WishPoolApiException catch (error) {
+      _showMessage(_friendlyApiError(error));
+    } on SocketException {
+      _showMessage('网络不可达，请检查网络连接后重试');
+    } on HttpException {
+      _showMessage('网络请求失败，请稍后重试');
+    } on TimeoutException {
+      _showMessage('网络请求超时，请检查网络后重试');
     } catch (_) {
-      _showMessage('操作失败，请检查输入和本地服务。');
+      _showMessage('操作失败，请稍后重试');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
+  String _friendlyApiError(WishPoolApiException error) {
+    if (error.statusCode == 401 || error.statusCode == 403) {
+      return _childMode ? '配对码无效或已过期，请让家长重新生成' : '登录失败，请检查验证码后重试';
+    }
+    if (error.statusCode >= 500) return '服务暂时不可用，请稍后重试';
+    if (error.statusCode == 408 || error.statusCode == 429) {
+      return '请求暂时不可用，请稍后重试';
+    }
+    return _childMode ? '配对失败，请检查配对码后重试' : '登录失败，请稍后重试';
+  }
+
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -321,7 +418,8 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
           children: [
             Text('创建家庭空间', style: theme.textTheme.headlineLarge),
             const SizedBox(height: WishPoolSpacing.xs),
-            Text('欢迎，${widget.session.displayName}', style: theme.textTheme.bodyLarge),
+            Text('欢迎，${widget.session.displayName}',
+                style: theme.textTheme.bodyLarge),
             const SizedBox(height: WishPoolSpacing.lg),
             TextField(
               controller: _familyController,
@@ -368,8 +466,10 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
   }
 
   Future<void> _createFamily() async {
-    if (_familyController.text.trim().isEmpty || _childController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('请填写家庭名称和孩子昵称。')));
+    if (_familyController.text.trim().isEmpty ||
+        _childController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('请填写家庭名称和孩子昵称。')));
       return;
     }
     setState(() => _submitting = true);
@@ -378,12 +478,15 @@ class _FamilySetupScreenState extends State<FamilySetupScreen> {
         session: widget.session,
         familyName: _familyController.text.trim(),
         childName: _childController.text.trim(),
-        timezone: _timezoneController.text.trim().isEmpty ? 'Asia/Shanghai' : _timezoneController.text.trim(),
+        timezone: _timezoneController.text.trim().isEmpty
+            ? 'Asia/Shanghai'
+            : _timezoneController.text.trim(),
       );
       widget.onCompleted(session);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('创建失败，请确认本地服务已启动。')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('创建失败，请确认本地服务已启动。')));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

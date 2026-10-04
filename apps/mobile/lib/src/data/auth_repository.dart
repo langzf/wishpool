@@ -89,10 +89,13 @@ class AuthRepository {
         },
       },
       accessToken: session.accessToken,
-      idempotencyKey: 'mobile-create-family-${DateTime.now().millisecondsSinceEpoch}',
+      idempotencyKey:
+          'mobile-create-family-${DateTime.now().millisecondsSinceEpoch}',
     );
     final familyId = _string(family['id'], '');
-    final children = familyId.isEmpty ? const <Object?>[] : await _children(familyId, session.accessToken);
+    final children = familyId.isEmpty
+        ? const <Object?>[]
+        : await _children(familyId, session.accessToken);
     final childId = _firstId(children);
     return session.copyWith(
       familyId: familyId,
@@ -104,8 +107,10 @@ class AuthRepository {
   Future<WishPoolSession> enrichSession(WishPoolSession session) async {
     if (session.accessToken.isEmpty) return session;
     try {
-      final context = await apiClient.getJson('/me', accessToken: session.accessToken);
-      final families = context['families'] is List ? context['families'] as List : const [];
+      final context =
+          await apiClient.getJson('/me', accessToken: session.accessToken);
+      final families =
+          context['families'] is List ? context['families'] as List : const [];
       final current = _preferredFamilyContext(families, session.familyId);
       final family = _map(current['family']);
       final member = _map(current['member']);
@@ -125,7 +130,8 @@ class AuthRepository {
     }
   }
 
-  Future<WishPoolSession> _sessionFromAuthResponse(Map<String, Object?> response) async {
+  Future<WishPoolSession> _sessionFromAuthResponse(
+      Map<String, Object?> response) async {
     final user = _map(response['user']);
     final session = WishPoolSession(
       accessToken: _string(response['accessToken'], ''),
@@ -139,13 +145,16 @@ class AuthRepository {
   }
 
   Future<List<Object?>> _children(String familyId, String accessToken) async {
-    final response = await apiClient.getRawJson('/families/$familyId/children', accessToken: accessToken);
+    final response = await apiClient.getRawJson('/families/$familyId/children',
+        accessToken: accessToken);
     return response is List ? response : const [];
   }
 
-  Map<Object?, Object?> _preferredFamilyContext(List<Object?> families, String familyId) {
+  Map<Object?, Object?> _preferredFamilyContext(
+      List<Object?> families, String familyId) {
     if (families.isEmpty) return const {};
-    final exact = families.map(_map).where((context) => _string(_map(context['family'])['id'], '') == familyId);
+    final exact = families.map(_map).where(
+        (context) => _string(_map(context['family'])['id'], '') == familyId);
     return exact.isNotEmpty ? exact.first : _map(families.first);
   }
 
@@ -170,7 +179,9 @@ class AuthRepository {
 
   Map<Object?, Object?> _map(Object? value) => value is Map ? value : const {};
 
-  String _string(Object? value, String fallback) => value is String && value.isNotEmpty ? value : fallback;
+  String _string(Object? value, String fallback) =>
+      value is String && value.isNotEmpty ? value : fallback;
 
-  String? _stringOrNull(Object? value) => value is String && value.isNotEmpty ? value : null;
+  String? _stringOrNull(Object? value) =>
+      value is String && value.isNotEmpty ? value : null;
 }

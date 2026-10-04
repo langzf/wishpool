@@ -54,6 +54,7 @@ export * from './MeResponse';
 export * from './MediaAsset';
 export * from './MemberRole';
 export * from './MemoryExport';
+export * from './MemoryItem';
 export * from './MemoryTimeline';
 export * from './NotificationDevice';
 export * from './NotificationDispatchItem';

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../design/wishpool_theme.dart';
 import '../domain/wishpool_snapshot.dart';
 
-class WishScreen extends StatelessWidget {
+class WishScreen extends StatefulWidget {
   const WishScreen({
     super.key,
     required this.snapshot,
@@ -12,32 +12,82 @@ class WishScreen extends StatelessWidget {
   final WishPoolSnapshot snapshot;
 
   @override
+  State<WishScreen> createState() => _WishScreenState();
+}
+
+class _WishScreenState extends State<WishScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _unlockAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _unlockAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    if (widget.snapshot.wishCurrentFragments >=
+        widget.snapshot.wishTargetFragments) {
+      _unlockAnimation.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant WishScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final wasLocked = oldWidget.snapshot.wishCurrentFragments <
+        oldWidget.snapshot.wishTargetFragments;
+    final isComplete = widget.snapshot.wishCurrentFragments >=
+        widget.snapshot.wishTargetFragments;
+    if (wasLocked && isComplete) _unlockAnimation.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _unlockAnimation.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final snapshot = widget.snapshot;
     final theme = Theme.of(context);
-    final remaining = (snapshot.wishTargetFragments - snapshot.wishCurrentFragments).clamp(0, snapshot.wishTargetFragments).toInt();
-    final hasWish = snapshot.wishTargetFragments > 1 || snapshot.wishCurrentFragments > 0;
+    final remaining =
+        (snapshot.wishTargetFragments - snapshot.wishCurrentFragments)
+            .clamp(0, snapshot.wishTargetFragments)
+            .toInt();
+    final hasWish =
+        snapshot.wishTargetFragments > 1 || snapshot.wishCurrentFragments > 0;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
       children: [
         Text('心愿卡', style: theme.textTheme.bodyLarge),
         const SizedBox(height: WishPoolSpacing.xs),
-        Text(hasWish ? snapshot.wishTitle : '等待新的心愿', style: theme.textTheme.headlineLarge),
+        Text(hasWish ? snapshot.wishTitle : '等待新的心愿',
+            style: theme.textTheme.headlineLarge),
         const SizedBox(height: WishPoolSpacing.md),
-        _WishHeroCard(
-          title: snapshot.wishTitle,
-          progress: snapshot.wishProgress,
-          currentFragments: snapshot.wishCurrentFragments,
-          targetFragments: snapshot.wishTargetFragments,
-          imageUrl: snapshot.wishImageUrl,
-          fragmentMode: snapshot.wishFragmentVisualMode,
-          fragmentRows: snapshot.wishFragmentRows,
-          fragmentCols: snapshot.wishFragmentCols,
-          fragmentMask: snapshot.wishFragmentMask,
-          litIndexes: snapshot.wishLitIndexes,
-          remainingFragments: remaining,
-          hasWish: hasWish,
-          onRuleTap: () => _showWishRule(context, remaining),
+        AnimatedBuilder(
+          animation: _unlockAnimation,
+          builder: (context, child) => Transform.scale(
+            scale: 1 + (_unlockAnimation.value * 0.025),
+            child: child,
+          ),
+          child: _WishHeroCard(
+            title: snapshot.wishTitle,
+            progress: snapshot.wishProgress,
+            currentFragments: snapshot.wishCurrentFragments,
+            targetFragments: snapshot.wishTargetFragments,
+            imageUrl: snapshot.wishImageUrl,
+            fragmentMode: snapshot.wishFragmentVisualMode,
+            fragmentRows: snapshot.wishFragmentRows,
+            fragmentCols: snapshot.wishFragmentCols,
+            fragmentMask: snapshot.wishFragmentMask,
+            litIndexes: snapshot.wishLitIndexes,
+            remainingFragments: remaining,
+            hasWish: hasWish,
+            onRuleTap: () => _showWishRule(context, remaining),
+          ),
         ),
         const SizedBox(height: WishPoolSpacing.md),
         _EncourageCard(
@@ -45,6 +95,10 @@ class WishScreen extends StatelessWidget {
           latestMemoryTitle: snapshot.latestMemoryTitle,
           hasWish: hasWish,
         ),
+        if (snapshot.wishHistory.isNotEmpty) ...[
+          const SizedBox(height: WishPoolSpacing.lg),
+          _WishHistorySection(items: snapshot.wishHistory),
+        ],
       ],
     );
   }
@@ -59,7 +113,9 @@ class WishScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(snapshot.wishTitle, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            Text(widget.snapshot.wishTitle,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             const SizedBox(height: WishPoolSpacing.sm),
             Text(
               remaining == 0
@@ -68,19 +124,109 @@ class WishScreen extends StatelessWidget {
             ),
             const SizedBox(height: WishPoolSpacing.md),
             _FragmentBoard(
-              current: snapshot.wishCurrentFragments,
-              target: snapshot.wishTargetFragments,
-              imageUrl: snapshot.wishImageUrl,
-              mode: snapshot.wishFragmentVisualMode,
-              rows: snapshot.wishFragmentRows,
-              cols: snapshot.wishFragmentCols,
-              mask: snapshot.wishFragmentMask,
-              litIndexes: snapshot.wishLitIndexes,
+              current: widget.snapshot.wishCurrentFragments,
+              target: widget.snapshot.wishTargetFragments,
+              imageUrl: widget.snapshot.wishImageUrl,
+              mode: widget.snapshot.wishFragmentVisualMode,
+              rows: widget.snapshot.wishFragmentRows,
+              cols: widget.snapshot.wishFragmentCols,
+              mask: widget.snapshot.wishFragmentMask,
+              litIndexes: widget.snapshot.wishLitIndexes,
               compact: true,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _WishHistorySection extends StatelessWidget {
+  const _WishHistorySection({required this.items});
+
+  final List<WishHistoryItemData> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('已经实现的心愿', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: WishPoolSpacing.sm),
+        ...items.map((item) => Card(
+              margin: const EdgeInsets.only(bottom: WishPoolSpacing.sm),
+              child: ListTile(
+                leading: _HistoryThumb(url: item.imageUrl),
+                title: Text(item.title),
+                subtitle: Text(item.redeemed
+                    ? '已核销 · ${item.redeemedDate}'
+                    : '${item.earnedFragments} / ${item.requiredFragments} 块碎片'),
+                trailing: item.redeemed
+                    ? const Icon(Icons.verified_rounded,
+                        color: WishPoolColors.secondary)
+                    : const Icon(Icons.lock_open_rounded),
+                onTap: () => _showHistory(context, item),
+              ),
+            )),
+      ],
+    );
+  }
+
+  void _showHistory(BuildContext context, WishHistoryItemData item) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item.title, style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 8),
+            Text(item.redeemed
+                ? '兑现时间：${item.redeemedDate}'
+                : '心愿状态：${item.status}'),
+            if (item.redemptionPhotoUrls.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: item.redemptionPhotoUrls.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) => ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(item.redemptionPhotoUrls[index],
+                        width: 150, height: 120, fit: BoxFit.cover),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryThumb extends StatelessWidget {
+  const _HistoryThumb({this.url});
+
+  final String? url;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: url == null
+          ? Container(
+              width: 54,
+              height: 54,
+              color: WishPoolColors.muted,
+              child: const Icon(Icons.auto_awesome),
+            )
+          : Image.network(url!, width: 54, height: 54, fit: BoxFit.cover),
     );
   }
 }
@@ -140,6 +286,10 @@ class _WishHeroCard extends StatelessWidget {
             const SizedBox(height: WishPoolSpacing.lg),
             Text(title, style: theme.textTheme.headlineMedium),
             const SizedBox(height: WishPoolSpacing.xs),
+            Text('奖励：兑现这份心愿',
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: WishPoolColors.secondary)),
+            const SizedBox(height: WishPoolSpacing.xs),
             Text(hasWish ? _progressText() : '新的心愿会在这里亮起来。'),
             const SizedBox(height: WishPoolSpacing.md),
             Row(
@@ -147,7 +297,8 @@ class _WishHeroCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '$currentFragments / $targetFragments 块碎片',
-                    style: theme.textTheme.labelLarge?.copyWith(color: WishPoolColors.secondary),
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(color: WishPoolColors.secondary),
                   ),
                 ),
                 FilledButton.icon(
@@ -195,10 +346,12 @@ class _FragmentBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final layout = _fragmentLayout(target, mode: mode, rows: rows, cols: cols, mask: mask);
+    final layout =
+        _fragmentLayout(target, mode: mode, rows: rows, cols: cols, mask: mask);
     final cells = layout.rows * layout.cols;
     final filled = current.clamp(0, cells).toInt();
-    final litSet = litIndexes.where((index) => index >= 0 && index < cells).toSet();
+    final litSet =
+        litIndexes.where((index) => index >= 0 && index < cells).toSet();
     final complete = filled == cells && target > 0;
 
     return Semantics(
@@ -218,14 +371,18 @@ class _FragmentBoard extends StatelessWidget {
                 itemCount: cells,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: layout.cols,
-                  crossAxisSpacing: layout.mode == 'irregular' ? 2 : WishPoolSpacing.xs,
-                  mainAxisSpacing: layout.mode == 'irregular' ? 2 : WishPoolSpacing.xs,
+                  crossAxisSpacing:
+                      layout.mode == 'irregular' ? 2 : WishPoolSpacing.xs,
+                  mainAxisSpacing:
+                      layout.mode == 'irregular' ? 2 : WishPoolSpacing.xs,
                 ),
                 itemBuilder: (context, index) {
                   final cell = layout.cells[index];
                   return _FragmentTile(
                     index: cell.index,
-                    lit: litSet.isNotEmpty ? litSet.contains(cell.index) : cell.index < filled,
+                    lit: litSet.isNotEmpty
+                        ? litSet.contains(cell.index)
+                        : cell.index < filled,
                     mode: layout.mode,
                     hasImage: imageUrl != null && imageUrl!.isNotEmpty,
                     polygon: cell.polygon,
@@ -259,8 +416,18 @@ class _WishImageBackdrop extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Positioned(left: 18, top: 16, child: Icon(Icons.favorite, color: WishPoolColors.primary.withValues(alpha: 0.24), size: 72)),
-            Positioned(right: 18, bottom: 16, child: Icon(Icons.auto_awesome, color: WishPoolColors.accent.withValues(alpha: 0.42), size: 82)),
+            Positioned(
+                left: 18,
+                top: 16,
+                child: Icon(Icons.favorite,
+                    color: WishPoolColors.primary.withValues(alpha: 0.24),
+                    size: 72)),
+            Positioned(
+                right: 18,
+                bottom: 16,
+                child: Icon(Icons.auto_awesome,
+                    color: WishPoolColors.accent.withValues(alpha: 0.42),
+                    size: 82)),
           ],
         ),
       );
@@ -268,7 +435,8 @@ class _WishImageBackdrop extends StatelessWidget {
     return Image.network(
       imageUrl!,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => const _WishImageBackdrop(imageUrl: null),
+      errorBuilder: (context, error, stackTrace) =>
+          const _WishImageBackdrop(imageUrl: null),
     );
   }
 }
@@ -295,9 +463,19 @@ class _FragmentTile extends StatelessWidget {
       curve: Curves.easeOutBack,
       margin: EdgeInsets.all(mode == 'irregular' ? 0 : 1),
       decoration: BoxDecoration(
-        color: lit ? (hasImage ? Colors.transparent : WishPoolColors.secondary.withValues(alpha: 0.72)) : const Color(0xFF172033).withValues(alpha: 0.72),
-        border: Border.all(color: lit ? Colors.white.withValues(alpha: 0.76) : Colors.white.withValues(alpha: 0.18), width: lit ? 1.5 : 1),
-        borderRadius: mode == 'grid_reveal' ? BorderRadius.circular(8) : BorderRadius.circular(18),
+        color: lit
+            ? (hasImage
+                ? Colors.transparent
+                : WishPoolColors.secondary.withValues(alpha: 0.72))
+            : const Color(0xFF172033).withValues(alpha: 0.72),
+        border: Border.all(
+            color: lit
+                ? Colors.white.withValues(alpha: 0.76)
+                : Colors.white.withValues(alpha: 0.18),
+            width: lit ? 1.5 : 1),
+        borderRadius: mode == 'grid_reveal'
+            ? BorderRadius.circular(8)
+            : BorderRadius.circular(18),
         boxShadow: lit
             ? [
                 BoxShadow(
@@ -308,11 +486,21 @@ class _FragmentTile extends StatelessWidget {
               ]
             : null,
       ),
-      child: lit ? const SizedBox.shrink() : Icon(Icons.auto_awesome, color: Colors.white.withValues(alpha: 0.74), size: 18),
+      child: lit
+          ? const SizedBox.shrink()
+          : Icon(Icons.auto_awesome,
+              color: Colors.white.withValues(alpha: 0.74), size: 18),
     );
 
-    if (mode == 'irregular') return ClipPath(clipper: _ShardClipper(index, polygon: polygon), child: tile);
-    if (mode == 'puzzle_lines') return CustomPaint(foregroundPainter: _PuzzleLinePainter(index: index, lit: lit), child: tile);
+    if (mode == 'irregular') {
+      return ClipPath(
+          clipper: _ShardClipper(index, polygon: polygon), child: tile);
+    }
+    if (mode == 'puzzle_lines') {
+      return CustomPaint(
+          foregroundPainter: _PuzzleLinePainter(index: index, lit: lit),
+          child: tile);
+    }
     return tile;
   }
 }
@@ -325,9 +513,14 @@ class _CompletionSparkle extends StatelessWidget {
     return IgnorePointer(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: RadialGradient(colors: [Colors.white.withValues(alpha: 0.38), Colors.transparent]),
+          gradient: RadialGradient(colors: [
+            Colors.white.withValues(alpha: 0.38),
+            Colors.transparent
+          ]),
         ),
-        child: Center(child: Icon(Icons.celebration, color: Colors.white.withValues(alpha: 0.86), size: 42)),
+        child: Center(
+            child: Icon(Icons.celebration,
+                color: Colors.white.withValues(alpha: 0.86), size: 42)),
       ),
     );
   }
@@ -344,14 +537,17 @@ class _PuzzleLinePainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = lit ? 2 : 1.2
-      ..color = (lit ? Colors.white : const Color(0xFF93C5FD)).withValues(alpha: lit ? 0.9 : 0.5);
+      ..color = (lit ? Colors.white : const Color(0xFF93C5FD))
+          .withValues(alpha: lit ? 0.9 : 0.5);
     final path = Path()
       ..moveTo(0, 0)
       ..lineTo(size.width * 0.42, 0)
-      ..arcToPoint(Offset(size.width * 0.58, 0), radius: Radius.circular(size.width * 0.12), clockwise: index.isEven)
+      ..arcToPoint(Offset(size.width * 0.58, 0),
+          radius: Radius.circular(size.width * 0.12), clockwise: index.isEven)
       ..lineTo(size.width, 0)
       ..lineTo(size.width, size.height * 0.42)
-      ..arcToPoint(Offset(size.width, size.height * 0.58), radius: Radius.circular(size.width * 0.12), clockwise: !index.isEven)
+      ..arcToPoint(Offset(size.width, size.height * 0.58),
+          radius: Radius.circular(size.width * 0.12), clockwise: !index.isEven)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -359,7 +555,8 @@ class _PuzzleLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _PuzzleLinePainter oldDelegate) => oldDelegate.lit != lit || oldDelegate.index != index;
+  bool shouldRepaint(covariant _PuzzleLinePainter oldDelegate) =>
+      oldDelegate.lit != lit || oldDelegate.index != index;
 }
 
 class _ShardClipper extends CustomClipper<Path> {
@@ -370,14 +567,41 @@ class _ShardClipper extends CustomClipper<Path> {
 
   @override
   Path getClip(Size size) {
-    final points = polygon?.map((point) => Offset(point.x, point.y)).toList() ?? switch (index % 5) {
-      0 => [const Offset(0.02, 0.08), const Offset(0.88, 0), const Offset(1, 0.72), const Offset(0.18, 1)],
-      1 => [const Offset(0.12, 0), const Offset(1, 0.14), const Offset(0.86, 1), const Offset(0, 0.84)],
-      2 => [const Offset(0, 0), const Offset(0.78, 0.1), const Offset(1, 1), const Offset(0.2, 0.88)],
-      3 => [const Offset(0.18, 0.06), const Offset(1, 0), const Offset(0.82, 0.92), const Offset(0, 1)],
-      _ => [const Offset(0, 0.2), const Offset(0.72, 0), const Offset(1, 0.8), const Offset(0.24, 1)],
-    };
-    final path = Path()..moveTo(points.first.dx * size.width, points.first.dy * size.height);
+    final points = polygon?.map((point) => Offset(point.x, point.y)).toList() ??
+        switch (index % 5) {
+          0 => [
+              const Offset(0.02, 0.08),
+              const Offset(0.88, 0),
+              const Offset(1, 0.72),
+              const Offset(0.18, 1)
+            ],
+          1 => [
+              const Offset(0.12, 0),
+              const Offset(1, 0.14),
+              const Offset(0.86, 1),
+              const Offset(0, 0.84)
+            ],
+          2 => [
+              const Offset(0, 0),
+              const Offset(0.78, 0.1),
+              const Offset(1, 1),
+              const Offset(0.2, 0.88)
+            ],
+          3 => [
+              const Offset(0.18, 0.06),
+              const Offset(1, 0),
+              const Offset(0.82, 0.92),
+              const Offset(0, 1)
+            ],
+          _ => [
+              const Offset(0, 0.2),
+              const Offset(0.72, 0),
+              const Offset(1, 0.8),
+              const Offset(0.24, 1)
+            ],
+        };
+    final path = Path()
+      ..moveTo(points.first.dx * size.width, points.first.dy * size.height);
     for (final point in points.skip(1)) {
       path.lineTo(point.dx * size.width, point.dy * size.height);
     }
@@ -385,7 +609,8 @@ class _ShardClipper extends CustomClipper<Path> {
   }
 
   @override
-  bool shouldReclip(covariant _ShardClipper oldClipper) => oldClipper.index != index || oldClipper.polygon != polygon;
+  bool shouldReclip(covariant _ShardClipper oldClipper) =>
+      oldClipper.index != index || oldClipper.polygon != polygon;
 }
 
 class _EncourageCard extends StatelessWidget {
@@ -424,7 +649,8 @@ class _EncourageCard extends StatelessWidget {
                 color: WishPoolColors.muted,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.celebration_outlined, color: WishPoolColors.accent),
+              child: const Icon(Icons.celebration_outlined,
+                  color: WishPoolColors.accent),
             ),
             const SizedBox(width: WishPoolSpacing.md),
             Expanded(
@@ -444,19 +670,38 @@ class _EncourageCard extends StatelessWidget {
   }
 }
 
-({int rows, int cols, String mode, List<WishFragmentCellData> cells}) _fragmentLayout(
+({int rows, int cols, String mode, List<WishFragmentCellData> cells})
+    _fragmentLayout(
   int target, {
   required String mode,
   int? rows,
   int? cols,
   WishFragmentMaskData? mask,
 }) {
-  if (mask != null && mask.rows > 0 && mask.cols > 0 && mask.rows * mask.cols == mask.total && mask.cells.length == mask.total) {
-    return (rows: mask.rows, cols: mask.cols, mode: mask.mode, cells: mask.cells);
+  if (mask != null &&
+      mask.rows > 0 &&
+      mask.cols > 0 &&
+      mask.rows * mask.cols == mask.total &&
+      mask.cells.length == mask.total) {
+    return (
+      rows: mask.rows,
+      cols: mask.cols,
+      mode: mask.mode,
+      cells: mask.cells
+    );
   }
   final normalizedTarget = target > 0 ? target : 1;
-  if (rows != null && cols != null && rows > 0 && cols > 0 && rows * cols == normalizedTarget) {
-    return (rows: rows, cols: cols, mode: mode, cells: _defaultCells(rows, cols));
+  if (rows != null &&
+      cols != null &&
+      rows > 0 &&
+      cols > 0 &&
+      rows * cols == normalizedTarget) {
+    return (
+      rows: rows,
+      cols: cols,
+      mode: mode,
+      cells: _defaultCells(rows, cols)
+    );
   }
   var bestRows = 1;
   var bestCols = normalizedTarget;
@@ -468,11 +713,17 @@ class _EncourageCard extends StatelessWidget {
     }
     candidateRows += 1;
   }
-  return (rows: bestRows, cols: bestCols, mode: mode, cells: _defaultCells(bestRows, bestCols));
+  return (
+    rows: bestRows,
+    cols: bestCols,
+    mode: mode,
+    cells: _defaultCells(bestRows, bestCols)
+  );
 }
 
 List<WishFragmentCellData> _defaultCells(int rows, int cols) {
   return List.generate(rows * cols, (index) {
-    return WishFragmentCellData(index: index, row: index ~/ cols, col: index % cols);
+    return WishFragmentCellData(
+        index: index, row: index ~/ cols, col: index % cols);
   });
 }

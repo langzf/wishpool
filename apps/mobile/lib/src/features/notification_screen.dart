@@ -25,7 +25,8 @@ class NotificationScreen extends StatelessWidget {
       children: [
         Text('通知中心', style: theme.textTheme.headlineLarge),
         const SizedBox(height: WishPoolSpacing.xs),
-        Text('${snapshot.unreadNotifications} 条未读提醒', style: theme.textTheme.bodyMedium),
+        Text('${snapshot.unreadNotifications} 条未读提醒',
+            style: theme.textTheme.bodyMedium),
         const SizedBox(height: WishPoolSpacing.md),
         ...snapshot.notificationInbox.map(
           (item) => Padding(
@@ -76,17 +77,21 @@ class _NotificationCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(isRead ? Icons.mark_email_read_outlined : Icons.notifications_active_outlined),
+                Icon(isRead
+                    ? Icons.mark_email_read_outlined
+                    : Icons.notifications_active_outlined),
                 const SizedBox(width: WishPoolSpacing.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(item.title, style: Theme.of(context).textTheme.titleLarge),
+                      Text(item.title,
+                          style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 4),
                       Text(item.body),
                       const SizedBox(height: 4),
-                      Text(item.createdAt, style: Theme.of(context).textTheme.bodySmall),
+                      Text(item.createdAt,
+                          style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                 ),
@@ -113,7 +118,8 @@ class _NotificationCard extends StatelessWidget {
     await WishPoolScope.of(context).markNotificationsRead([item.id]);
     if (!context.mounted) return;
     onChanged?.call();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('已标记为已读')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('已标记为已读')));
   }
 }
 
@@ -137,10 +143,12 @@ class _PreferenceTile extends StatelessWidget {
   }
 
   Future<void> _update(BuildContext context, bool enabled) async {
-    await WishPoolScope.of(context).updateNotificationPreference(preference, enabled: enabled);
+    await WishPoolScope.of(context)
+        .updateNotificationPreference(preference, enabled: enabled);
     if (!context.mounted) return;
     onChanged?.call();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('通知偏好已更新')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('通知偏好已更新')));
   }
 
   String _label(String type) {

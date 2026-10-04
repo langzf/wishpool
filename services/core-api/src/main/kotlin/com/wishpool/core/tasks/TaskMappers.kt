@@ -32,6 +32,7 @@ fun taskInstanceResponse(rs: ResultSet, rowNum: Int): TaskInstanceResponse =
         requireReview = rs.getBoolean("require_review"),
         status = rs.getString("status"),
         latestSubmissionId = rs.getObject("latest_submission_id", UUID::class.java),
+        rewardAmount = (rs.getObject("reward_amount") as? Number)?.toInt(),
     )
 
 fun weeklyPlanHeader(rs: ResultSet, rowNum: Int): WeeklyPlanHeader =

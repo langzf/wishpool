@@ -61,9 +61,12 @@ class WishPoolTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, height: 1.15),
-        headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.2),
-        titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, height: 1.25),
+        headlineLarge:
+            TextStyle(fontSize: 32, fontWeight: FontWeight.w800, height: 1.15),
+        headlineMedium:
+            TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.2),
+        titleLarge:
+            TextStyle(fontSize: 20, fontWeight: FontWeight.w800, height: 1.25),
         bodyLarge: TextStyle(fontSize: 16, height: 1.5),
         bodyMedium: TextStyle(fontSize: 14, height: 1.5),
         labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
@@ -91,7 +94,8 @@ class WishPoolTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        indicatorShape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

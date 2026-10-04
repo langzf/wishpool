@@ -5,6 +5,7 @@ All URIs are relative to *http://localhost:8080*
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
 | [**exportMemory**](MemoriesApi.md#exportmemoryoperation) | **POST** /memories/{memoryId}/export | Request memory export. |
+| [**featureMemory**](MemoriesApi.md#featurememory) | **POST** /memories/{memoryId}/feature | Feature a memory into the child\&#39;s room (idempotent) |
 | [**getMemory**](MemoriesApi.md#getmemory) | **GET** /memories/{memoryId} | Get a memory detail. |
 | [**listMemories**](MemoriesApi.md#listmemories) | **GET** /memories | List memories for a child. |
 
@@ -81,6 +82,76 @@ example().catch(console.error);
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **202** | Export requested. |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## featureMemory
+
+> RoomItem featureMemory(memoryId)
+
+Feature a memory into the child\&#39;s room (idempotent)
+
+### Example
+
+```ts
+import {
+  Configuration,
+  MemoriesApi,
+} from '@wishpool/api-client';
+import type { FeatureMemoryRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new MemoriesApi(config);
+
+  const body = {
+    // string
+    memoryId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+  } satisfies FeatureMemoryRequest;
+
+  try {
+    const data = await api.featureMemory(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **memoryId** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+[**RoomItem**](RoomItem.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Room item containing the featured memory. |  -  |
 | **0** | Error response. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

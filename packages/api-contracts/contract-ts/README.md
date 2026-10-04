@@ -95,6 +95,7 @@ All URIs are relative to *http://localhost:8080*
 *MediaApi* | [**createUploadSession**](docs/MediaApi.md#createuploadsessionoperation) | **POST** /media/upload-sessions | Create a signed upload session.
 *MediaApi* | [**finalizeMedia**](docs/MediaApi.md#finalizemediaoperation) | **POST** /media/{mediaId}/finalize | Finalize a media upload.
 *MemoriesApi* | [**exportMemory**](docs/MemoriesApi.md#exportmemoryoperation) | **POST** /memories/{memoryId}/export | Request memory export.
+*MemoriesApi* | [**featureMemory**](docs/MemoriesApi.md#featurememory) | **POST** /memories/{memoryId}/feature | Feature a memory into the child\&#39;s room (idempotent)
 *MemoriesApi* | [**getMemory**](docs/MemoriesApi.md#getmemory) | **GET** /memories/{memoryId} | Get a memory detail.
 *MemoriesApi* | [**listMemories**](docs/MemoriesApi.md#listmemories) | **GET** /memories | List memories for a child.
 *NotificationsApi* | [**listNotificationPreferences**](docs/NotificationsApi.md#listnotificationpreferences) | **GET** /notification-preferences | List notification preferences for the current user.
@@ -194,6 +195,7 @@ All URIs are relative to *http://localhost:8080*
 - [MediaAsset](docs/MediaAsset.md)
 - [MemberRole](docs/MemberRole.md)
 - [MemoryExport](docs/MemoryExport.md)
+- [MemoryItem](docs/MemoryItem.md)
 - [MemoryTimeline](docs/MemoryTimeline.md)
 - [NotificationDevice](docs/NotificationDevice.md)
 - [NotificationDispatchItem](docs/NotificationDispatchItem.md)

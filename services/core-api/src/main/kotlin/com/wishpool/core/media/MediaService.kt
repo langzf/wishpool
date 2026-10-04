@@ -207,6 +207,9 @@ class MediaService(
     @Transactional
     fun markProcessingStarted(mediaId: UUID): MediaAssetResponse {
         val media = findMedia(mediaId) ?: throw NotFoundError("Media asset not found.")
+        // A duplicate media.uploaded event can arrive after completion. ready is a
+        // terminal success state, so this endpoint is idempotent instead of retrying 409.
+        if (media.status == "ready") return toResponse(media)
         if (media.status !in setOf("uploaded", "processing")) {
             throw ConflictError("Media asset is not ready for processing.")
         }

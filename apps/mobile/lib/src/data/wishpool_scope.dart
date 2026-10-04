@@ -50,31 +50,45 @@ class WishPoolScope extends InheritedWidget {
 
   Future<WishPoolSnapshot> loadSnapshot() => repository.loadHomeSnapshot();
 
-  Future<void> approveReview(String submissionId) => repository.approveReview(submissionId);
+  Future<void> approveReview(String submissionId) =>
+      repository.approveReview(submissionId);
 
-  Future<void> requestRevision(String submissionId) => repository.requestRevision(submissionId);
+  Future<void> requestRevision(String submissionId, {String? feedback}) =>
+      repository.requestRevision(submissionId, feedback: feedback);
 
-  Future<void> submitManualTask(ChildTask task) => repository.submitManualTask(task);
+  Future<void> submitManualTask(ChildTask task) =>
+      repository.submitManualTask(task);
 
-  Future<void> submitMediaTask({
+  Future<MediaSubmitOutcome> submitMediaTask({
     required ChildTask task,
     required File file,
     required String contentType,
   }) =>
-      repository.submitMediaTask(task: task, file: file, contentType: contentType);
+      repository.submitMediaTask(
+          task: task, file: file, contentType: contentType);
 
-  Future<void> arrangeRoomItem(RoomItemData item, {required double left, required double top}) =>
+  Future<MediaSubmitOutcome> retryPendingUploads({bool force = false}) =>
+      repository.retryPendingUploads(force: force);
+
+  Future<void> resetUploadBackoff() => repository.resetUploadBackoff();
+
+  Future<void> arrangeRoomItem(RoomItemData item,
+          {required double left, required double top}) =>
       repository.arrangeRoomItem(item, left: left, top: top);
 
   Future<void> skipTask(ChildTask task) => repository.skipTask(task);
 
   Future<void> postponeTask(ChildTask task) => repository.postponeTask(task);
 
-  Future<void> markNotificationsRead(List<String> notificationIds) => repository.markNotificationsRead(notificationIds);
+  Future<void> markNotificationsRead(List<String> notificationIds) =>
+      repository.markNotificationsRead(notificationIds);
 
-  Future<void> updateNotificationPreference(NotificationPreferenceData preference, {required bool enabled}) =>
+  Future<void> updateNotificationPreference(
+          NotificationPreferenceData preference,
+          {required bool enabled}) =>
       repository.updateNotificationPreference(preference, enabled: enabled);
 
   @override
-  bool updateShouldNotify(WishPoolScope oldWidget) => config != oldWidget.config;
+  bool updateShouldNotify(WishPoolScope oldWidget) =>
+      config != oldWidget.config;
 }

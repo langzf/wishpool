@@ -58,6 +58,7 @@ class ReviewService(
               ti.require_review,
               ti.status as task_status,
               ti.latest_submission_id,
+              null::int as reward_amount,
               ap.summary as ai_summary,
               tm.id as thumb_id,
               tm.family_id as thumb_family_id,
@@ -113,6 +114,7 @@ class ReviewService(
                         requireReview = rs.getBoolean("require_review"),
                         status = rs.getString("task_status"),
                         latestSubmissionId = rs.getObject("latest_submission_id", UUID::class.java),
+                        rewardAmount = (rs.getObject("reward_amount") as? Number)?.toInt(),
                     ),
                     aiSummary = rs.getString("ai_summary"),
                     thumbnailMedia = rs.getObject("thumb_id", UUID::class.java)?.let {
@@ -147,6 +149,9 @@ class ReviewService(
         familyPolicy.requireParent(user, submission.familyId)
         idempotencyService.find(submission.familyId, idempotencyKey, REVIEW_OPERATION)
             ?.let { return getReview(it.resourceId) }
+        if (submission.status in setOf("ai_pending", "ai_processing")) {
+            throw ConflictError("智能检查还没完成，稍等一下再试")
+        }
         if (submission.status != "review_pending") throw ConflictError("Submission is not pending review.")
 
         val task = findTaskForUpdate(submission.taskInstanceId) ?: throw NotFoundError("Task not found.")

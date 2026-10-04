@@ -23,6 +23,9 @@ class WishPoolSnapshot {
     required this.unreadNotifications,
     required this.notificationInbox,
     required this.notificationPreferences,
+    this.latestFeedback,
+    this.wishHistory = const <WishHistoryItemData>[],
+    this.memoryTimeline = const <MemoryTimelineItemData>[],
   });
 
   final String source;
@@ -46,6 +49,9 @@ class WishPoolSnapshot {
   final int unreadNotifications;
   final List<NotificationItemData> notificationInbox;
   final List<NotificationPreferenceData> notificationPreferences;
+  final ChildFeedbackData? latestFeedback;
+  final List<WishHistoryItemData> wishHistory;
+  final List<MemoryTimelineItemData> memoryTimeline;
 }
 
 const fixtureSnapshot = WishPoolSnapshot(
@@ -60,7 +66,7 @@ const fixtureSnapshot = WishPoolSnapshot(
   wishFragmentRows: null,
   wishFragmentCols: null,
   wishFragmentMask: null,
-  wishLitIndexes: const <int>[],
+  wishLitIndexes: <int>[],
   childTasks: childTasks,
   reviewCards: reviewCards,
   weeklyPlanRules: weeklyPlanRules,
@@ -70,7 +76,82 @@ const fixtureSnapshot = WishPoolSnapshot(
   unreadNotifications: 0,
   notificationInbox: notificationInbox,
   notificationPreferences: notificationPreferences,
+  latestFeedback: null,
 );
+
+class WishHistoryItemData {
+  const WishHistoryItemData({
+    required this.id,
+    required this.title,
+    required this.status,
+    required this.earnedFragments,
+    required this.requiredFragments,
+    this.imageUrl,
+    this.redeemedDate,
+    this.redemptionPhotoUrls = const <String>[],
+  });
+
+  final String id;
+  final String title;
+  final String status;
+  final int earnedFragments;
+  final int requiredFragments;
+  final String? imageUrl;
+  final String? redeemedDate;
+  final List<String> redemptionPhotoUrls;
+
+  bool get redeemed => redeemedDate != null && redeemedDate!.isNotEmpty;
+}
+
+class MemoryTimelineItemData {
+  const MemoryTimelineItemData({
+    required this.id,
+    required this.weekId,
+    required this.title,
+    required this.status,
+    required this.summary,
+    required this.items,
+  });
+
+  final String id;
+  final String weekId;
+  final String title;
+  final String status;
+  final String summary;
+  final List<MemoryMediaItemData> items;
+}
+
+class MemoryMediaItemData {
+  const MemoryMediaItemData({
+    required this.id,
+    required this.title,
+    required this.kind,
+    this.sourceType,
+    this.sourceId,
+    this.mediaAssetId,
+    this.contentType,
+    this.url,
+    this.thumbnailUrl,
+    this.note,
+    this.scheduledDate,
+    this.durationSec,
+  });
+
+  final String id;
+  final String title;
+  final String kind;
+  final String? sourceType;
+  final String? sourceId;
+  final String? mediaAssetId;
+  final String? contentType;
+  final String? url;
+  final String? thumbnailUrl;
+  final String? note;
+  final String? scheduledDate;
+  final int? durationSec;
+
+  bool get playable => url != null && url!.isNotEmpty;
+}
 
 class WishFragmentMaskData {
   const WishFragmentMaskData({

@@ -20,6 +20,12 @@ import { mapValues } from '../runtime';
  */
 export interface GenerateMemoryWorkflowRequest {
     /**
+     * Wish id for manual regeneration; the event payload remains authoritative.
+     * @type {string}
+     * @memberof GenerateMemoryWorkflowRequest
+     */
+    wishId?: string;
+    /**
      * 
      * @type {string}
      * @memberof GenerateMemoryWorkflowRequest
@@ -45,6 +51,7 @@ export function GenerateMemoryWorkflowRequestFromJSONTyped(json: any, ignoreDisc
     }
     return {
         
+        'wishId': json['wishId'] == null ? undefined : json['wishId'],
         'triggeredByEventId': json['triggeredByEventId'],
     };
 }
@@ -60,6 +67,7 @@ export function GenerateMemoryWorkflowRequestToJSONTyped(value?: GenerateMemoryW
 
     return {
         
+        'wishId': value['wishId'],
         'triggeredByEventId': value['triggeredByEventId'],
     };
 }

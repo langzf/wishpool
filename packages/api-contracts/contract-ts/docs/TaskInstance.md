@@ -19,6 +19,7 @@ Name | Type
 `requireReview` | boolean
 `status` | string
 `latestSubmissionId` | string
+`rewardAmount` | number
 
 ## Example
 
@@ -40,6 +41,7 @@ const example = {
   "requireReview": null,
   "status": null,
   "latestSubmissionId": null,
+  "rewardAmount": null,
 } satisfies TaskInstance
 
 console.log(example)

@@ -11,8 +11,10 @@ class WishPoolApiClient {
 
   final WishPoolRuntimeConfig config;
   final HttpClient _httpClient;
+  static const _requestTimeout = Duration(seconds: 12);
 
-  Future<Map<String, Object?>> getJson(String path, {String? accessToken}) async {
+  Future<Map<String, Object?>> getJson(String path,
+      {String? accessToken}) async {
     final decoded = await getRawJson(path, accessToken: accessToken);
     if (decoded is! Map<String, Object?>) {
       throw const FormatException('Expected a JSON object response.');
@@ -22,12 +24,14 @@ class WishPoolApiClient {
 
   Future<Object?> getRawJson(String path, {String? accessToken}) async {
     final uri = Uri.parse('${config.coreApiBaseUrl}$path');
-    final request = await _httpClient.getUrl(uri);
+    final request = await _httpClient.getUrl(uri).timeout(_requestTimeout);
     if (accessToken != null) {
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
+      request.headers
+          .set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
     }
-    final response = await request.close();
-    final body = await response.transform(utf8.decoder).join();
+    final response = await request.close().timeout(_requestTimeout);
+    final body =
+        await response.transform(utf8.decoder).join().timeout(_requestTimeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw WishPoolApiException(response.statusCode, body);
     }
@@ -70,17 +74,20 @@ class WishPoolApiClient {
     String? idempotencyKey,
   }) async {
     final uri = Uri.parse('${config.coreApiBaseUrl}$path');
-    final request = await _httpClient.openUrl(method, uri);
+    final request =
+        await _httpClient.openUrl(method, uri).timeout(_requestTimeout);
     request.headers.contentType = ContentType.json;
     if (accessToken != null) {
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
+      request.headers
+          .set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
     }
     if (idempotencyKey != null) {
       request.headers.set('Idempotency-Key', idempotencyKey);
     }
     request.write(jsonEncode(body));
-    final response = await request.close();
-    final responseBody = await response.transform(utf8.decoder).join();
+    final response = await request.close().timeout(_requestTimeout);
+    final responseBody =
+        await response.transform(utf8.decoder).join().timeout(_requestTimeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw WishPoolApiException(response.statusCode, responseBody);
     }
@@ -97,12 +104,16 @@ class WishPoolApiClient {
     File file, {
     required String contentType,
   }) async {
-    final request = await _httpClient.putUrl(Uri.parse(url));
+    final request =
+        await _httpClient.putUrl(Uri.parse(url)).timeout(_requestTimeout);
     request.headers.contentType = ContentType.parse(contentType);
     request.headers.contentLength = await file.length();
-    await request.addStream(file.openRead());
-    final response = await request.close();
-    final responseBody = await response.transform(utf8.decoder).join();
+    request.headers.set(HttpHeaders.userAgentHeader,
+        'Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36');
+    await request.addStream(file.openRead()).timeout(_requestTimeout);
+    final response = await request.close().timeout(_requestTimeout);
+    final responseBody =
+        await response.transform(utf8.decoder).join().timeout(_requestTimeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw WishPoolApiException(response.statusCode, responseBody);
     }

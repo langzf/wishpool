@@ -45,7 +45,9 @@ class SyncCoordinator {
     );
     final socket = await WebSocket.connect(
       uri.toString(),
-      headers: accessToken == null ? null : {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
+      headers: accessToken == null
+          ? null
+          : {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
     );
     socket.add(jsonEncode({'type': 'sync.pull', 'afterSeq': afterSeq}));
     return SyncConnectionState(socket: socket, afterSeq: afterSeq);
@@ -66,12 +68,16 @@ class SyncCoordinator {
   Future<void> _connect() async {
     final familyId = _familyId;
     final accessToken = _accessToken;
-    if (_connecting || _disposed || familyId == null || accessToken == null) return;
+    if (_connecting || _disposed || familyId == null || accessToken == null) {
+      return;
+    }
     _connecting = true;
     try {
-      final state = await connect(familyId: familyId, afterSeq: _afterSeq, accessToken: accessToken);
+      final state = await connect(
+          familyId: familyId, afterSeq: _afterSeq, accessToken: accessToken);
       _socket = state.socket;
-      _socket?.listen(_handleSocketMessage, onDone: _scheduleReconnect, onError: (_) => _scheduleReconnect());
+      _socket?.listen(_handleSocketMessage,
+          onDone: _scheduleReconnect, onError: (_) => _scheduleReconnect());
     } catch (_) {
       _scheduleReconnect();
     } finally {
@@ -148,8 +154,10 @@ class FamilySyncEvent {
       type: json['type']?.toString() ?? 'unknown',
       aggregateType: json['aggregateType']?.toString() ?? 'unknown',
       aggregateId: json['aggregateId']?.toString() ?? '',
-      occurredAt: occurredAtValue is String ? DateTime.tryParse(occurredAtValue) : null,
-      payload: payloadValue is Map ? payloadValue.cast<String, Object?>() : const {},
+      occurredAt:
+          occurredAtValue is String ? DateTime.tryParse(occurredAtValue) : null,
+      payload:
+          payloadValue is Map ? payloadValue.cast<String, Object?>() : const {},
     );
   }
 }

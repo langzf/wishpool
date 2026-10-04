@@ -70,7 +70,7 @@ class SubmissionService(
             .param("task_instance_id", task.id)
             .param("attempt_no", attemptNo)
             .param("submission_type", task.submissionType)
-            .param("status", "review_pending")
+            .param("status", "ai_pending")
             .param("client_mutation_id", request.clientMutationId.trim())
             .param("submitted_by_device_id", user.deviceId)
             .param("submitted_at", submittedAt)
@@ -212,7 +212,8 @@ class SubmissionService(
         jdbcClient.sql(
             """
             select id, family_id, child_id, scheduled_date, title, category, submission_type,
-                   description, target_text, is_core, require_review, status, latest_submission_id
+                   description, target_text, is_core, require_review, status, latest_submission_id,
+                   case when status = 'approved' then coalesce((select sum(amount)::int from reward_ledger where task_instance_id = task_instance.id and reward_type = 'star_light'), 0) else null end as reward_amount
             from task_instance
             where id = :id
             """.trimIndent(),

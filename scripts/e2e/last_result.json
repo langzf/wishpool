@@ -1,0 +1,134 @@
+{
+  "startedAt": "2026-09-30T19:32:58.221735+00:00",
+  "date": "2026-10-01",
+  "runId": "033227-05c31e",
+  "weekId": "e2e-w-033227-05c31e",
+  "baseUrls": {
+    "coreApi": "http://localhost:18080",
+    "parentWeb": "http://localhost:18300",
+    "realtimeHealth": "http://localhost:18081/health"
+  },
+  "results": [
+    {
+      "id": "auth.login",
+      "name": "parent login",
+      "result": "PASS",
+      "evidence": "real parent accessToken received"
+    },
+    {
+      "id": "plan.materialize",
+      "name": "save unique week plan",
+      "result": "PASS",
+      "evidence": "planId=ddd152bc-88ed-459d-854a-b3733434a13d weekId=e2e-w-033227-05c31e rule=e2e-033227-05c31e submissionType=photo isCore=false"
+    },
+    {
+      "id": "task.today",
+      "name": "poll today's materialized todo",
+      "result": "PASS",
+      "evidence": "taskId=ad03ebfa-6b6d-4b41-8b3e-11ccd236e214 status=todo date=2026-10-01 poll<= 45s"
+    },
+    {
+      "id": "pairing.consume",
+      "name": "pair child device",
+      "result": "PASS",
+      "evidence": "pairing consume returned real child token"
+    },
+    {
+      "id": "submission.create",
+      "name": "create ai_pending submission",
+      "result": "PASS",
+      "evidence": "submissionId=dbede646-3cad-4c72-b554-297ace29a9d7 initialStatus=ai_pending mediaAssetIds=['c33a03cd-f7b5-4e33-9a4a-80f86c269f75'] c33a03cd-f7b5-4e33-9a4a-80f86c269f75|PUT=200|finalize=200|media_asset.status=uploaded(at finalize)|media_asset.status=processing"
+    },
+    {
+      "id": "submission.idempotency",
+      "name": "duplicate submission is rejected/reused",
+      "result": "PASS",
+      "evidence": "duplicate status=201 sameSubmission=True"
+    },
+    {
+      "id": "ai.precheck",
+      "name": "AI four-evidence precheck",
+      "result": "PASS",
+      "evidence": "status ai_pending->review_pending; ai_job/ai_precheck/model_log/outbox/fk=[1, 1, 1, 1, 1]; body={\"id\":\"dbede646-3cad-4c72-b554-297ace29a9d7\",\"familyId\":\"6f6a9246-5ab7-4abe-aee8-639559b69243\",\"childId\":\"47fecf11-ec9d-405b-8049-281fc61fac0f\",\"taskInstanceId\":\"ad03ebfa-6b6d-4b41-8b3e-11ccd236e214\",\"attemptNo\":1,\"submissionType\":\"photo\",\"status\":\"review_pending\",\"submittedAt\":\"2026-09-30T19:32:41.49186Z\",\"task\":{\"id\":\"ad03ebfa-6b6d-4b41-8b3e-11ccd236e214\",\"familyId\":\"6f6a9246-5ab7-4abe-aee8-639559b69243\",\"childId\":..."
+    },
+    {
+      "id": "review.detail",
+      "name": "review detail includes aiPrecheck",
+      "result": "PASS",
+      "evidence": "status=200 aiPrecheck=present"
+    },
+    {
+      "id": "review.approve",
+      "name": "approve review returns 201",
+      "result": "PASS",
+      "evidence": "status=201 reviewId=f3731868-7905-4567-bcdb-b980280ca616"
+    },
+    {
+      "id": "reward.ledger",
+      "name": "reward ledger grows",
+      "result": "PASS",
+      "evidence": "reward_ledger count/sum (38, 36)->(39, 37); summary=200 wish=200"
+    },
+    {
+      "id": "memories.room",
+      "name": "memories and room",
+      "result": "PASS",
+      "evidence": "memories=1 roomItems=2 arrangeStatus=200"
+    },
+    {
+      "id": "sync.realtime",
+      "name": "sync and realtime health",
+      "result": "PASS",
+      "evidence": "latestSeq=500->1000 realtime=200"
+    },
+    {
+      "id": "parent.routes",
+      "name": "parent web routes",
+      "result": "PASS",
+      "evidence": "/=200 /reviews=200 /wish=200 /plan=200 /memories=200 /room=200 /notifications=200 /settings/privacy=200 /settings/family=200"
+    },
+    {
+      "id": "outbox.zero",
+      "name": "outbox drains",
+      "result": "PASS",
+      "evidence": "unpublished outbox=0"
+    },
+    {
+      "id": "db.evidence",
+      "name": "database evidence",
+      "result": "PASS",
+      "evidence": "submission; ai_job; ai_precheck; outbox"
+    }
+  ],
+  "createdRows": [
+    {
+      "table": "plan",
+      "id": "ddd152bc-88ed-459d-854a-b3733434a13d"
+    },
+    {
+      "table": "weekId",
+      "id": "e2e-w-033227-05c31e"
+    },
+    {
+      "table": "rule",
+      "id": "e2e-033227-05c31e"
+    },
+    {
+      "table": "task_instance",
+      "id": "ad03ebfa-6b6d-4b41-8b3e-11ccd236e214"
+    },
+    {
+      "table": "device",
+      "id": "d056e17f-f930-4995-a5da-ce5e23659aed"
+    },
+    {
+      "table": "media_asset",
+      "id": "c33a03cd-f7b5-4e33-9a4a-80f86c269f75"
+    },
+    {
+      "table": "submission",
+      "id": "dbede646-3cad-4c72-b554-297ace29a9d7"
+    }
+  ],
+  "prefix": "e2e-033227-05c31e"
+}

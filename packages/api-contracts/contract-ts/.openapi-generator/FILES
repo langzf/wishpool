@@ -63,6 +63,7 @@ docs/MediaAsset.md
 docs/MemberRole.md
 docs/MemoriesApi.md
 docs/MemoryExport.md
+docs/MemoryItem.md
 docs/MemoryTimeline.md
 docs/NotificationDevice.md
 docs/NotificationDispatchItem.md
@@ -213,6 +214,7 @@ src/models/MeResponse.ts
 src/models/MediaAsset.ts
 src/models/MemberRole.ts
 src/models/MemoryExport.ts
+src/models/MemoryItem.ts
 src/models/MemoryTimeline.ts
 src/models/NotificationDevice.ts
 src/models/NotificationDispatchItem.ts

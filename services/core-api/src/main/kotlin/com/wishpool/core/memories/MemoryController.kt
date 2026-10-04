@@ -26,6 +26,9 @@ class MemoryController(
     fun getMemory(@PathVariable memoryId: UUID): WeeklyMemoryResponse =
         memoryService.getMemory(memoryId)
 
+    @PostMapping("/memories/{memoryId}/feature")
+    fun featureMemory(@PathVariable memoryId: UUID) = memoryService.featureMemory(memoryId)
+
     @PostMapping("/memories/{memoryId}/export")
     fun exportMemory(
         @PathVariable memoryId: UUID,

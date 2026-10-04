@@ -89,6 +89,7 @@ data class TaskInstanceResponse(
     val requireReview: Boolean,
     val status: String,
     val latestSubmissionId: UUID?,
+    val rewardAmount: Int? = null,
 )
 
 data class TodaySnapshotResponse(

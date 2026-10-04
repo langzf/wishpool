@@ -23,6 +23,7 @@ data class RunAiPrecheckWorkflowRequest(
 
 data class GenerateMemoryWorkflowRequest(
     val triggeredByEventId: UUID,
+    val wishId: UUID? = null,
 )
 
 data class PrivacyDeletionWorkflowRequest(

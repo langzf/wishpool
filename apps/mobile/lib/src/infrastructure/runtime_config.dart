@@ -18,8 +18,10 @@ class WishPoolRuntimeConfig {
   final String role;
 
   static const local = WishPoolRuntimeConfig(
-    coreApiBaseUrl: String.fromEnvironment('WISHPOOL_CORE_API_URL', defaultValue: 'http://localhost:8080'),
-    realtimeBaseUrl: String.fromEnvironment('WISHPOOL_REALTIME_URL', defaultValue: 'ws://localhost:8081/realtime'),
+    coreApiBaseUrl: String.fromEnvironment('WISHPOOL_CORE_API_URL',
+        defaultValue: 'http://10.0.2.2:18080'),
+    realtimeBaseUrl: String.fromEnvironment('WISHPOOL_REALTIME_URL',
+        defaultValue: 'ws://localhost:8081/realtime'),
     useRemoteApi: bool.fromEnvironment('WISHPOOL_USE_REMOTE_API'),
     accessToken: String.fromEnvironment('WISHPOOL_ACCESS_TOKEN'),
     familyId: String.fromEnvironment('WISHPOOL_FAMILY_ID'),
@@ -27,7 +29,11 @@ class WishPoolRuntimeConfig {
     role: String.fromEnvironment('WISHPOOL_ROLE', defaultValue: 'parent'),
   );
 
-  bool get hasRemoteContext => useRemoteApi && accessToken.isNotEmpty && familyId.isNotEmpty && childId.isNotEmpty;
+  bool get hasRemoteContext =>
+      useRemoteApi &&
+      accessToken.isNotEmpty &&
+      familyId.isNotEmpty &&
+      childId.isNotEmpty;
 
   bool get isChildDevice => role == 'child_device';
 

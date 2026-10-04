@@ -139,7 +139,8 @@ class TaskPlanningService(
         val tasks = jdbcClient.sql(
             """
             select id, family_id, child_id, scheduled_date, title, category, submission_type,
-                   description, target_text, is_core, require_review, status, latest_submission_id
+                   description, target_text, is_core, require_review, status, latest_submission_id,
+                   case when status = 'approved' then coalesce((select sum(amount)::int from reward_ledger where task_instance_id = task_instance.id and reward_type = 'star_light'), 0) else null end as reward_amount
             from task_instance
             where child_id = :child_id
               and scheduled_date = :scheduled_date
@@ -179,7 +180,8 @@ class TaskPlanningService(
                 updated_at = now()
             where id = :id
             returning id, family_id, child_id, scheduled_date, title, category, submission_type,
-                      description, target_text, is_core, require_review, status, latest_submission_id
+                      description, target_text, is_core, require_review, status, latest_submission_id,
+                      case when status = 'approved' then coalesce((select sum(amount)::int from reward_ledger where task_instance_id = task_instance.id and reward_type = 'star_light'), 0) else null end as reward_amount
             """.trimIndent(),
         )
             .param("id", taskId)
@@ -242,7 +244,8 @@ class TaskPlanningService(
               :is_core, :require_review, 'todo', :sort_order
             )
             returning id, family_id, child_id, scheduled_date, title, category, submission_type,
-                      description, target_text, is_core, require_review, status, latest_submission_id
+                      description, target_text, is_core, require_review, status, latest_submission_id,
+                      case when status = 'approved' then coalesce((select sum(amount)::int from reward_ledger where task_instance_id = task_instance.id and reward_type = 'star_light'), 0) else null end as reward_amount
             """.trimIndent(),
         )
             .param("family_id", task.familyId)
@@ -305,7 +308,8 @@ class TaskPlanningService(
         jdbcClient.sql(
             """
             select id, family_id, child_id, scheduled_date, title, category, submission_type,
-                   description, target_text, is_core, require_review, status, latest_submission_id
+                   description, target_text, is_core, require_review, status, latest_submission_id,
+                   case when status = 'approved' then coalesce((select sum(amount)::int from reward_ledger where task_instance_id = task_instance.id and reward_type = 'star_light'), 0) else null end as reward_amount
             from task_instance
             where id = :id
             """.trimIndent(),
@@ -378,19 +382,11 @@ class TaskPlanningService(
     }
 
     private fun replaceRules(planId: UUID, rules: List<WeeklyPlanRuleInput>): List<WeeklyPlanRuleResponse> {
-        jdbcClient.sql(
-            """
-            update weekly_plan_rule
-            set superseded_at = now()
-            where weekly_plan_id = :plan_id
-              and superseded_at is null
-            """.trimIndent(),
-        )
-            .param("plan_id", planId)
-            .update()
+        val existingRules = listRules(planId)
 
         rules.forEachIndexed { index, rule ->
-            jdbcClient.sql(
+            val existing = existingRules.getOrNull(index)
+            val sql = if (existing == null) {
                 """
                 insert into weekly_plan_rule (
                   weekly_plan_id, task_template_id, title_snapshot, category, submission_type,
@@ -399,9 +395,27 @@ class TaskPlanningService(
                   :weekly_plan_id, :task_template_id, :title, :category, :submission_type,
                   :description, :target_text, :weekdays, :is_core, :require_review, :sort_order
                 )
-                """.trimIndent(),
-            )
+                """.trimIndent()
+            } else {
+                """
+                update weekly_plan_rule
+                set task_template_id = :task_template_id,
+                    title_snapshot = :title,
+                    category = :category,
+                    submission_type = :submission_type,
+                    description_snapshot = :description,
+                    target_text_snapshot = :target_text,
+                    weekdays = :weekdays,
+                    is_core = :is_core,
+                    require_review = :require_review,
+                    sort_order = :sort_order,
+                    superseded_at = null
+                where id = :rule_id
+                """.trimIndent()
+            }
+            jdbcClient.sql(sql)
                 .param("weekly_plan_id", planId)
+                .param("rule_id", existing?.id)
                 .param("task_template_id", rule.taskTemplateId)
                 .param("title", rule.title.trim())
                 .param("category", rule.category)
@@ -412,6 +426,14 @@ class TaskPlanningService(
                 .param("is_core", rule.isCore)
                 .param("require_review", rule.requireReview)
                 .param("sort_order", rule.sortOrder ?: index)
+                .update()
+        }
+
+        existingRules.drop(rules.size).forEach { stale ->
+            jdbcClient.sql(
+                "update weekly_plan_rule set superseded_at = now() where id = :id",
+            )
+                .param("id", stale.id)
                 .update()
         }
 
@@ -471,20 +493,33 @@ class TaskPlanningService(
         request: SaveWeeklyPlanRequest,
         rules: List<WeeklyPlanRuleResponse>,
     ) {
+        val dates = generateSequence(request.startDate) { it.plusDays(1) }
+            .takeWhile { !it.isAfter(request.endDate) }
+            .toList()
+
+        // Keep the identity of open tasks stable across repeated plan saves. A task is
+        // identified by its plan rule and materialized date; only tasks outside the
+        // current rule/date set are removed, and only while they are still open.
         jdbcClient.sql(
             """
             delete from task_instance
             where weekly_plan_id = :plan_id
-              and status = 'todo'
-              and latest_submission_id is null
+              and status in ('todo', 'needs_revision')
+              and not exists (
+                select 1
+                from weekly_plan_rule r
+                where r.weekly_plan_id = :plan_id
+                  and r.superseded_at is null
+                  and r.id = task_instance.plan_rule_id
+                  and task_instance.scheduled_date between :start_date and :end_date
+                  and extract(isodow from task_instance.scheduled_date)::int = any(r.weekdays)
+              )
             """.trimIndent(),
         )
             .param("plan_id", planId)
+            .param("start_date", request.startDate)
+            .param("end_date", request.endDate)
             .update()
-
-        val dates = generateSequence(request.startDate) { it.plusDays(1) }
-            .takeWhile { !it.isAfter(request.endDate) }
-            .toList()
 
         for (rule in rules) {
             for (date in dates) {
@@ -492,23 +527,66 @@ class TaskPlanningService(
                 if (weekday !in rule.weekdays) continue
                 jdbcClient.sql(
                     """
-                    with inserted as (
-                      insert into task_instance (
-                        family_id, child_id, weekly_plan_id, plan_rule_id, scheduled_date,
-                        source, title, category, submission_type, description, target_text,
-                        is_core, require_review, status, sort_order
-                      ) values (
-                        :family_id, :child_id, :weekly_plan_id, :plan_rule_id, :scheduled_date,
-                        'weekly_rule', :title, :category, :submission_type, :description, :target_text,
-                        :is_core, :require_review, 'todo', :sort_order
-                      )
-                      on conflict do nothing
-                      returning id, family_id, child_id, scheduled_date, title, category, submission_type,
-                                description, target_text, is_core, require_review, status, latest_submission_id
+                    update task_instance
+                    set title = :title,
+                        category = :category,
+                        submission_type = :submission_type,
+                        description = :description,
+                        target_text = :target_text,
+                        is_core = :is_core,
+                        require_review = :require_review,
+                        sort_order = :sort_order,
+                        version = version + 1,
+                        updated_at = now()
+                    where weekly_plan_id = :weekly_plan_id
+                      and plan_rule_id = :plan_rule_id
+                      and scheduled_date = :scheduled_date
+                      and status in ('todo', 'needs_revision')
+                    returning id, family_id, child_id, scheduled_date, title, category, submission_type,
+                              description, target_text, is_core, require_review, status, latest_submission_id,
+                              case when status = 'approved' then coalesce((select sum(amount)::int from reward_ledger where task_instance_id = task_instance.id and reward_type = 'star_light'), 0) else null end as reward_amount
+                    """.trimIndent(),
+                )
+                    .param("family_id", request.familyId)
+                    .param("child_id", request.childId)
+                    .param("weekly_plan_id", planId)
+                    .param("plan_rule_id", rule.id)
+                    .param("scheduled_date", date)
+                    .param("title", rule.title)
+                    .param("category", rule.category)
+                    .param("submission_type", rule.submissionType)
+                    .param("description", rule.description)
+                    .param("target_text", rule.targetText)
+                    .param("is_core", rule.isCore)
+                    .param("require_review", rule.requireReview)
+                    .param("sort_order", rule.sortOrder)
+                    .query(::taskInstanceResponse)
+                    .optional()
+                    .ifPresent { updated ->
+                        // Updating an existing open task is intentionally silent: it is
+                        // not a new task and must not emit another task.created event.
+                    }
+
+                jdbcClient.sql(
+                    """
+                    insert into task_instance (
+                      family_id, child_id, weekly_plan_id, plan_rule_id, scheduled_date,
+                      source, title, category, submission_type, description, target_text,
+                      is_core, require_review, status, sort_order
                     )
-                    select id, family_id, child_id, scheduled_date, title, category, submission_type,
-                           description, target_text, is_core, require_review, status, latest_submission_id
-                    from inserted
+                    select :family_id, :child_id, :weekly_plan_id, :plan_rule_id, :scheduled_date,
+                           'weekly_rule', :title, :category, :submission_type, :description, :target_text,
+                           :is_core, :require_review, 'todo', :sort_order
+                    where not exists (
+                      select 1
+                      from task_instance
+                      where weekly_plan_id = :weekly_plan_id
+                        and plan_rule_id = :plan_rule_id
+                        and scheduled_date = :scheduled_date
+                    )
+                    returning id, family_id, child_id, scheduled_date, title, category, submission_type,
+                              description, target_text, is_core, require_review, status, latest_submission_id,
+                              case when status = 'approved' then coalesce((select sum(amount)::int from reward_ledger where task_instance_id = task_instance.id and reward_type = 'star_light'), 0) else null end as reward_amount
                     """.trimIndent(),
                 )
                     .param("family_id", request.familyId)

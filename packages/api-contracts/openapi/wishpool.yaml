@@ -1105,6 +1105,28 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /memories/{memoryId}/feature:
+    post:
+      tags: [Memories]
+      operationId: featureMemory
+      summary: Feature a memory into the child's room (idempotent)
+      parameters:
+        - name: memoryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Room item containing the featured memory.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomItem'
+        default:
+          $ref: '#/components/responses/Error'
+
   /room/state:
     get:
       tags: [Room]
@@ -2594,6 +2616,12 @@ components:
             - type: string
               format: uuid
             - type: 'null'
+        rewardAmount:
+          description: Actual sum of star_light ledger entries; null until the task is approved.
+          anyOf:
+            - type: integer
+              minimum: 0
+            - type: 'null'
 
     TodaySnapshot:
       type: object
@@ -3602,11 +3630,53 @@ components:
         items:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            $ref: '#/components/schemas/MemoryItem'
         status:
           type: string
           enum: [generating, generated, exported]
+
+    MemoryItem:
+      type: object
+      required: [id, itemType, sourceType, sourceId]
+      additionalProperties: true
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemType:
+          type: string
+          enum: [approved_task, photo, audio, video]
+        sourceType:
+          type: string
+        sourceId:
+          type: string
+          format: uuid
+        mediaAssetId:
+          anyOf:
+            - type: string
+              format: uuid
+            - type: 'null'
+        downloadUrl:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+        contentType:
+          type: string
+        thumbnailUrl:
+          anyOf:
+            - type: string
+              format: uri
+            - type: 'null'
+        durationSec:
+          anyOf:
+            - type: integer
+            - type: 'null'
+        taskTitle:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
 
     ExportMemoryRequest:
       type: object
@@ -3851,6 +3921,10 @@ components:
       type: object
       required: [triggeredByEventId]
       properties:
+        wishId:
+          type: string
+          format: uuid
+          description: Wish id for manual regeneration; the event payload remains authoritative.
         triggeredByEventId:
           type: string
           format: uuid
