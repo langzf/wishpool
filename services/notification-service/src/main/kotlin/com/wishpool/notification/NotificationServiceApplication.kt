@@ -43,6 +43,7 @@ fun Application.notificationModule(runtime: NotificationRuntime) {
                     NotificationHealthResponse(
                         status = "ready",
                         dispatchEnabled = runtime.config.dispatchEnabled,
+                        provider = runtime.config.pushProvider,
                     ),
                 ),
                 contentType = ContentType.Application.Json,

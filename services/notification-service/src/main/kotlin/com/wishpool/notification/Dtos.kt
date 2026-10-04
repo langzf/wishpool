@@ -15,6 +15,8 @@ data class NotificationEventResponse(
     val relatedResourceType: String?,
     val relatedResourceId: UUID?,
     val status: String,
+    val errorMessage: String? = null,
+    val providerMessageId: String? = null,
     val sentAt: OffsetDateTime?,
     val readAt: OffsetDateTime?,
     val createdAt: OffsetDateTime,
@@ -63,4 +65,5 @@ data class NotificationHealthResponse(
     val service: String = "notification-service",
     val status: String,
     val dispatchEnabled: Boolean,
+    val provider: String,
 )

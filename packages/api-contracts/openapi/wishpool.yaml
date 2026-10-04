@@ -4011,6 +4011,14 @@ components:
         status:
           type: string
           enum: [pending, sent, failed, read, suppressed]
+        errorMessage:
+          anyOf:
+            - type: string
+            - type: 'null'
+        providerMessageId:
+          anyOf:
+            - type: string
+            - type: 'null'
         sentAt:
           anyOf:
             - type: string

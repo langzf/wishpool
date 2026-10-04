@@ -24,7 +24,7 @@ class NotificationService(
         familyPolicy.requireMember(user, familyId)
         val effectiveLimit = limit.coerceIn(1, 100)
         val statusClause = if (status.isNullOrBlank()) {
-            "and ne.status in ('pending', 'sent', 'failed', 'read')"
+            "and ne.status in ('pending', 'sent', 'failed', 'read', 'suppressed')"
         } else {
             if (status !in PUBLIC_STATUSES) throw BadRequestError("Unsupported notification status.")
             "and ne.status = :status"
@@ -32,7 +32,7 @@ class NotificationService(
         val query = jdbcClient.sql(
             """
             select id, family_id, recipient_user_id, recipient_device_id, type, title, body,
-                   related_resource_type, related_resource_id, status, sent_at, read_at, created_at
+                   related_resource_type, related_resource_id, status, error_message, provider_message_id, sent_at, read_at, created_at
             from notification_event ne
             where ne.family_id = :family_id
               and ne.recipient_user_id = :recipient_user_id
@@ -69,9 +69,9 @@ class NotificationService(
                 read_at = coalesce(read_at, now())
             where recipient_user_id = :recipient_user_id
               and id in (:ids)
-              and status in ('pending', 'sent', 'failed')
+              and status in ('pending', 'sent', 'failed', 'suppressed')
             returning id, family_id, recipient_user_id, recipient_device_id, type, title, body,
-                      related_resource_type, related_resource_id, status, sent_at, read_at, created_at
+                      related_resource_type, related_resource_id, status, error_message, provider_message_id, sent_at, read_at, created_at
             """.trimIndent(),
         )
             .param("recipient_user_id", user.userId)
@@ -211,7 +211,7 @@ class NotificationService(
                             else 'pending'
                           end
             returning id, family_id, recipient_user_id, recipient_device_id, type, title, body,
-                      related_resource_type, related_resource_id, status, sent_at, read_at, created_at
+                      related_resource_type, related_resource_id, status, error_message, provider_message_id, sent_at, read_at, created_at
             """.trimIndent(),
         )
             .param("family_id", request.familyId)
@@ -247,7 +247,7 @@ class NotificationService(
             from candidate
             where ne.id = candidate.id
             returning ne.id, ne.family_id, ne.recipient_user_id, ne.recipient_device_id, ne.type, ne.title, ne.body,
-                      ne.related_resource_type, ne.related_resource_id, ne.status, ne.sent_at, ne.read_at, ne.created_at
+                      ne.related_resource_type, ne.related_resource_id, ne.status, ne.error_message, ne.provider_message_id, ne.sent_at, ne.read_at, ne.created_at
             """.trimIndent(),
         )
             .param("limit", limit)
@@ -255,9 +255,14 @@ class NotificationService(
             .list()
         return ClaimNotificationEventsResponse(
             rows.map { notification ->
+                val device = findDispatchDevice(notification)
+                if (device != null && notification.recipientDeviceId == null) {
+                    jdbcClient.sql("update notification_event set recipient_device_id = :device_id where id = :id")
+                        .param("device_id", device.id).param("id", notification.id).update()
+                }
                 NotificationDispatchItem(
-                    notification = toResponse(notification),
-                    recipientDevice = findDispatchDevice(notification)?.let(::toDeviceResponse),
+                    notification = toResponse(notification.copy(recipientDeviceId = device?.id ?: notification.recipientDeviceId)),
+                    recipientDevice = device?.let(::toDeviceResponse),
                     preference = findPreference(notification)?.let(::toPreferenceResponse),
                 )
             },
@@ -271,14 +276,18 @@ class NotificationService(
             """
             update notification_event
             set status = :status,
+                error_message = :error_message,
+                provider_message_id = :provider_message_id,
                 sent_at = case when :status = 'sent' then coalesce(sent_at, now()) else sent_at end
             where id = :id
             returning id, family_id, recipient_user_id, recipient_device_id, type, title, body,
-                      related_resource_type, related_resource_id, status, sent_at, read_at, created_at
+                      related_resource_type, related_resource_id, status, error_message, provider_message_id, sent_at, read_at, created_at
             """.trimIndent(),
         )
             .param("id", notificationId)
             .param("status", request.status)
+            .param("error_message", request.errorMessage)
+            .param("provider_message_id", request.providerMessageId)
             .query(::notificationEventRecord)
             .optional()
             .orElseThrow { NotFoundError("Notification event not found.") }
@@ -297,6 +306,8 @@ class NotificationService(
             relatedResourceType = record.relatedResourceType,
             relatedResourceId = record.relatedResourceId,
             status = record.status,
+            errorMessage = record.errorMessage,
+            providerMessageId = record.providerMessageId,
             sentAt = record.sentAt,
             readAt = record.readAt,
             createdAt = record.createdAt,
@@ -395,7 +406,7 @@ class NotificationService(
     }
 
     private companion object {
-        val PUBLIC_STATUSES = setOf("pending", "sent", "failed", "read")
+        val PUBLIC_STATUSES = setOf("pending", "sent", "failed", "read", "suppressed")
         val PLATFORMS = setOf("ios", "android", "ipad_os", "web", "admin_web")
         val PUSH_PROVIDERS = setOf("apns", "fcm", "huawei", "xiaomi", "oppo", "vivo")
         val NOTIFICATION_TYPES = setOf(

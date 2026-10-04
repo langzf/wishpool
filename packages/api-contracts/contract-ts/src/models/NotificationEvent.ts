@@ -81,6 +81,18 @@ export interface NotificationEvent {
     status: NotificationEventStatusEnum;
     /**
      * 
+     * @type {string}
+     * @memberof NotificationEvent
+     */
+    errorMessage?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof NotificationEvent
+     */
+    providerMessageId?: string | null;
+    /**
+     * 
      * @type {Date}
      * @memberof NotificationEvent
      */
@@ -162,6 +174,8 @@ export function NotificationEventFromJSONTyped(json: any, ignoreDiscriminator: b
         'relatedResourceType': json['relatedResourceType'] === undefined ? undefined : json['relatedResourceType'] === null ? null : json['relatedResourceType'],
         'relatedResourceId': json['relatedResourceId'] === undefined ? undefined : json['relatedResourceId'] === null ? null : json['relatedResourceId'],
         'status': json['status'],
+        'errorMessage': json['errorMessage'] === undefined ? undefined : json['errorMessage'] === null ? null : json['errorMessage'],
+        'providerMessageId': json['providerMessageId'] === undefined ? undefined : json['providerMessageId'] === null ? null : json['providerMessageId'],
         'sentAt': json['sentAt'] === undefined ? undefined : json['sentAt'] === null ? null : (new Date(json['sentAt'])),
         'readAt': json['readAt'] === undefined ? undefined : json['readAt'] === null ? null : (new Date(json['readAt'])),
         'createdAt': (new Date(json['createdAt'])),
@@ -189,6 +203,8 @@ export function NotificationEventToJSONTyped(value?: NotificationEvent | null, i
         'relatedResourceType': value['relatedResourceType'],
         'relatedResourceId': value['relatedResourceId'],
         'status': value['status'],
+        'errorMessage': value['errorMessage'],
+        'providerMessageId': value['providerMessageId'],
         'sentAt': value['sentAt'] == null ? value['sentAt'] : value['sentAt'].toISOString(),
         'readAt': value['readAt'] == null ? value['readAt'] : value['readAt'].toISOString(),
         'createdAt': value['createdAt'].toISOString(),

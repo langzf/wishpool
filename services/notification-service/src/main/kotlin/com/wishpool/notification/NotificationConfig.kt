@@ -11,6 +11,9 @@ data class NotificationConfig(
     val pollInterval: Duration,
     val claimLimit: Int,
     val dispatchEnabled: Boolean,
+    val pushProvider: String = "none",
+    val webhookUrl: URI? = null,
+    val mergeWindowSeconds: Long = 300,
 ) {
     companion object {
         fun fromEnv(env: Map<String, String> = System.getenv()): NotificationConfig =
@@ -23,6 +26,9 @@ data class NotificationConfig(
                     .milliseconds,
                 claimLimit = (env["WISHPOOL_NOTIFICATION_CLAIM_LIMIT"] ?: "50").toInt().coerceIn(1, 100),
                 dispatchEnabled = (env["WISHPOOL_NOTIFICATION_DISPATCH_ENABLED"] ?: "false").toBoolean(),
+                pushProvider = (env["WISHPOOL_NOTIFICATION_PUSH_PROVIDER"] ?: "none").lowercase(),
+                webhookUrl = env["WISHPOOL_NOTIFICATION_PUSH_WEBHOOK_URL"]?.takeIf { it.isNotBlank() }?.let(::URI),
+                mergeWindowSeconds = (env["WISHPOOL_NOTIFICATION_MERGE_WINDOW_SECONDS"] ?: "300").toLong().coerceAtLeast(0),
             )
 
         private fun normalizedUri(value: String): URI {

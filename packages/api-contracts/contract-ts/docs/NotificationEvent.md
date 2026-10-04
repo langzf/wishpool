@@ -16,6 +16,8 @@ Name | Type
 `relatedResourceType` | string
 `relatedResourceId` | string
 `status` | string
+`errorMessage` | string
+`providerMessageId` | string
 `sentAt` | Date
 `readAt` | Date
 `createdAt` | Date
@@ -37,6 +39,8 @@ const example = {
   "relatedResourceType": null,
   "relatedResourceId": null,
   "status": null,
+  "errorMessage": null,
+  "providerMessageId": null,
   "sentAt": null,
   "readAt": null,
   "createdAt": null,

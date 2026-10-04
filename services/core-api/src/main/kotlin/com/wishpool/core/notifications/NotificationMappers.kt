@@ -17,6 +17,8 @@ fun notificationEventRecord(rs: ResultSet, rowNum: Int): NotificationEventRecord
         relatedResourceType = rs.getString("related_resource_type"),
         relatedResourceId = rs.getObject("related_resource_id", UUID::class.java),
         status = rs.getString("status"),
+        errorMessage = rs.getString("error_message"),
+        providerMessageId = rs.getString("provider_message_id"),
         sentAt = rs.getObject("sent_at", OffsetDateTime::class.java),
         readAt = rs.getObject("read_at", OffsetDateTime::class.java),
         createdAt = rs.getObject("created_at", OffsetDateTime::class.java),
