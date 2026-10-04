@@ -38,3 +38,7 @@ __pycache__/
 *.pyc
 # local task briefs / dispatch logs (kept in C:\Users\18513\codex_tasks)
 .codex_tasks/
+
+# Kotlin 编译缓存（codex/宿主构建产生）
+.kotlin/
+**/.kotlin/
