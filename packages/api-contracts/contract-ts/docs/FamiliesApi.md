@@ -7,7 +7,9 @@ All URIs are relative to *http://localhost:8080*
 | [**createFamily**](FamiliesApi.md#createfamilyoperation) | **POST** /families | Create a family. |
 | [**getFamily**](FamiliesApi.md#getfamily) | **GET** /families/{familyId} | Get family details. |
 | [**inviteParent**](FamiliesApi.md#inviteparentoperation) | **POST** /families/{familyId}/invites | Invite a parent to a family. |
+| [**listFamilyDevices**](FamiliesApi.md#listfamilydevices) | **GET** /families/{familyId}/devices | List paired devices in a family. |
 | [**listFamilyMembers**](FamiliesApi.md#listfamilymembers) | **GET** /families/{familyId}/members | List family members. |
+| [**revokeFamilyDevice**](FamiliesApi.md#revokefamilydevice) | **POST** /families/{familyId}/devices/{deviceId}/revoke | Revoke a paired device. Repeated revocation is idempotent. |
 
 
 
@@ -230,6 +232,76 @@ example().catch(console.error);
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
+## listFamilyDevices
+
+> Array&lt;FamilyDevice&gt; listFamilyDevices(familyId)
+
+List paired devices in a family.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  FamiliesApi,
+} from '@wishpool/api-client';
+import type { ListFamilyDevicesRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new FamiliesApi(config);
+
+  const body = {
+    // string
+    familyId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+  } satisfies ListFamilyDevicesRequest;
+
+  try {
+    const data = await api.listFamilyDevices(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **familyId** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+[**Array&lt;FamilyDevice&gt;**](FamilyDevice.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Paired devices, including revoked devices. |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
 ## listFamilyMembers
 
 > Array&lt;FamilyMember&gt; listFamilyMembers(familyId)
@@ -295,6 +367,82 @@ example().catch(console.error);
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **200** | Family members. |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## revokeFamilyDevice
+
+> FamilyDevice revokeFamilyDevice(familyId, deviceId, revokeDeviceRequest)
+
+Revoke a paired device. Repeated revocation is idempotent.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  FamiliesApi,
+} from '@wishpool/api-client';
+import type { RevokeFamilyDeviceRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new FamiliesApi(config);
+
+  const body = {
+    // string
+    familyId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // string
+    deviceId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // RevokeDeviceRequest (optional)
+    revokeDeviceRequest: ...,
+  } satisfies RevokeFamilyDeviceRequest;
+
+  try {
+    const data = await api.revokeFamilyDevice(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **familyId** | `string` |  | [Defaults to `undefined`] |
+| **deviceId** | `string` |  | [Defaults to `undefined`] |
+| **revokeDeviceRequest** | [RevokeDeviceRequest](RevokeDeviceRequest.md) |  | [Optional] |
+
+### Return type
+
+[**FamilyDevice**](FamilyDevice.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Revoked device. |  -  |
 | **0** | Error response. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

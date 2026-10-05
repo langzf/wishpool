@@ -1,8 +1,8 @@
 {
-  "startedAt": "2026-10-04T20:17:43.940352+00:00",
+  "startedAt": "2026-10-04T23:32:08.434613+00:00",
   "date": "2026-10-05",
-  "runId": "041708-e547f0",
-  "weekId": "e2e-w-041708-e547f0",
+  "runId": "073116-cd175b",
+  "weekId": "e2e-w-073116-cd175b",
   "baseUrls": {
     "coreApi": "http://localhost:18080",
     "parentWeb": "http://localhost:18300",
@@ -19,13 +19,13 @@
       "id": "plan.materialize",
       "name": "save unique week plan",
       "result": "PASS",
-      "evidence": "planId=4b9c3f06-e638-4f7b-84ac-b66c19d7c27f weekId=e2e-w-041708-e547f0 rule=e2e-041708-e547f0 submissionType=photo isCore=false"
+      "evidence": "planId=5aae0aa0-68f5-4681-8f2b-cea043f97acc weekId=e2e-w-073116-cd175b rule=e2e-073116-cd175b submissionType=photo isCore=false"
     },
     {
       "id": "task.today",
       "name": "poll today's materialized todo",
       "result": "PASS",
-      "evidence": "taskId=a209f62b-55a9-4688-aa8d-bd2b3cc1cf11 status=todo date=2026-10-05 poll<= 45s"
+      "evidence": "taskId=2795bced-0689-4d51-b737-0937e4ef09fb status=todo date=2026-10-05 poll<= 45s"
     },
     {
       "id": "pairing.consume",
@@ -37,7 +37,7 @@
       "id": "submission.create",
       "name": "create ai_pending submission",
       "result": "PASS",
-      "evidence": "submissionId=3f335b0d-403e-4416-bf67-45c4b61020da initialStatus=ai_pending mediaAssetIds=['e7598ef4-dcce-41bc-afc4-91709546a5f3'] e7598ef4-dcce-41bc-afc4-91709546a5f3|PUT=200|finalize=200|media_asset.status=uploaded(at finalize)|media_asset.status=processing"
+      "evidence": "submissionId=ec90716e-8e56-4930-9b4d-408aeb2302c9 initialStatus=ai_pending mediaAssetIds=['3bb23b8a-0c63-4a44-9581-76826840672c'] 3bb23b8a-0c63-4a44-9581-76826840672c|PUT=200|finalize=200|media_asset.status=uploaded(at finalize)|media_asset.status=processing"
     },
     {
       "id": "submission.idempotency",
@@ -49,7 +49,7 @@
       "id": "ai.precheck",
       "name": "AI four-evidence precheck",
       "result": "PASS",
-      "evidence": "status ai_pending->review_pending; ai_job/ai_precheck/model_log/outbox/fk=[1, 1, 1, 1, 1]; body={\"id\":\"3f335b0d-403e-4416-bf67-45c4b61020da\",\"familyId\":\"6f6a9246-5ab7-4abe-aee8-639559b69243\",\"childId\":\"47fecf11-ec9d-405b-8049-281fc61fac0f\",\"taskInstanceId\":\"a209f62b-55a9-4688-aa8d-bd2b3cc1cf11\",\"attemptNo\":1,\"submissionType\":\"photo\",\"status\":\"review_pending\",\"submittedAt\":\"2026-10-04T20:17:22.346875Z\",\"task\":{\"id\":\"a209f62b-55a9-4688-aa8d-bd2b3cc1cf11\",\"familyId\":\"6f6a9246-5ab7-4abe-aee8-639559b69243\",\"childId\"..."
+      "evidence": "status ai_pending->review_pending; ai_job/ai_precheck/model_log/outbox/fk=[1, 1, 1, 1, 1]; body={\"id\":\"ec90716e-8e56-4930-9b4d-408aeb2302c9\",\"familyId\":\"6f6a9246-5ab7-4abe-aee8-639559b69243\",\"childId\":\"47fecf11-ec9d-405b-8049-281fc61fac0f\",\"taskInstanceId\":\"2795bced-0689-4d51-b737-0937e4ef09fb\",\"attemptNo\":1,\"submissionType\":\"photo\",\"status\":\"review_pending\",\"submittedAt\":\"2026-10-04T23:31:41.369809Z\",\"task\":{\"id\":\"2795bced-0689-4d51-b737-0937e4ef09fb\",\"familyId\":\"6f6a9246-5ab7-4abe-aee8-639559b69243\",\"childId\"..."
     },
     {
       "id": "review.detail",
@@ -61,13 +61,13 @@
       "id": "review.approve",
       "name": "approve review returns 201",
       "result": "PASS",
-      "evidence": "status=201 reviewId=5eb45fc2-14e9-40ee-824c-c94f9c487ce1"
+      "evidence": "status=201 reviewId=27fac4b5-058b-486b-b14f-bfa81a40ca34"
     },
     {
       "id": "reward.ledger",
       "name": "reward ledger grows",
       "result": "PASS",
-      "evidence": "reward_ledger count/sum (48, 46)->(49, 47); summary=200 wish=200"
+      "evidence": "reward_ledger count/sum (49, 47)->(50, 48); summary=200 wish=200"
     },
     {
       "id": "memories.room",
@@ -103,32 +103,32 @@
   "createdRows": [
     {
       "table": "plan",
-      "id": "4b9c3f06-e638-4f7b-84ac-b66c19d7c27f"
+      "id": "5aae0aa0-68f5-4681-8f2b-cea043f97acc"
     },
     {
       "table": "weekId",
-      "id": "e2e-w-041708-e547f0"
+      "id": "e2e-w-073116-cd175b"
     },
     {
       "table": "rule",
-      "id": "e2e-041708-e547f0"
+      "id": "e2e-073116-cd175b"
     },
     {
       "table": "task_instance",
-      "id": "a209f62b-55a9-4688-aa8d-bd2b3cc1cf11"
+      "id": "2795bced-0689-4d51-b737-0937e4ef09fb"
     },
     {
       "table": "device",
-      "id": "2dfa8bed-4653-4764-90d6-e9a45aba8e63"
+      "id": "2e4510d5-c416-44a1-838a-4a859d74744a"
     },
     {
       "table": "media_asset",
-      "id": "e7598ef4-dcce-41bc-afc4-91709546a5f3"
+      "id": "3bb23b8a-0c63-4a44-9581-76826840672c"
     },
     {
       "table": "submission",
-      "id": "3f335b0d-403e-4416-bf67-45c4b61020da"
+      "id": "ec90716e-8e56-4930-9b4d-408aeb2302c9"
     }
   ],
-  "prefix": "e2e-041708-e547f0"
+  "prefix": "e2e-073116-cd175b"
 }

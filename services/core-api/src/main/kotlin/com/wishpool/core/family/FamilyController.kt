@@ -13,6 +13,7 @@ import java.util.UUID
 @RestController
 class FamilyController(
     private val familyService: FamilyService,
+    private val deviceService: DeviceService,
 ) {
     @PostMapping("/families")
     @ResponseStatus(HttpStatus.CREATED)
@@ -34,4 +35,10 @@ class FamilyController(
         @Valid @RequestBody request: InviteParentRequest,
     ): FamilyInviteResponse =
         familyService.inviteParent(familyId, request)
+
+    @GetMapping("/families/{familyId}/devices")
+    fun listDevices(@PathVariable familyId: UUID): List<FamilyDeviceResponse> = deviceService.list(familyId)
+
+    @PostMapping("/families/{familyId}/devices/{deviceId}/revoke")
+    fun revokeDevice(@PathVariable familyId: UUID, @PathVariable deviceId: UUID, @RequestBody request: RevokeDeviceRequest): FamilyDeviceResponse = deviceService.revoke(familyId, deviceId, request)
 }

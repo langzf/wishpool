@@ -39,6 +39,7 @@ docs/EvaluateRewardWorkflowRequest.md
 docs/ExportMemoryRequest.md
 docs/FamiliesApi.md
 docs/Family.md
+docs/FamilyDevice.md
 docs/FamilyEvent.md
 docs/FamilyInvite.md
 docs/FamilyMember.md
@@ -98,6 +99,7 @@ docs/Review.md
 docs/ReviewSubmissionRequest.md
 docs/ReviewsApi.md
 docs/RevokeAdminMediaAccessGrantRequest.md
+docs/RevokeDeviceRequest.md
 docs/RevokeReviewRequest.md
 docs/RewardSummary.md
 docs/RoomApi.md
@@ -196,6 +198,7 @@ src/models/DeviceRegistration.ts
 src/models/EvaluateRewardWorkflowRequest.ts
 src/models/ExportMemoryRequest.ts
 src/models/Family.ts
+src/models/FamilyDevice.ts
 src/models/FamilyEvent.ts
 src/models/FamilyInvite.ts
 src/models/FamilyMember.ts
@@ -246,6 +249,7 @@ src/models/RetryOutboxEventRequest.ts
 src/models/Review.ts
 src/models/ReviewSubmissionRequest.ts
 src/models/RevokeAdminMediaAccessGrantRequest.ts
+src/models/RevokeDeviceRequest.ts
 src/models/RevokeReviewRequest.ts
 src/models/RewardSummary.ts
 src/models/RoomItem.ts

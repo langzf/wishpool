@@ -10,6 +10,7 @@ import '../data/wishpool_scope.dart';
 import '../design/wishpool_theme.dart';
 import '../domain/wishpool_snapshot.dart';
 import '../shared/fixture_data.dart';
+import '../infrastructure/wishpool_api_client.dart';
 import 'child_dashboard.dart';
 import 'notification_screen.dart';
 import 'memory_timeline_screen.dart';
@@ -112,6 +113,13 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
       future: _snapshotFuture,
       builder: (context, snapshot) {
         final scope = WishPoolScope.of(context);
+        if (snapshot.hasError && snapshot.error is WishPoolApiException && (snapshot.error as WishPoolApiException).statusCode == 401) {
+          return Scaffold(body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('设备已被移除，请重新配对', textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton(onPressed: widget.onSignOut, child: const Text('重新配对')),
+          ]))));
+        }
         final data = snapshot.data ?? fixtureSnapshot;
         final screens = <Widget>[
           ChildDashboardScreen(

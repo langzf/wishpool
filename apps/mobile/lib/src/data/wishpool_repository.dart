@@ -86,6 +86,9 @@ class WishPoolRepository {
         wishHistory: wishHistory,
         memoryTimeline: memoryTimeline,
       );
+    } on WishPoolApiException catch (error) {
+      if (error.statusCode == 401) rethrow;
+      return fixtureSnapshot;
     } catch (_) {
       return fixtureSnapshot;
     }

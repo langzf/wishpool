@@ -24,6 +24,11 @@ import {
     FamilyToJSON,
 } from '../models/Family';
 import {
+    type FamilyDevice,
+    FamilyDeviceFromJSON,
+    FamilyDeviceToJSON,
+} from '../models/FamilyDevice';
+import {
     type FamilyInvite,
     FamilyInviteFromJSON,
     FamilyInviteToJSON,
@@ -43,6 +48,11 @@ import {
     ProblemFromJSON,
     ProblemToJSON,
 } from '../models/Problem';
+import {
+    type RevokeDeviceRequest,
+    RevokeDeviceRequestFromJSON,
+    RevokeDeviceRequestToJSON,
+} from '../models/RevokeDeviceRequest';
 
 export interface CreateFamilyOperationRequest {
     createFamilyRequest: CreateFamilyRequest;
@@ -59,8 +69,18 @@ export interface InviteParentOperationRequest {
     idempotencyKey?: string;
 }
 
+export interface ListFamilyDevicesRequest {
+    familyId: string;
+}
+
 export interface ListFamilyMembersRequest {
     familyId: string;
+}
+
+export interface RevokeFamilyDeviceRequest {
+    familyId: string;
+    deviceId: string;
+    revokeDeviceRequest?: RevokeDeviceRequest;
 }
 
 /**
@@ -146,6 +166,29 @@ export interface FamiliesApiInterface {
     inviteParent(requestParameters: InviteParentOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FamilyInvite>;
 
     /**
+     * Creates request options for listFamilyDevices without sending the request
+     * @param {string} familyId 
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    listFamilyDevicesRequestOpts(requestParameters: ListFamilyDevicesRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @summary List paired devices in a family.
+     * @param {string} familyId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    listFamilyDevicesRaw(requestParameters: ListFamilyDevicesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FamilyDevice>>>;
+
+    /**
+     * List paired devices in a family.
+     */
+    listFamilyDevices(requestParameters: ListFamilyDevicesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FamilyDevice>>;
+
+    /**
      * Creates request options for listFamilyMembers without sending the request
      * @param {string} familyId 
      * @throws {RequiredError}
@@ -167,6 +210,33 @@ export interface FamiliesApiInterface {
      * List family members.
      */
     listFamilyMembers(requestParameters: ListFamilyMembersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FamilyMember>>;
+
+    /**
+     * Creates request options for revokeFamilyDevice without sending the request
+     * @param {string} familyId 
+     * @param {string} deviceId 
+     * @param {RevokeDeviceRequest} [revokeDeviceRequest] 
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    revokeFamilyDeviceRequestOpts(requestParameters: RevokeFamilyDeviceRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @summary Revoke a paired device. Repeated revocation is idempotent.
+     * @param {string} familyId 
+     * @param {string} deviceId 
+     * @param {RevokeDeviceRequest} [revokeDeviceRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof FamiliesApiInterface
+     */
+    revokeFamilyDeviceRaw(requestParameters: RevokeFamilyDeviceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FamilyDevice>>;
+
+    /**
+     * Revoke a paired device. Repeated revocation is idempotent.
+     */
+    revokeFamilyDevice(requestParameters: RevokeFamilyDeviceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FamilyDevice>;
 
 }
 
@@ -355,6 +425,59 @@ export class FamiliesApi extends runtime.BaseAPI implements FamiliesApiInterface
     }
 
     /**
+     * Creates request options for listFamilyDevices without sending the request
+     */
+    async listFamilyDevicesRequestOpts(requestParameters: ListFamilyDevicesRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['familyId'] == null) {
+            throw new runtime.RequiredError(
+                'familyId',
+                'Required parameter "familyId" was null or undefined when calling listFamilyDevices().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/families/{familyId}/devices`;
+        urlPath = urlPath.replace('{familyId}', encodeURIComponent(String(requestParameters['familyId'])));
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     * List paired devices in a family.
+     */
+    async listFamilyDevicesRaw(requestParameters: ListFamilyDevicesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FamilyDevice>>> {
+        const requestOptions = await this.listFamilyDevicesRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FamilyDeviceFromJSON));
+    }
+
+    /**
+     * List paired devices in a family.
+     */
+    async listFamilyDevices(requestParameters: ListFamilyDevicesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FamilyDevice>> {
+        const response = await this.listFamilyDevicesRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Creates request options for listFamilyMembers without sending the request
      */
     async listFamilyMembersRequestOpts(requestParameters: ListFamilyMembersRequest): Promise<runtime.RequestOpts> {
@@ -404,6 +527,70 @@ export class FamiliesApi extends runtime.BaseAPI implements FamiliesApiInterface
      */
     async listFamilyMembers(requestParameters: ListFamilyMembersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<FamilyMember>> {
         const response = await this.listFamilyMembersRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for revokeFamilyDevice without sending the request
+     */
+    async revokeFamilyDeviceRequestOpts(requestParameters: RevokeFamilyDeviceRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['familyId'] == null) {
+            throw new runtime.RequiredError(
+                'familyId',
+                'Required parameter "familyId" was null or undefined when calling revokeFamilyDevice().'
+            );
+        }
+
+        if (requestParameters['deviceId'] == null) {
+            throw new runtime.RequiredError(
+                'deviceId',
+                'Required parameter "deviceId" was null or undefined when calling revokeFamilyDevice().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/families/{familyId}/devices/{deviceId}/revoke`;
+        urlPath = urlPath.replace('{familyId}', encodeURIComponent(String(requestParameters['familyId'])));
+        urlPath = urlPath.replace('{deviceId}', encodeURIComponent(String(requestParameters['deviceId'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: RevokeDeviceRequestToJSON(requestParameters['revokeDeviceRequest']),
+        };
+    }
+
+    /**
+     * Revoke a paired device. Repeated revocation is idempotent.
+     */
+    async revokeFamilyDeviceRaw(requestParameters: RevokeFamilyDeviceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FamilyDevice>> {
+        const requestOptions = await this.revokeFamilyDeviceRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FamilyDeviceFromJSON(jsonValue));
+    }
+
+    /**
+     * Revoke a paired device. Repeated revocation is idempotent.
+     */
+    async revokeFamilyDevice(requestParameters: RevokeFamilyDeviceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FamilyDevice> {
+        const response = await this.revokeFamilyDeviceRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

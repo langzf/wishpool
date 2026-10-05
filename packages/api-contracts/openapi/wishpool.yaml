@@ -396,6 +396,47 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /families/{familyId}/devices:
+    get:
+      tags: [Families]
+      operationId: listFamilyDevices
+      summary: List paired devices in a family.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+      responses:
+        '200':
+          description: Paired devices, including revoked devices.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/FamilyDevice' }
+        default: { $ref: '#/components/responses/Error' }
+
+  /families/{familyId}/devices/{deviceId}/revoke:
+    post:
+      tags: [Families]
+      operationId: revokeFamilyDevice
+      summary: Revoke a paired device. Repeated revocation is idempotent.
+      parameters:
+        - $ref: '#/components/parameters/FamilyId'
+        - name: deviceId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RevokeDeviceRequest' }
+      responses:
+        '200':
+          description: Revoked device.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FamilyDevice' }
+        default: { $ref: '#/components/responses/Error' }
+
   /pairing/consume:
     post:
       tags: [Pairing]
@@ -4123,6 +4164,24 @@ components:
           type: string
         deviceName:
           type: string
+
+    FamilyDevice:
+      type: object
+      required: [id, platform, pushTokenRegistered, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        platform: { type: string }
+        deviceName: { type: string, nullable: true }
+        childId: { type: string, format: uuid, nullable: true }
+        pushProvider: { type: string, nullable: true }
+        pushTokenRegistered: { type: boolean }
+        lastSeenAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        revokedAt: { type: string, format: date-time, nullable: true }
+    RevokeDeviceRequest:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 500 }
 
     NotificationDevice:
       type: object

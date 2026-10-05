@@ -80,7 +80,9 @@ All URIs are relative to *http://localhost:8080*
 *FamiliesApi* | [**createFamily**](docs/FamiliesApi.md#createfamilyoperation) | **POST** /families | Create a family.
 *FamiliesApi* | [**getFamily**](docs/FamiliesApi.md#getfamily) | **GET** /families/{familyId} | Get family details.
 *FamiliesApi* | [**inviteParent**](docs/FamiliesApi.md#inviteparentoperation) | **POST** /families/{familyId}/invites | Invite a parent to a family.
+*FamiliesApi* | [**listFamilyDevices**](docs/FamiliesApi.md#listfamilydevices) | **GET** /families/{familyId}/devices | List paired devices in a family.
 *FamiliesApi* | [**listFamilyMembers**](docs/FamiliesApi.md#listfamilymembers) | **GET** /families/{familyId}/members | List family members.
+*FamiliesApi* | [**revokeFamilyDevice**](docs/FamiliesApi.md#revokefamilydevice) | **POST** /families/{familyId}/devices/{deviceId}/revoke | Revoke a paired device. Repeated revocation is idempotent.
 *HomeApi* | [**getChildHomeContext**](docs/HomeApi.md#getchildhomecontext) | **GET** /children/{childId}/home-context | Get the child-facing home context used by mobile and tablet clients.
 *HomeApi* | [**getParentDashboardContext**](docs/HomeApi.md#getparentdashboardcontext) | **GET** /families/{familyId}/parent-dashboard | Get the parent dashboard context used by mobile and web clients.
 *InternalApi* | [**acceptGenerateMemoryWorkflowActivity**](docs/InternalApi.md#acceptgeneratememoryworkflowactivity) | **POST** /internal/workflows/generate-memory | Execute weekly memory workflow activity.
@@ -177,6 +179,7 @@ All URIs are relative to *http://localhost:8080*
 - [EvaluateRewardWorkflowRequest](docs/EvaluateRewardWorkflowRequest.md)
 - [ExportMemoryRequest](docs/ExportMemoryRequest.md)
 - [Family](docs/Family.md)
+- [FamilyDevice](docs/FamilyDevice.md)
 - [FamilyEvent](docs/FamilyEvent.md)
 - [FamilyInvite](docs/FamilyInvite.md)
 - [FamilyMember](docs/FamilyMember.md)
@@ -227,6 +230,7 @@ All URIs are relative to *http://localhost:8080*
 - [Review](docs/Review.md)
 - [ReviewSubmissionRequest](docs/ReviewSubmissionRequest.md)
 - [RevokeAdminMediaAccessGrantRequest](docs/RevokeAdminMediaAccessGrantRequest.md)
+- [RevokeDeviceRequest](docs/RevokeDeviceRequest.md)
 - [RevokeReviewRequest](docs/RevokeReviewRequest.md)
 - [RewardSummary](docs/RewardSummary.md)
 - [RoomItem](docs/RoomItem.md)
