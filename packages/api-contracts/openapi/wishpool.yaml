@@ -1429,6 +1429,40 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /internal/debug/wishes/{wishId}:
+    get:
+      tags: [Internal]
+      security: [{ internalToken: [] }]
+      operationId: debugGetWish
+      parameters:
+        - { name: wishId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Debug wish state, content: { application/json: { schema: { $ref: '#/components/schemas/DebugWishState' } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /internal/debug/wishes/{wishId}/fragments:
+    post:
+      tags: [Internal]
+      security: [{ internalToken: [] }]
+      operationId: debugSetWishFragments
+      parameters:
+        - { name: wishId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/DebugWishFragmentsRequest' } } }
+      responses:
+        '200': { description: Updated debug wish, content: { application/json: { schema: { $ref: '#/components/schemas/DebugWishState' } } } }
+        default: { $ref: '#/components/responses/Error' }
+  /internal/debug/wishes/{wishId}/unlock:
+    post:
+      tags: [Internal]
+      security: [{ internalToken: [] }]
+      operationId: debugUnlockWish
+      parameters:
+        - { name: wishId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Unlocked debug wish, content: { application/json: { schema: { $ref: '#/components/schemas/DebugWishState' } } } }
+        default: { $ref: '#/components/responses/Error' }
+
   /internal/notifications:
     post:
       tags: [Internal]
@@ -4464,6 +4498,23 @@ components:
         limit: {type: integer}
         hasMore: {type: boolean}
 
+    DebugWishFragmentsRequest:
+      type: object
+      required: [earnedFragments]
+      properties:
+        earnedFragments: { type: integer, minimum: 0 }
+    DebugWishState:
+      type: object
+      required: [wishId, familyId, childId, earnedFragments, requiredFragments, status]
+      properties:
+        wishId: { type: string, format: uuid }
+        familyId: { type: string, format: uuid }
+        childId: { type: string, format: uuid }
+        earnedFragments: { type: integer }
+        requiredFragments: { type: integer }
+        status: { type: string }
+        fragmentMask: { type: string, nullable: true }
+        auditId: { type: string, format: uuid, nullable: true }
     PrivacyRequestCreate:
       type: object
       required: [familyId, requestType, confirmationText]

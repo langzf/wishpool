@@ -660,6 +660,7 @@ a:focus-visible {
   overflow: hidden;
   place-items: center;
   position: relative;
+  transition: opacity 220ms ease, transform 220ms ease, background 220ms ease, border-color 220ms ease;
 }
 
 .fragment-cell::before {
@@ -693,6 +694,16 @@ a:focus-visible {
   box-shadow:
     inset 0 0 0 1px rgba(16, 185, 129, 0.36),
     0 0 16px rgba(16, 185, 129, 0.22);
+}
+
+@keyframes fragment-reveal {
+  from { opacity: .35; transform: scale(.86); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.fragment-cell.filled { animation: fragment-reveal 360ms cubic-bezier(.2,.8,.2,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .fragment-cell, .fragment-cell.filled { animation: none; transition: none; }
 }
 
 .fragment-cell.filled::before,

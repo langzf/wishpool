@@ -9,6 +9,9 @@ All URIs are relative to *http://localhost:8080*
 | [**claimNotificationEvents**](InternalApi.md#claimnotificationeventsoperation) | **POST** /internal/notifications/claim | Claim pending notification events for dispatch. |
 | [**claimOutboxEvents**](InternalApi.md#claimoutboxeventsoperation) | **POST** /internal/outbox/events/claim | Claim unpublished outbox events for an internal publisher. |
 | [**createNotification**](InternalApi.md#createnotification) | **POST** /internal/notifications | Create or deduplicate an internal notification event. |
+| [**debugGetWish**](InternalApi.md#debuggetwish) | **GET** /internal/debug/wishes/{wishId} |  |
+| [**debugSetWishFragments**](InternalApi.md#debugsetwishfragments) | **POST** /internal/debug/wishes/{wishId}/fragments |  |
+| [**debugUnlockWish**](InternalApi.md#debugunlockwish) | **POST** /internal/debug/wishes/{wishId}/unlock |  |
 | [**markNotificationDispatchResult**](InternalApi.md#marknotificationdispatchresult) | **POST** /internal/notifications/{notificationId}/dispatch-result | Mark notification dispatch result. |
 | [**markOutboxEventPublished**](InternalApi.md#markoutboxeventpublished) | **POST** /internal/outbox/events/{eventId}/published | Mark an outbox event as published. |
 | [**retryOutboxEvent**](InternalApi.md#retryoutboxeventoperation) | **POST** /internal/outbox/events/{eventId}/retry | Release an outbox event lease and schedule retry. |
@@ -363,6 +366,219 @@ example().catch(console.error);
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **200** | Notification event. |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## debugGetWish
+
+> DebugWishState debugGetWish(wishId)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  InternalApi,
+} from '@wishpool/api-client';
+import type { DebugGetWishRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // To configure API key authorization: internalToken
+    apiKey: "YOUR API KEY",
+  });
+  const api = new InternalApi(config);
+
+  const body = {
+    // string
+    wishId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+  } satisfies DebugGetWishRequest;
+
+  try {
+    const data = await api.debugGetWish(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **wishId** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+[**DebugWishState**](DebugWishState.md)
+
+### Authorization
+
+[internalToken](../README.md#internalToken)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Debug wish state |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## debugSetWishFragments
+
+> DebugWishState debugSetWishFragments(wishId, debugWishFragmentsRequest)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  InternalApi,
+} from '@wishpool/api-client';
+import type { DebugSetWishFragmentsRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // To configure API key authorization: internalToken
+    apiKey: "YOUR API KEY",
+  });
+  const api = new InternalApi(config);
+
+  const body = {
+    // string
+    wishId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // DebugWishFragmentsRequest
+    debugWishFragmentsRequest: ...,
+  } satisfies DebugSetWishFragmentsRequest;
+
+  try {
+    const data = await api.debugSetWishFragments(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **wishId** | `string` |  | [Defaults to `undefined`] |
+| **debugWishFragmentsRequest** | [DebugWishFragmentsRequest](DebugWishFragmentsRequest.md) |  | |
+
+### Return type
+
+[**DebugWishState**](DebugWishState.md)
+
+### Authorization
+
+[internalToken](../README.md#internalToken)
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Updated debug wish |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## debugUnlockWish
+
+> DebugWishState debugUnlockWish(wishId)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  InternalApi,
+} from '@wishpool/api-client';
+import type { DebugUnlockWishRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // To configure API key authorization: internalToken
+    apiKey: "YOUR API KEY",
+  });
+  const api = new InternalApi(config);
+
+  const body = {
+    // string
+    wishId: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+  } satisfies DebugUnlockWishRequest;
+
+  try {
+    const data = await api.debugUnlockWish(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **wishId** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+[**DebugWishState**](DebugWishState.md)
+
+### Authorization
+
+[internalToken](../README.md#internalToken)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Unlocked debug wish |  -  |
 | **0** | Error response. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

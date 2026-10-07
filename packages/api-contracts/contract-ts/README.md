@@ -90,6 +90,9 @@ All URIs are relative to *http://localhost:8080*
 *InternalApi* | [**claimNotificationEvents**](docs/InternalApi.md#claimnotificationeventsoperation) | **POST** /internal/notifications/claim | Claim pending notification events for dispatch.
 *InternalApi* | [**claimOutboxEvents**](docs/InternalApi.md#claimoutboxeventsoperation) | **POST** /internal/outbox/events/claim | Claim unpublished outbox events for an internal publisher.
 *InternalApi* | [**createNotification**](docs/InternalApi.md#createnotification) | **POST** /internal/notifications | Create or deduplicate an internal notification event.
+*InternalApi* | [**debugGetWish**](docs/InternalApi.md#debuggetwish) | **GET** /internal/debug/wishes/{wishId} | 
+*InternalApi* | [**debugSetWishFragments**](docs/InternalApi.md#debugsetwishfragments) | **POST** /internal/debug/wishes/{wishId}/fragments | 
+*InternalApi* | [**debugUnlockWish**](docs/InternalApi.md#debugunlockwish) | **POST** /internal/debug/wishes/{wishId}/unlock | 
 *InternalApi* | [**markNotificationDispatchResult**](docs/InternalApi.md#marknotificationdispatchresult) | **POST** /internal/notifications/{notificationId}/dispatch-result | Mark notification dispatch result.
 *InternalApi* | [**markOutboxEventPublished**](docs/InternalApi.md#markoutboxeventpublished) | **POST** /internal/outbox/events/{eventId}/published | Mark an outbox event as published.
 *InternalApi* | [**retryOutboxEvent**](docs/InternalApi.md#retryoutboxeventoperation) | **POST** /internal/outbox/events/{eventId}/retry | Release an outbox event lease and schedule retry.
@@ -175,6 +178,8 @@ All URIs are relative to *http://localhost:8080*
 - [CreateWishImageGenerationRequest](docs/CreateWishImageGenerationRequest.md)
 - [CreateWishRequest](docs/CreateWishRequest.md)
 - [DailySummary](docs/DailySummary.md)
+- [DebugWishFragmentsRequest](docs/DebugWishFragmentsRequest.md)
+- [DebugWishState](docs/DebugWishState.md)
 - [DeviceRegistration](docs/DeviceRegistration.md)
 - [EvaluateRewardWorkflowRequest](docs/EvaluateRewardWorkflowRequest.md)
 - [ExportMemoryRequest](docs/ExportMemoryRequest.md)

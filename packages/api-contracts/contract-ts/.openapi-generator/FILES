@@ -34,6 +34,8 @@ docs/CreateUploadSessionRequest.md
 docs/CreateWishImageGenerationRequest.md
 docs/CreateWishRequest.md
 docs/DailySummary.md
+docs/DebugWishFragmentsRequest.md
+docs/DebugWishState.md
 docs/DeviceRegistration.md
 docs/EvaluateRewardWorkflowRequest.md
 docs/ExportMemoryRequest.md
@@ -194,6 +196,8 @@ src/models/CreateUploadSessionRequest.ts
 src/models/CreateWishImageGenerationRequest.ts
 src/models/CreateWishRequest.ts
 src/models/DailySummary.ts
+src/models/DebugWishFragmentsRequest.ts
+src/models/DebugWishState.ts
 src/models/DeviceRegistration.ts
 src/models/EvaluateRewardWorkflowRequest.ts
 src/models/ExportMemoryRequest.ts

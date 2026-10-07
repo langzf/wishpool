@@ -59,6 +59,7 @@ class _WishScreenState extends State<WishScreen>
     final hasWish =
         snapshot.wishTargetFragments > 1 || snapshot.wishCurrentFragments > 0;
 
+    final unlockValue = CurvedAnimation(parent: _unlockAnimation, curve: Curves.easeOutCubic);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
       children: [
@@ -68,7 +69,7 @@ class _WishScreenState extends State<WishScreen>
             style: theme.textTheme.headlineLarge),
         const SizedBox(height: WishPoolSpacing.md),
         AnimatedBuilder(
-          animation: _unlockAnimation,
+          animation: unlockValue,
           builder: (context, child) => Transform.scale(
             scale: 1 + (_unlockAnimation.value * 0.025),
             child: child,

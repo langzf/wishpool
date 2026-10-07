@@ -40,6 +40,8 @@ wishpool:
     trace-header: X-Trace-Id
   internal:
     token: ${WISHPOOL_INTERNAL_TOKEN:wishpool-local-internal-token}
+  debug-endpoints:
+    enabled: ${WISHPOOL_ENABLE_DEBUG_ENDPOINTS:false}
   outbox:
     default-lease-seconds: ${WISHPOOL_OUTBOX_DEFAULT_LEASE_SECONDS:60}
   storage:

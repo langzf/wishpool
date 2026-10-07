@@ -42,3 +42,4 @@ __pycache__/
 # Kotlin 编译缓存（codex/宿主构建产生）
 .kotlin/
 **/.kotlin/
+.next.*backup*/

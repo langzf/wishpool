@@ -30,6 +30,8 @@ export * from './CreateUploadSessionRequest';
 export * from './CreateWishImageGenerationRequest';
 export * from './CreateWishRequest';
 export * from './DailySummary';
+export * from './DebugWishFragmentsRequest';
+export * from './DebugWishState';
 export * from './DeviceRegistration';
 export * from './EvaluateRewardWorkflowRequest';
 export * from './ExportMemoryRequest';

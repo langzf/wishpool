@@ -34,6 +34,16 @@ import {
     CreateNotificationEventRequestToJSON,
 } from '../models/CreateNotificationEventRequest';
 import {
+    type DebugWishFragmentsRequest,
+    DebugWishFragmentsRequestFromJSON,
+    DebugWishFragmentsRequestToJSON,
+} from '../models/DebugWishFragmentsRequest';
+import {
+    type DebugWishState,
+    DebugWishStateFromJSON,
+    DebugWishStateToJSON,
+} from '../models/DebugWishState';
+import {
     type EvaluateRewardWorkflowRequest,
     EvaluateRewardWorkflowRequestFromJSON,
     EvaluateRewardWorkflowRequestToJSON,
@@ -122,6 +132,19 @@ export interface ClaimOutboxEventsOperationRequest {
 
 export interface CreateNotificationRequest {
     createNotificationEventRequest: CreateNotificationEventRequest;
+}
+
+export interface DebugGetWishRequest {
+    wishId: string;
+}
+
+export interface DebugSetWishFragmentsRequest {
+    wishId: string;
+    debugWishFragmentsRequest: DebugWishFragmentsRequest;
+}
+
+export interface DebugUnlockWishRequest {
+    wishId: string;
 }
 
 export interface MarkNotificationDispatchResultRequest {
@@ -271,6 +294,71 @@ export interface InternalApiInterface {
      * Create or deduplicate an internal notification event.
      */
     createNotification(requestParameters: CreateNotificationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NotificationEvent>;
+
+    /**
+     * Creates request options for debugGetWish without sending the request
+     * @param {string} wishId 
+     * @throws {RequiredError}
+     * @memberof InternalApiInterface
+     */
+    debugGetWishRequestOpts(requestParameters: DebugGetWishRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} wishId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InternalApiInterface
+     */
+    debugGetWishRaw(requestParameters: DebugGetWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DebugWishState>>;
+
+    /**
+     */
+    debugGetWish(requestParameters: DebugGetWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DebugWishState>;
+
+    /**
+     * Creates request options for debugSetWishFragments without sending the request
+     * @param {string} wishId 
+     * @param {DebugWishFragmentsRequest} debugWishFragmentsRequest 
+     * @throws {RequiredError}
+     * @memberof InternalApiInterface
+     */
+    debugSetWishFragmentsRequestOpts(requestParameters: DebugSetWishFragmentsRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} wishId 
+     * @param {DebugWishFragmentsRequest} debugWishFragmentsRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InternalApiInterface
+     */
+    debugSetWishFragmentsRaw(requestParameters: DebugSetWishFragmentsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DebugWishState>>;
+
+    /**
+     */
+    debugSetWishFragments(requestParameters: DebugSetWishFragmentsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DebugWishState>;
+
+    /**
+     * Creates request options for debugUnlockWish without sending the request
+     * @param {string} wishId 
+     * @throws {RequiredError}
+     * @memberof InternalApiInterface
+     */
+    debugUnlockWishRequestOpts(requestParameters: DebugUnlockWishRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} wishId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InternalApiInterface
+     */
+    debugUnlockWishRaw(requestParameters: DebugUnlockWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DebugWishState>>;
+
+    /**
+     */
+    debugUnlockWish(requestParameters: DebugUnlockWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DebugWishState>;
 
     /**
      * Creates request options for markNotificationDispatchResult without sending the request
@@ -673,6 +761,157 @@ export class InternalApi extends runtime.BaseAPI implements InternalApiInterface
      */
     async createNotification(requestParameters: CreateNotificationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NotificationEvent> {
         const response = await this.createNotificationRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for debugGetWish without sending the request
+     */
+    async debugGetWishRequestOpts(requestParameters: DebugGetWishRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['wishId'] == null) {
+            throw new runtime.RequiredError(
+                'wishId',
+                'Required parameter "wishId" was null or undefined when calling debugGetWish().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Internal-Token"] = await this.configuration.apiKey("X-Internal-Token"); // internalToken authentication
+        }
+
+
+        let urlPath = `/internal/debug/wishes/{wishId}`;
+        urlPath = urlPath.replace('{wishId}', encodeURIComponent(String(requestParameters['wishId'])));
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     */
+    async debugGetWishRaw(requestParameters: DebugGetWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DebugWishState>> {
+        const requestOptions = await this.debugGetWishRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => DebugWishStateFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async debugGetWish(requestParameters: DebugGetWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DebugWishState> {
+        const response = await this.debugGetWishRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for debugSetWishFragments without sending the request
+     */
+    async debugSetWishFragmentsRequestOpts(requestParameters: DebugSetWishFragmentsRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['wishId'] == null) {
+            throw new runtime.RequiredError(
+                'wishId',
+                'Required parameter "wishId" was null or undefined when calling debugSetWishFragments().'
+            );
+        }
+
+        if (requestParameters['debugWishFragmentsRequest'] == null) {
+            throw new runtime.RequiredError(
+                'debugWishFragmentsRequest',
+                'Required parameter "debugWishFragmentsRequest" was null or undefined when calling debugSetWishFragments().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Internal-Token"] = await this.configuration.apiKey("X-Internal-Token"); // internalToken authentication
+        }
+
+
+        let urlPath = `/internal/debug/wishes/{wishId}/fragments`;
+        urlPath = urlPath.replace('{wishId}', encodeURIComponent(String(requestParameters['wishId'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: DebugWishFragmentsRequestToJSON(requestParameters['debugWishFragmentsRequest']),
+        };
+    }
+
+    /**
+     */
+    async debugSetWishFragmentsRaw(requestParameters: DebugSetWishFragmentsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DebugWishState>> {
+        const requestOptions = await this.debugSetWishFragmentsRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => DebugWishStateFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async debugSetWishFragments(requestParameters: DebugSetWishFragmentsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DebugWishState> {
+        const response = await this.debugSetWishFragmentsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for debugUnlockWish without sending the request
+     */
+    async debugUnlockWishRequestOpts(requestParameters: DebugUnlockWishRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['wishId'] == null) {
+            throw new runtime.RequiredError(
+                'wishId',
+                'Required parameter "wishId" was null or undefined when calling debugUnlockWish().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-Internal-Token"] = await this.configuration.apiKey("X-Internal-Token"); // internalToken authentication
+        }
+
+
+        let urlPath = `/internal/debug/wishes/{wishId}/unlock`;
+        urlPath = urlPath.replace('{wishId}', encodeURIComponent(String(requestParameters['wishId'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     */
+    async debugUnlockWishRaw(requestParameters: DebugUnlockWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DebugWishState>> {
+        const requestOptions = await this.debugUnlockWishRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => DebugWishStateFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async debugUnlockWish(requestParameters: DebugUnlockWishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DebugWishState> {
+        const response = await this.debugUnlockWishRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

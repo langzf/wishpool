@@ -124,6 +124,7 @@ services:
       WISHPOOL_S3_REGION: ${WISHPOOL_S3_REGION:-local}
       WISHPOOL_AI_WORKER_BASE_URL: http://ai-worker:8100
       WISHPOOL_INTERNAL_TOKEN: ${WISHPOOL_INTERNAL_TOKEN:-wishpool-local-internal-token}
+      WISHPOOL_ENABLE_DEBUG_ENDPOINTS: ${WISHPOOL_ENABLE_DEBUG_ENDPOINTS:-false}
     ports:
       - "${CORE_API_PORT:-8080}:8080"
     volumes:
