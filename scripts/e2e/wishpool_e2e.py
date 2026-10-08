@@ -194,14 +194,31 @@ class Runner:
         if r.status != 201:
             raise RuntimeError(f"upload session status={r.status} body={compact(r.body)}")
         media_id, upload_url = r.body["mediaId"], r.body["uploadUrl"]
-        request = urllib.request.Request(upload_url, data=data, headers={"Content-Type": "image/png", "User-Agent": self.args.user_agent}, method="PUT")
-        try:
-            with urllib.request.urlopen(request, timeout=20) as response:
-                put_status = response.status
-        except urllib.error.HTTPError as exc:
-            raise RuntimeError(f"presigned PUT status={exc.code} body={exc.read().decode(errors='replace')}") from exc
-        if put_status not in (200, 201):
-            raise RuntimeError(f"presigned PUT status={put_status}")
+        # 直传对象存储：经 Cloudflare 隧道（minio.yueying.cloud）时有瞬时 502/503/504 抖动，
+        # 首次即失败会把「基础设施抖动」误报成回归失败（2026-10-08 09:00 实测）。
+        # presigned URL 在有效期内可重复 PUT，故对 5xx 与网络错误做 4 次退避重试。
+        put_status, put_err = None, None
+        for attempt in range(4):
+            request = urllib.request.Request(upload_url, data=data, headers={"Content-Type": "image/png", "User-Agent": self.args.user_agent}, method="PUT")
+            try:
+                with urllib.request.urlopen(request, timeout=20) as response:
+                    put_status = response.status
+                if put_status in (200, 201):
+                    put_err = None
+                    break
+                put_err = f"presigned PUT status={put_status}"
+            except urllib.error.HTTPError as exc:
+                put_err = f"presigned PUT status={exc.code} body={exc.read().decode(errors='replace')}"
+                if exc.code not in (502, 503, 504) or attempt == 3:
+                    raise RuntimeError(put_err) from exc
+            except Exception as exc:
+                put_err = f"presigned PUT error={exc}"
+                if attempt == 3:
+                    raise RuntimeError(put_err) from exc
+            print(f"[RETRY] {put_err} — 隧道瞬时抖动，第 {attempt + 2}/4 次尝试", flush=True)
+            time.sleep(2.0 * (attempt + 1))
+        if put_err:
+            raise RuntimeError(put_err)
         final = self.core.request("POST", f"/media/{media_id}/finalize", self.child_token, {"checksumSha256": hashlib.sha256(data).hexdigest(), "width": 32, "height": 32}, {"Idempotency-Key": f"{self.prefix}-finalize-{media_id}"})
         if final.status != 200:
             raise RuntimeError(f"finalize status={final.status} body={compact(final.body)}")
