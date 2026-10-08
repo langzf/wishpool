@@ -460,8 +460,8 @@ class _FragmentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tile = AnimatedContainer(
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutBack,
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
       margin: EdgeInsets.all(mode == 'irregular' ? 0 : 1),
       decoration: BoxDecoration(
         color: lit
