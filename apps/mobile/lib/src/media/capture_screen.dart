@@ -12,6 +12,7 @@ import '../data/wishpool_repository.dart';
 import '../shared/fixture_data.dart';
 import 'media_capture_utils.dart';
 import '../features/submission_waiting_screen.dart';
+import '../shared/friendly_error.dart';
 
 class MediaCaptureScreen extends StatefulWidget {
   const MediaCaptureScreen({
@@ -79,7 +80,10 @@ class _MediaCaptureScreenState extends State<MediaCaptureScreen> {
       if (!mounted) return;
       setState(() => _camera = controller);
     } catch (error) {
-      if (mounted) setState(() => _status = '摄像头不可用：$error');
+      if (mounted) {
+        setState(() => _status =
+            '\u6444\u50cf\u5934\u4e0d\u53ef\u7528\uff0c${childFriendlyError(error)}');
+      }
     }
   }
 
@@ -220,7 +224,10 @@ class _MediaCaptureScreenState extends State<MediaCaptureScreen> {
         await _setFile(file);
       }
     } catch (error) {
-      if (mounted) setState(() => _status = '采集失败：$error');
+      if (mounted) {
+        setState(() => _status =
+            '\u91c7\u96c6\u5931\u8d25\uff0c${childFriendlyError(error)}');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -240,7 +247,10 @@ class _MediaCaptureScreenState extends State<MediaCaptureScreen> {
       }
       await _setFile(File(result.path));
     } catch (error) {
-      if (mounted) setState(() => _status = '停止录制失败：$error');
+      if (mounted) {
+        setState(() => _status =
+            '\u505c\u6b62\u5f55\u5236\u5931\u8d25\uff0c${childFriendlyError(error)}');
+      }
     } finally {
       _recordingTransition = false;
       if (mounted) setState(() => _busy = false);
@@ -289,7 +299,8 @@ class _MediaCaptureScreenState extends State<MediaCaptureScreen> {
       if (mounted) {
         setState(() {
           _recording = false;
-          _status = '录音失败：$error';
+          _status =
+              '\u5f55\u97f3\u5931\u8d25\uff0c${childFriendlyError(error)}';
         });
       }
     } finally {

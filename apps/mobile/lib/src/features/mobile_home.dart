@@ -48,7 +48,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
   bool _networkRecoveryInFlight = false;
   bool _retryAfterCurrentUpload = false;
   bool _isForeground = true;
-  Duration _networkRecoveryDelay = const Duration(seconds: 2);
+  final _networkRecoveryBackoff = NetworkRecoveryBackoff();
   int _lastNoticeVersion = 0;
 
   @override
@@ -102,6 +102,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
       _uploadRetryTimer = null;
       return;
     }
+    _networkRecoveryBackoff.reset();
     _retryUploads();
     _startUploadRetry();
     _startNetworkRecoveryMonitor();
@@ -113,12 +114,20 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
       future: _snapshotFuture,
       builder: (context, snapshot) {
         final scope = WishPoolScope.of(context);
-        if (snapshot.hasError && snapshot.error is WishPoolApiException && (snapshot.error as WishPoolApiException).statusCode == 401) {
-          return Scaffold(body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('设备已被移除，请重新配对', textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: widget.onSignOut, child: const Text('重新配对')),
-          ]))));
+        if (snapshot.hasError &&
+            snapshot.error is WishPoolApiException &&
+            (snapshot.error as WishPoolApiException).statusCode == 401) {
+          return Scaffold(
+              body: Center(
+                  child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        const Text('设备已被移除，请重新配对', textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                            onPressed: widget.onSignOut,
+                            child: const Text('重新配对')),
+                      ]))));
         }
         final data = snapshot.data ?? fixtureSnapshot;
         final screens = <Widget>[
@@ -137,8 +146,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
             onFeature: (memoryId) async {
               await scope.repository.featureMemory(memoryId);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('已精选入屋')));
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(const SnackBar(content: Text('已精选入屋')));
                 _reloadSnapshot();
               }
             },
@@ -230,7 +239,10 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
   void _scheduleNetworkRecoveryProbe() {
     if (!_isForeground || !mounted) return;
     _networkRecoveryTimer?.cancel();
-    _networkRecoveryTimer = Timer(_networkRecoveryDelay, () async {
+    final hasPendingUploads = _uploadQueue?.items.isNotEmpty ?? false;
+    _networkRecoveryTimer = Timer(
+        _networkRecoveryBackoff.delayForQueue(
+            hasPendingUploads: hasPendingUploads), () async {
       _networkRecoveryTimer = null;
       await _runNetworkRecoveryProbe();
       if (_isForeground && mounted) _scheduleNetworkRecoveryProbe();
@@ -252,9 +264,10 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
       final socket = await Socket.connect(uri.host, port,
           timeout: const Duration(seconds: 3));
       await socket.close();
-      _networkRecoveryDelay = const Duration(seconds: 2);
-      await scope.resetUploadBackoff();
-      await _retryUploads(force: true);
+      _networkRecoveryBackoff.reset();
+      await UploadRecoveryHandler(
+              scope.uploadQueue, () => _retryUploads(force: true))
+          .onNetworkRecovered();
     } on SocketException {
       _increaseNetworkRecoveryDelay();
     } on TimeoutException {
@@ -265,8 +278,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen>
   }
 
   void _increaseNetworkRecoveryDelay() {
-    final nextSeconds = (_networkRecoveryDelay.inSeconds * 2).clamp(2, 60);
-    _networkRecoveryDelay = Duration(seconds: nextSeconds);
+    _networkRecoveryBackoff.recordFailure(
+        hasPendingUploads: _uploadQueue?.items.isNotEmpty ?? false);
   }
 
   Future<void> _retryUploads({bool force = false}) async {

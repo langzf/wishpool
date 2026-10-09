@@ -11,6 +11,7 @@ import '../infrastructure/auth_session_store.dart';
 import '../infrastructure/child_mode_lock.dart';
 import '../infrastructure/runtime_config.dart';
 import '../infrastructure/wishpool_api_client.dart';
+import '../shared/friendly_error.dart';
 import 'mobile_home.dart';
 
 class AuthGate extends StatefulWidget {
@@ -360,6 +361,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   String _friendlyApiError(WishPoolApiException error) {
+    if (_childMode) return childFriendlyError(error);
     if (error.statusCode == 401 || error.statusCode == 403) {
       return _childMode ? '配对码无效或已过期，请让家长重新生成' : '登录失败，请检查验证码后重试';
     }

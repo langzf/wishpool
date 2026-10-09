@@ -8,6 +8,46 @@ enum PendingUploadState { pending, uploading, failed }
 
 const maxUploadAttempts = 8;
 
+/// Backoff for the connectivity probe. A non-empty upload queue must be
+/// checked frequently so a long upload backoff cannot hide network recovery.
+class NetworkRecoveryBackoff {
+  NetworkRecoveryBackoff({this.now = _systemNow});
+
+  static DateTime _systemNow() => DateTime.now();
+  final DateTime Function() now;
+  Duration _delay = const Duration(seconds: 2);
+
+  Duration get delay => _delay;
+
+  void reset() => _delay = const Duration(seconds: 2);
+
+  Duration delayForQueue({required bool hasPendingUploads}) {
+    if (hasPendingUploads) return const Duration(seconds: 5);
+    return _delay;
+  }
+
+  void recordFailure({required bool hasPendingUploads}) {
+    if (hasPendingUploads) {
+      _delay = const Duration(seconds: 5);
+      return;
+    }
+    final nextSeconds = (_delay.inSeconds * 2).clamp(2, 60);
+    _delay = Duration(seconds: nextSeconds);
+  }
+}
+
+/// Adapter used by connectivity/foreground event sources.
+class UploadRecoveryHandler {
+  const UploadRecoveryHandler(this.queue, this.retry);
+  final UploadQueue queue;
+  final Future<void> Function() retry;
+
+  Future<void> onNetworkRecovered() async {
+    await queue.resetBackoff();
+    await retry();
+  }
+}
+
 class UploadQueue extends ChangeNotifier {
   UploadQueue({SharedPreferences? preferences}) : _preferences = preferences;
 

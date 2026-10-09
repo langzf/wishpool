@@ -3,13 +3,14 @@ import 'dart:io';
 
 import 'dart:async';
 
-
 import '../domain/wishpool_snapshot.dart';
 import '../infrastructure/runtime_config.dart';
 import '../infrastructure/wishpool_api_client.dart';
+import 'upload_retry_policy.dart';
 import '../shared/fixture_data.dart';
 import 'upload_queue.dart';
 import '../media/media_capture_utils.dart';
+import '../shared/friendly_error.dart';
 
 enum MediaSubmitOutcome {
   completed,
@@ -206,8 +207,12 @@ class WishPoolRepository {
     final url = _stringOrNull(value['downloadUrl']) ??
         _stringOrNull(media['downloadUrl']) ??
         _stringOrNull(value['url']);
-    final kind = _string(value['itemType'], _string(value['kind'],
-        _string(value['mediaType'], _string(media['contentType'], 'approved_task'))));
+    final kind = _string(
+        value['itemType'],
+        _string(
+            value['kind'],
+            _string(value['mediaType'],
+                _string(media['contentType'], 'approved_task'))));
     return MemoryMediaItemData(
       id: _string(value['id'], _string(media['id'], 'memory-item')),
       title: _string(value['title'], _string(value['name'], '成长记录')),
@@ -215,7 +220,8 @@ class WishPoolRepository {
       sourceType: _stringOrNull(value['sourceType']),
       sourceId: _stringOrNull(value['sourceId']),
       mediaAssetId: _stringOrNull(value['mediaAssetId']),
-      contentType: _stringOrNull(value['contentType']) ?? _stringOrNull(media['contentType']),
+      contentType: _stringOrNull(value['contentType']) ??
+          _stringOrNull(media['contentType']),
       url: url,
       thumbnailUrl: _stringOrNull(value['thumbnailUrl']) ??
           _stringOrNull(_map(value['thumbnailMedia'])['downloadUrl']),
@@ -405,7 +411,7 @@ class WishPoolRepository {
         uploadQueue.publishNotice('这个任务已经打卡过啦');
         return MediaSubmitOutcome.alreadySubmitted;
       }
-      return _recordFailure(item, _friendlyError(error));
+      return _recordFailure(item, childFriendlyError(error));
     } on SocketException catch (_) {
       return _recordFailure(item, '当前离线，已保存，联网后自动上传');
     } on TimeoutException catch (_) {
@@ -427,7 +433,7 @@ class WishPoolRepository {
     if (matches.isNotEmpty) item = matches.first;
     final attempts = item.attempts + 1;
     final terminal = attempts >= maxUploadAttempts;
-    final seconds = (1 << attempts.clamp(0, 8)).clamp(2, 300).toInt();
+    final seconds = uploadBackoffForAttempt(attempts).inSeconds;
     await uploadQueue.update(item.copyWith(
       state: PendingUploadState.failed,
       attempts: attempts,
@@ -439,15 +445,6 @@ class WishPoolRepository {
     uploadQueue
         .publishNotice(terminal ? '上传多次失败，已暂停自动重试，请点击手动重试' : '网络不稳定，稍后自动重试');
     return MediaSubmitOutcome.failed;
-  }
-
-  String _friendlyError(WishPoolApiException error) {
-    if (error.statusCode >= 500 ||
-        error.statusCode == 408 ||
-        error.statusCode == 429) {
-      return '网络暂时不稳定，已保存，稍后自动重试';
-    }
-    return '提交失败，请稍后重试';
   }
 
   Future<Map<String, Object?>> findWishImageCandidates({
