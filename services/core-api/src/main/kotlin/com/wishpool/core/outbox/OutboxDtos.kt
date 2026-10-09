@@ -35,3 +35,15 @@ data class OutboxAckResponse(
     val status: String,
     val publishedAt: OffsetDateTime?,
 )
+
+data class OutboxArchiveResponse(
+    val candidateRows: Int,
+    val archivedRows: Int,
+    val deletedRows: Int,
+    val durationMs: Long,
+    val archivePath: String?,
+    val archivePaths: List<String>,
+    val batches: Int,
+    val drained: Boolean,
+    val dryRun: Boolean,
+)

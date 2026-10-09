@@ -14,5 +14,8 @@ class ForbiddenError(message: String = "The current user is not allowed to perfo
 class NotFoundError(message: String = "Resource not found.") : ApiError(HttpStatus.NOT_FOUND, message)
 
 class ConflictError(message: String = "Resource state conflict.") : ApiError(HttpStatus.CONFLICT, message)
+class ArchiveFailureError(message: String, cause: Throwable) : ApiError(HttpStatus.INTERNAL_SERVER_ERROR, message) {
+    init { initCause(cause) }
+}
 
 class BadRequestError(message: String = "Bad request.") : ApiError(HttpStatus.BAD_REQUEST, message)

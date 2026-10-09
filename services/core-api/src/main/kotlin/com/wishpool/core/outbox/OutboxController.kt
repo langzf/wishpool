@@ -4,6 +4,7 @@ import com.wishpool.core.internal.InternalAuthService
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
@@ -40,5 +41,16 @@ class OutboxController(
     ): OutboxEventResponse {
         internalAuthService.requireToken(internalToken)
         return outboxService.scheduleRetry(eventId, request)
+    }
+
+    @PostMapping("/internal/outbox/archive")
+    fun archive(
+        @RequestHeader("X-Internal-Token", required = false) internalToken: String?,
+        @RequestParam(defaultValue = "false") dryRun: Boolean,
+        @RequestParam(defaultValue = "5000") batchSize: Int,
+        @RequestParam(defaultValue = "20") maxBatches: Int,
+    ): OutboxArchiveResponse {
+        internalAuthService.requireToken(internalToken)
+        return outboxService.archive(dryRun, batchSize, maxBatches)
     }
 }

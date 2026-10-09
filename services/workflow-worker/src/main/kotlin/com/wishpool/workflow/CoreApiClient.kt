@@ -43,6 +43,9 @@ class CoreApiClient(
         )
     }
 
+    fun archiveOutbox(dryRun: Boolean = false, batchSize: Int = 5000, maxBatches: Int = 20): OutboxArchiveResponse =
+        post("/internal/outbox/archive?dryRun=$dryRun&batchSize=$batchSize&maxBatches=$maxBatches", emptyMap<String, String>())
+
     fun materializeWeeklyPlan(request: MaterializeWeeklyPlanWorkflowRequest) {
         post<Unit>("/internal/workflows/materialize-weekly-plan", request)
     }
@@ -87,6 +90,8 @@ class CoreApiClient(
     private fun resolve(path: String): URI =
         config.coreApiBaseUrl.resolve(path)
 }
+
+data class OutboxArchiveResponse(val candidateRows: Int, val archivedRows: Int, val deletedRows: Int, val durationMs: Long, val archivePath: String?, val archivePaths: List<String> = emptyList(), val batches: Int = 0, val drained: Boolean = false, val dryRun: Boolean)
 
 class CoreApiException(
     val statusCode: Int,

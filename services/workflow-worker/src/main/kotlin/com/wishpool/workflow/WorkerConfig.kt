@@ -11,6 +11,7 @@ data class WorkerConfig(
     val outboxPollInterval: Duration,
     val outboxClaimLimit: Int,
     val outboxRetryDelaySeconds: Long,
+    val outboxArchiveInterval: Duration,
 ) {
     companion object {
         fun fromEnv(env: Map<String, String> = System.getenv()): WorkerConfig =
@@ -22,6 +23,7 @@ data class WorkerConfig(
                 outboxPollInterval = Duration.ofMillis((env["WISHPOOL_OUTBOX_POLL_INTERVAL_MS"] ?: "1000").toLong()),
                 outboxClaimLimit = (env["WISHPOOL_OUTBOX_CLAIM_LIMIT"] ?: "50").toInt(),
                 outboxRetryDelaySeconds = (env["WISHPOOL_OUTBOX_RETRY_DELAY_SECONDS"] ?: "60").toLong(),
+                outboxArchiveInterval = Duration.ofHours((env["WISHPOOL_OUTBOX_ARCHIVE_INTERVAL_HOURS"] ?: "24").toLong().coerceAtLeast(1)),
             )
     }
 }

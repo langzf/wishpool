@@ -45,9 +45,24 @@ fun main() {
     factory.start()
 
     val publisher = OutboxPublisher(config, coreApiClient, workflowClient)
+    val archiveScheduler = Thread {
+        try {
+            while (!Thread.currentThread().isInterrupted) {
+                Thread.sleep(config.outboxArchiveInterval.toMillis())
+                val result = coreApiClient.archiveOutbox(batchSize = 5000, maxBatches = 20)
+                logger.info("每日归档完成 candidateRows={} archivedRows={} deletedRows={} durationMs={} archivePath={} dryRun={}", result.candidateRows, result.archivedRows, result.deletedRows, result.durationMs, result.archivePath, result.dryRun)
+            }
+        } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+        catch (ex: Exception) { logger.warn("每日 outbox 归档失败", ex) }
+    }
+    archiveScheduler.isDaemon = true
+    archiveScheduler.name = "outbox-archive-scheduler"
+    archiveScheduler.start()
+    logger.info("每日归档调度已注册，首次执行将在 {} 后进行", config.outboxArchiveInterval)
     Runtime.getRuntime().addShutdownHook(
         Thread {
             publisher.stop()
+            archiveScheduler.interrupt()
             factory.shutdown()
             service.shutdown()
         },

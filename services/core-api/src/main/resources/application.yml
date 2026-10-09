@@ -44,6 +44,8 @@ wishpool:
     enabled: ${WISHPOOL_ENABLE_DEBUG_ENDPOINTS:false}
   outbox:
     default-lease-seconds: ${WISHPOOL_OUTBOX_DEFAULT_LEASE_SECONDS:60}
+    retention-days: ${WISHPOOL_OUTBOX_RETENTION_DAYS:30}
+    archive-dir: ${WISHPOOL_OUTBOX_ARCHIVE_DIR:data/outbox-archive/}
   storage:
     s3:
       endpoint: ${WISHPOOL_S3_ENDPOINT:http://localhost:9000}
