@@ -35,7 +35,7 @@ class MediaWorkerConfig:
             s3_region=values.get("WISHPOOL_S3_REGION", values.get("S3_REGION", "local")),
             poll_interval_seconds=max(float(values.get("WISHPOOL_MEDIA_POLL_INTERVAL_SECONDS", "2")), 0.25),
             claim_limit=min(max(int(values.get("WISHPOOL_MEDIA_CLAIM_LIMIT", "5")), 1), 50),
-            lease_seconds=min(max(int(values.get("WISHPOOL_MEDIA_LEASE_SECONDS", "300")), 30), 3600),
+            lease_seconds=min(max(int(values.get("WISHPOOL_MEDIA_LEASE_SECONDS", "90")), 30), 3600),
             max_attempts=min(max(int(values.get("WISHPOOL_MEDIA_MAX_ATTEMPTS", "5")), 1), 1000),
             retry_backoff_seconds=min(max(int(values.get("WISHPOOL_MEDIA_RETRY_BACKOFF_SECONDS", "60")), 0), 86400),
             core_api_retry_backoff_seconds=min(max(float(values.get("WISHPOOL_MEDIA_CORE_API_RETRY_BACKOFF_SECONDS", "5")), 0.25), 300),

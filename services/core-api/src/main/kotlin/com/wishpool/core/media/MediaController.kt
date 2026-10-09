@@ -56,6 +56,18 @@ class MediaController(
         return service.claimProcessingItems(request)
     }
 
+    @PostMapping("/internal/media/processing/heartbeat")
+    fun heartbeat(@RequestHeader("X-Internal-Token", required = false) internalToken: String?, @Valid @RequestBody request: MediaProcessingHeartbeatRequest): MediaProcessingHeartbeatResponse {
+        internalAuthService.requireToken(internalToken)
+        return service.heartbeat(request)
+    }
+
+    @PostMapping("/internal/media/processing/reap-expired")
+    fun reapExpired(@RequestHeader("X-Internal-Token", required = false) internalToken: String?): Map<String, Int> {
+        internalAuthService.requireToken(internalToken)
+        return mapOf("count" to service.reapExpiredProcessingLeases())
+    }
+
     @PostMapping("/internal/media/{mediaId}/processing-completed")
     fun completeProcessing(
         @RequestHeader("X-Internal-Token", required = false) internalToken: String?,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+import threading
 from dataclasses import dataclass
 
 import requests
@@ -42,13 +43,27 @@ class MediaWorker:
 
     def run_once(self) -> int:
         items = self.core_api.claim()
+        if not items:
+            self.core_api.reap_expired()
         for item in items:
             media = item["media"]
             media_id = media["id"]
+            lease_token = item["leaseToken"]
+            stop_heartbeat = threading.Event()
+            def heartbeat() -> None:
+                interval = max(self.core_api.config.lease_seconds / 3, 10)
+                while not stop_heartbeat.wait(interval):
+                    try:
+                        self.core_api.heartbeat([{"mediaId": media_id, "leaseToken": lease_token}], self.core_api.config.lease_seconds)
+                    except Exception:
+                        logger.warning("媒体处理心跳续租失败 id=%s", media_id, exc_info=True)
+            heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
+            heartbeat_thread.start()
             started_at = time.perf_counter()
             try:
                 derivatives = self.processor.process(item)
-                self.core_api.complete(media_id, derivatives)
+                stop_heartbeat.set()
+                self.core_api.complete(media_id, lease_token, derivatives)
                 elapsed_ms = (time.perf_counter() - started_at) * 1000
                 logger.info(
                     "MEDIA_PROCESSED asset=%s elapsed_ms=%.1f derivative_kinds=%s derivative_count=%s",
@@ -59,11 +74,13 @@ class MediaWorker:
                 )
             except MediaProcessingError as exc:
                 code, retryable, delay = self._failure_policy(item, exc.code)
-                self.core_api.fail(media_id, code, str(exc), retryable=retryable, delay_seconds=delay)
+                stop_heartbeat.set()
+                self.core_api.fail(media_id, lease_token, code, str(exc), retryable=retryable, delay_seconds=delay)
                 logger.warning("Media processing failed for %s: %s", media_id, exc)
             except Exception as exc:
                 code, retryable, delay = self._failure_policy(item, "unexpected_error")
-                self.core_api.fail(media_id, code, str(exc), retryable=retryable, delay_seconds=delay)
+                stop_heartbeat.set()
+                self.core_api.fail(media_id, lease_token, code, str(exc), retryable=retryable, delay_seconds=delay)
                 logger.exception("Unexpected media processing failure for %s", media_id)
         return len(items)
 

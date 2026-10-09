@@ -47,6 +47,7 @@ data class MediaProcessingSourceResponse(
     val media: MediaAssetResponse,
     val derivatives: List<MediaDerivativeResponse>,
     val processing: MediaProcessingPolicyResponse,
+    val leaseToken: String? = null,
 )
 
 data class MediaProcessingPolicyResponse(
@@ -68,6 +69,7 @@ data class MediaDerivativeResponse(
 
 data class CompleteMediaProcessingRequest(
     val derivatives: List<MediaDerivativeInput>,
+    val leaseToken: String,
 )
 
 data class MediaDerivativeInput(
@@ -83,6 +85,7 @@ data class FailMediaProcessingRequest(
     val errorMessage: String,
     val retryable: Boolean = true,
     val delaySeconds: Long? = null,
+    val leaseToken: String,
 )
 
 data class ClaimMediaProcessingRequest(
@@ -93,6 +96,10 @@ data class ClaimMediaProcessingRequest(
 data class ClaimMediaProcessingResponse(
     val items: List<MediaProcessingSourceResponse>,
 )
+
+data class MediaProcessingHeartbeatRequest(val leases: List<MediaProcessingLeaseHeartbeat>, val leaseSeconds: Long = 90)
+data class MediaProcessingLeaseHeartbeat(val mediaId: UUID, val leaseToken: String)
+data class MediaProcessingHeartbeatResponse(val renewed: Int)
 
 data class MediaAssetRecord(
     val id: UUID,

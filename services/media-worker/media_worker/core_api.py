@@ -19,15 +19,22 @@ class CoreApiClient:
         )
         return list(response.get("items", []))
 
-    def complete(self, media_id: str, derivatives: list[dict[str, Any]]) -> None:
+    def heartbeat(self, leases: list[dict[str, str]], lease_seconds: int) -> None:
+        self._post("/internal/media/processing/heartbeat", {"leases": leases, "leaseSeconds": lease_seconds})
+
+    def reap_expired(self) -> int:
+        return int(self._post("/internal/media/processing/reap-expired", {}).get("count", 0))
+
+    def complete(self, media_id: str, lease_token: str, derivatives: list[dict[str, Any]]) -> None:
         self._post(
             f"/internal/media/{media_id}/processing-completed",
-            {"derivatives": derivatives},
+            {"derivatives": derivatives, "leaseToken": lease_token},
         )
 
     def fail(
         self,
         media_id: str,
+        lease_token: str,
         error_code: str,
         error_message: str,
         retryable: bool = True,
@@ -40,6 +47,7 @@ class CoreApiClient:
                 "errorMessage": error_message,
                 "retryable": retryable,
                 "delaySeconds": delay_seconds if delay_seconds is not None else (60 if retryable else 0),
+                "leaseToken": lease_token,
             },
         )
 

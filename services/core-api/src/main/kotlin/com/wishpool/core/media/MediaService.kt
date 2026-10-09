@@ -246,6 +246,7 @@ class MediaService(
             set status = 'processing',
                 processing_attempt_count = processing_attempt_count + 1,
                 processing_leased_until = now() + (:lease_seconds || ' seconds')::interval,
+                processing_lease_token = md5(random()::text || clock_timestamp()::text || candidate.id::text),
                 updated_at = now()
             from candidate
             where ma.id = candidate.id
@@ -272,10 +273,32 @@ class MediaService(
                     media = toResponse(media, internalS3Presigner),
                     derivatives = listDerivatives(media.id).map(::toDerivativeResponse),
                     processing = processingPolicy(media),
+                    leaseToken = jdbcClient.sql("select processing_lease_token from media_asset where id=:id").param("id", media.id).query(String::class.java).single(),
                 )
             },
         )
     }
+
+    @Transactional
+    fun heartbeat(request: MediaProcessingHeartbeatRequest): MediaProcessingHeartbeatResponse {
+        val seconds = request.leaseSeconds.coerceIn(30, 3600)
+        val renewed = request.leases.take(50).sumOf { lease ->
+            jdbcClient.sql("update media_asset set processing_leased_until=now() + (:seconds || ' seconds')::interval, updated_at=now() where id=:id and status='processing' and processing_lease_token=:token and processing_leased_until >= now()")
+                .param("seconds", seconds).param("id", lease.mediaId).param("token", lease.leaseToken).update()
+        }
+        return MediaProcessingHeartbeatResponse(renewed)
+    }
+
+    @Transactional
+    fun reapExpiredProcessingLeases(): Int = jdbcClient.sql("""
+        update media_asset set status=case when processing_attempt_count >= 5 then 'failed' else 'uploaded' end,
+          processing_available_at=case when processing_attempt_count >= 5 then processing_available_at else now() end,
+          processing_leased_until=null, processing_lease_token=null,
+          processing_retryable=case when processing_attempt_count >= 5 then false else true end,
+          processing_last_error_code=case when processing_attempt_count >= 5 then 'processing_lease_expired' else processing_last_error_code end,
+          processing_last_error_message=case when processing_attempt_count >= 5 then '处理租约已过期，已达到最大重试次数' else processing_last_error_message end,
+          updated_at=now() where status='processing' and processing_leased_until < now()
+    """.trimIndent()).update()
 
     fun getProcessingSource(mediaId: UUID): MediaProcessingSourceResponse {
         val media = findMedia(mediaId) ?: throw NotFoundError("Media asset not found.")
@@ -292,6 +315,7 @@ class MediaService(
     @Transactional
     fun completeProcessing(mediaId: UUID, request: CompleteMediaProcessingRequest): MediaAssetResponse {
         val media = findMedia(mediaId) ?: throw NotFoundError("Media asset not found.")
+        verifyLease(mediaId, request.leaseToken)
         if (media.status !in setOf("uploaded", "processing", "ready")) {
             throw ConflictError("Media asset is not ready for processing completion.")
         }
@@ -313,6 +337,7 @@ class MediaService(
     @Transactional
     fun failProcessing(mediaId: UUID, request: FailMediaProcessingRequest): MediaAssetResponse {
         val media = findMedia(mediaId) ?: throw NotFoundError("Media asset not found.")
+        verifyLease(mediaId, request.leaseToken)
         if (request.errorCode.isBlank()) throw BadRequestError("errorCode cannot be blank.")
         if (request.errorMessage.isBlank()) throw BadRequestError("errorMessage cannot be blank.")
         val failed = failMediaStatus(mediaId, request)
@@ -529,6 +554,7 @@ class MediaService(
             set status = 'failed',
                 processing_available_at = now() + (:delay_seconds || ' seconds')::interval,
                 processing_leased_until = null,
+                processing_lease_token = null,
                 processing_retryable = :retryable,
                 processing_last_error_code = :error_code,
                 processing_last_error_message = :error_message,
@@ -550,6 +576,7 @@ class MediaService(
             """
             update media_asset
             set processing_leased_until = null,
+                processing_lease_token = null,
                 processing_retryable = false,
                 processing_last_error_code = null,
                 processing_last_error_message = null,
@@ -661,6 +688,12 @@ class MediaService(
             it.signatureDuration(Duration.ofSeconds(uploadUrlTtlSec))
                 .putObjectRequest(request)
         }.url().toString()
+    }
+
+    private fun verifyLease(mediaId: UUID, token: String) {
+        val valid = jdbcClient.sql("select count(*) from media_asset where id=:id and status='processing' and processing_lease_token=:token and processing_leased_until >= now()")
+            .param("id", mediaId).param("token", token).query(Long::class.java).single() > 0
+        if (!valid) throw ConflictError("租约令牌无效、已过期或不属于当前处理者")
     }
 
     private fun presignedGetUrl(storageKey: String, presigner: S3Presigner, signatureDuration: Duration = Duration.ofSeconds(downloadUrlTtlSec)): String {
