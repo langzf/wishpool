@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Image, LoaderCircle, Mic, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { processReviewAction } from "@/app/actions";
+import { processReviewBatchAction } from "@/app/actions";
 
 type Review = { submissionId: string; taskTitle: string; category?: string; isCore?: boolean; submittedAt: string; aiSummary?: string | null; mediaType: string; thumbnailMedia?: { downloadUrl?: string | null; contentType: string } | null };
 const categoryNames: Record<string, string> = { reading: "阅读", exercise: "运动", creativity: "创造", life: "生活", learning: "学习", habit: "习惯" };
@@ -13,7 +13,8 @@ export function ReviewsList({ reviews, enabled }: { reviews: Review[]; enabled: 
   const ids = useMemo(() => reviews.map((review) => review.submissionId), [reviews]); const allSelected = ids.length > 0 && ids.every((id) => selected.includes(id));
   async function process(idsToProcess: string[], decision: "approved" | "needs_revision") {
     if (!idsToProcess.length || working || !enabled) return; setWorking(true); setMessage(null); setProgress({ done: 0, total: idsToProcess.length }); let success = 0; const failures: string[] = [];
-    for (let index = 0; index < idsToProcess.length; index += 1) { const form = new FormData(); form.set("submissionId", idsToProcess[index]); form.set("decision", decision); form.set("feedbackText", feedback); const result = await processReviewAction(form); if (result.ok) success += 1; else failures.push(`${findTitle(idsToProcess[index])}：${result.message}`); setProgress({ done: index + 1, total: idsToProcess.length }); }
+    const result = await processReviewBatchAction({ submissionIds: idsToProcess, decision, feedbackText: feedback, clientMutationId: crypto.randomUUID() });
+    if (result.ok) { result.results.forEach((item) => item.ok ? success += 1 : failures.push(`${findTitle(item.submissionId)}：${item.message ?? "该条审核未成功"}`)); } else { failures.push(result.message); }
     setWorking(false); setProgress(null); setSelected([]); setMessage(failures.length ? { kind: "error", text: `成功 ${success} 条 / 失败 ${failures.length} 条。${failures.join("；")}` } : { kind: "success", text: `成功处理 ${success} 条，已清空选择。` });
   }
   function findTitle(id: string) { return reviews.find((review) => review.submissionId === id)?.taskTitle ?? id; }

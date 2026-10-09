@@ -120,6 +120,7 @@ All URIs are relative to *http://localhost:8080*
 *ReviewsApi* | [**getReviewDetail**](docs/ReviewsApi.md#getreviewdetail) | **GET** /reviews/{submissionId}/detail | Get a review detail view for a submission.
 *ReviewsApi* | [**listPendingReviews**](docs/ReviewsApi.md#listpendingreviews) | **GET** /reviews/pending | List pending reviews.
 *ReviewsApi* | [**reviewSubmission**](docs/ReviewsApi.md#reviewsubmissionoperation) | **POST** /reviews | Approve or reject a submission.
+*ReviewsApi* | [**reviewSubmissionsBatch**](docs/ReviewsApi.md#reviewsubmissionsbatch) | **POST** /reviews/batch | Approve or reject multiple submissions independently.
 *ReviewsApi* | [**revokeReview**](docs/ReviewsApi.md#revokereviewoperation) | **POST** /reviews/{reviewId}/revoke | Revoke a review and create adjustment records when needed.
 *RoomApi* | [**arrangeRoomItem**](docs/RoomApi.md#arrangeroomitemoperation) | **POST** /room/items/{itemId}/arrange | Arrange a room item.
 *RoomApi* | [**getRoomState**](docs/RoomApi.md#getroomstate) | **GET** /room/state | Get room state for a child.
@@ -235,6 +236,11 @@ All URIs are relative to *http://localhost:8080*
 - [RelatedResource](docs/RelatedResource.md)
 - [RetryOutboxEventRequest](docs/RetryOutboxEventRequest.md)
 - [Review](docs/Review.md)
+- [ReviewBatchItem](docs/ReviewBatchItem.md)
+- [ReviewBatchItemResult](docs/ReviewBatchItemResult.md)
+- [ReviewBatchRequest](docs/ReviewBatchRequest.md)
+- [ReviewBatchResponse](docs/ReviewBatchResponse.md)
+- [ReviewBatchResponseSummary](docs/ReviewBatchResponseSummary.md)
 - [ReviewSubmissionRequest](docs/ReviewSubmissionRequest.md)
 - [RevokeAdminMediaAccessGrantRequest](docs/RevokeAdminMediaAccessGrantRequest.md)
 - [RevokeDeviceRequest](docs/RevokeDeviceRequest.md)

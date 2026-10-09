@@ -7,6 +7,7 @@ All URIs are relative to *http://localhost:8080*
 | [**getReviewDetail**](ReviewsApi.md#getreviewdetail) | **GET** /reviews/{submissionId}/detail | Get a review detail view for a submission. |
 | [**listPendingReviews**](ReviewsApi.md#listpendingreviews) | **GET** /reviews/pending | List pending reviews. |
 | [**reviewSubmission**](ReviewsApi.md#reviewsubmissionoperation) | **POST** /reviews | Approve or reject a submission. |
+| [**reviewSubmissionsBatch**](ReviewsApi.md#reviewsubmissionsbatch) | **POST** /reviews/batch | Approve or reject multiple submissions independently. |
 | [**revokeReview**](ReviewsApi.md#revokereviewoperation) | **POST** /reviews/{reviewId}/revoke | Revoke a review and create adjustment records when needed. |
 
 
@@ -219,6 +220,76 @@ example().catch(console.error);
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 | **201** | Review created. |  -  |
+| **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## reviewSubmissionsBatch
+
+> ReviewBatchResponse reviewSubmissionsBatch(reviewBatchRequest)
+
+Approve or reject multiple submissions independently.
+
+### Example
+
+```ts
+import {
+  Configuration,
+  ReviewsApi,
+} from '@wishpool/api-client';
+import type { ReviewSubmissionsBatchRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new ReviewsApi(config);
+
+  const body = {
+    // ReviewBatchRequest
+    reviewBatchRequest: ...,
+  } satisfies ReviewSubmissionsBatchRequest;
+
+  try {
+    const data = await api.reviewSubmissionsBatch(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **reviewBatchRequest** | [ReviewBatchRequest](ReviewBatchRequest.md) |  | |
+
+### Return type
+
+[**ReviewBatchResponse**](ReviewBatchResponse.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`, `application/problem+json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Per-item review results. |  -  |
 | **0** | Error response. |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)

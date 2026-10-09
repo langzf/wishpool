@@ -29,6 +29,16 @@ import {
     ReviewToJSON,
 } from '../models/Review';
 import {
+    type ReviewBatchRequest,
+    ReviewBatchRequestFromJSON,
+    ReviewBatchRequestToJSON,
+} from '../models/ReviewBatchRequest';
+import {
+    type ReviewBatchResponse,
+    ReviewBatchResponseFromJSON,
+    ReviewBatchResponseToJSON,
+} from '../models/ReviewBatchResponse';
+import {
     type ReviewSubmissionRequest,
     ReviewSubmissionRequestFromJSON,
     ReviewSubmissionRequestToJSON,
@@ -55,6 +65,10 @@ export interface ListPendingReviewsRequest {
 export interface ReviewSubmissionOperationRequest {
     reviewSubmissionRequest: ReviewSubmissionRequest;
     idempotencyKey?: string;
+}
+
+export interface ReviewSubmissionsBatchRequest {
+    reviewBatchRequest: ReviewBatchRequest;
 }
 
 export interface RevokeReviewOperationRequest {
@@ -140,6 +154,29 @@ export interface ReviewsApiInterface {
      * Approve or reject a submission.
      */
     reviewSubmission(requestParameters: ReviewSubmissionOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Review>;
+
+    /**
+     * Creates request options for reviewSubmissionsBatch without sending the request
+     * @param {ReviewBatchRequest} reviewBatchRequest 
+     * @throws {RequiredError}
+     * @memberof ReviewsApiInterface
+     */
+    reviewSubmissionsBatchRequestOpts(requestParameters: ReviewSubmissionsBatchRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @summary Approve or reject multiple submissions independently.
+     * @param {ReviewBatchRequest} reviewBatchRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof ReviewsApiInterface
+     */
+    reviewSubmissionsBatchRaw(requestParameters: ReviewSubmissionsBatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReviewBatchResponse>>;
+
+    /**
+     * Approve or reject multiple submissions independently.
+     */
+    reviewSubmissionsBatch(requestParameters: ReviewSubmissionsBatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReviewBatchResponse>;
 
     /**
      * Creates request options for revokeReview without sending the request
@@ -340,6 +377,61 @@ export class ReviewsApi extends runtime.BaseAPI implements ReviewsApiInterface {
      */
     async reviewSubmission(requestParameters: ReviewSubmissionOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Review> {
         const response = await this.reviewSubmissionRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for reviewSubmissionsBatch without sending the request
+     */
+    async reviewSubmissionsBatchRequestOpts(requestParameters: ReviewSubmissionsBatchRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['reviewBatchRequest'] == null) {
+            throw new runtime.RequiredError(
+                'reviewBatchRequest',
+                'Required parameter "reviewBatchRequest" was null or undefined when calling reviewSubmissionsBatch().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/reviews/batch`;
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: ReviewBatchRequestToJSON(requestParameters['reviewBatchRequest']),
+        };
+    }
+
+    /**
+     * Approve or reject multiple submissions independently.
+     */
+    async reviewSubmissionsBatchRaw(requestParameters: ReviewSubmissionsBatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReviewBatchResponse>> {
+        const requestOptions = await this.reviewSubmissionsBatchRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ReviewBatchResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Approve or reject multiple submissions independently.
+     */
+    async reviewSubmissionsBatch(requestParameters: ReviewSubmissionsBatchRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReviewBatchResponse> {
+        const response = await this.reviewSubmissionsBatchRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -33,6 +33,10 @@ class ReviewController(
     ): ReviewResponse =
         service.reviewSubmission(request, idempotencyKey)
 
+    @PostMapping("/reviews/batch")
+    fun reviewSubmissionsBatch(@Valid @RequestBody request: ReviewBatchRequest): ReviewBatchResponse =
+        service.reviewSubmissionsBatch(request)
+
     @PostMapping("/reviews/{reviewId}/revoke")
     fun revokeReview(
         @PathVariable reviewId: UUID,

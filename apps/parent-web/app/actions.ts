@@ -206,6 +206,22 @@ export async function processReviewAction(formData: FormData): Promise<{ ok: tru
   }
 }
 
+export async function processReviewBatchAction(input: { submissionIds: string[]; decision: ReviewDecision; feedbackText: string; clientMutationId: string }): Promise<{ ok: true; results: Array<{ submissionId: string; ok: boolean; reviewId?: string; message?: string }> } | { ok: false; message: string }> {
+  try {
+    const config = await requireParentActionConfig();
+    if (!config.accessToken) return { ok: false, message: "登录状态已失效，请重新登录" };
+    const response = await coreRequestJson<{ results: Array<{ submissionId: string; ok: boolean; reviewId?: string; message?: string }> }>("POST", "/reviews/batch", {
+      clientMutationId: input.clientMutationId,
+      items: input.submissionIds.map((submissionId) => ({ submissionId, decision: input.decision, feedback: { emoji: input.decision === "approved" ? "heart" : "seed", text: input.feedbackText } }))
+    }, config.accessToken);
+    revalidatePath("/reviews");
+    revalidatePath("/", "layout");
+    return { ok: true, results: response.results };
+  } catch (error) {
+    return { ok: false, message: errorMessage(error) };
+  }
+}
+
 export async function skipTaskAction(...args: unknown[]) {
   const formData = formDataFromActionArgs(args);
   const taskId = requireFormValue(formData, "taskId", "缺少任务信息，无法跳过。", "/");

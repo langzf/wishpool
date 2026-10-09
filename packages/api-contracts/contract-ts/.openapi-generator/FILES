@@ -99,6 +99,11 @@ docs/RegisterPushTokenRequest.md
 docs/RelatedResource.md
 docs/RetryOutboxEventRequest.md
 docs/Review.md
+docs/ReviewBatchItem.md
+docs/ReviewBatchItemResult.md
+docs/ReviewBatchRequest.md
+docs/ReviewBatchResponse.md
+docs/ReviewBatchResponseSummary.md
 docs/ReviewSubmissionRequest.md
 docs/ReviewsApi.md
 docs/RevokeAdminMediaAccessGrantRequest.md
@@ -253,6 +258,11 @@ src/models/RegisterPushTokenRequest.ts
 src/models/RelatedResource.ts
 src/models/RetryOutboxEventRequest.ts
 src/models/Review.ts
+src/models/ReviewBatchItem.ts
+src/models/ReviewBatchItemResult.ts
+src/models/ReviewBatchRequest.ts
+src/models/ReviewBatchResponse.ts
+src/models/ReviewBatchResponseSummary.ts
 src/models/ReviewSubmissionRequest.ts
 src/models/RevokeAdminMediaAccessGrantRequest.ts
 src/models/RevokeDeviceRequest.ts

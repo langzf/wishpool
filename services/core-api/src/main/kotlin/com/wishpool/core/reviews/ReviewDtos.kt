@@ -19,6 +19,12 @@ data class ReviewSubmissionRequest(
     val feedback: FeedbackInput? = null,
 )
 
+data class ReviewBatchRequest(val clientMutationId: String, val items: List<ReviewBatchItem>)
+data class ReviewBatchItem(val submissionId: UUID, val decision: String, val feedback: FeedbackInput? = null)
+data class ReviewBatchResponse(val summary: ReviewBatchSummary, val results: List<ReviewBatchItemResult>)
+data class ReviewBatchSummary(val total: Int, val succeeded: Int, val failed: Int)
+data class ReviewBatchItemResult(val submissionId: UUID, val ok: Boolean, val reviewId: UUID? = null, val code: String? = null, val message: String? = null)
+
 data class FeedbackInput(
     val emoji: String? = null,
     val text: String? = null,

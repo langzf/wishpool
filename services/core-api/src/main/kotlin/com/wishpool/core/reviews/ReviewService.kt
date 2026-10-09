@@ -17,6 +17,7 @@ import com.wishpool.core.submissions.SubmissionService
 import com.wishpool.core.submissions.submissionRecord
 import com.wishpool.core.tasks.TaskInstanceResponse
 import org.springframework.dao.DuplicateKeyException
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,6 +32,7 @@ class ReviewService(
     private val submissionService: SubmissionService,
     private val eventPublisher: DomainEventPublisher,
     private val idempotencyService: IdempotencyService,
+    private val selfProvider: ObjectProvider<ReviewService>,
 ) {
     fun listPendingReviews(familyId: UUID): List<PendingReviewCardResponse> {
         familyPolicy.requireParent(currentUser.require(), familyId)
@@ -143,6 +145,35 @@ class ReviewService(
 
     @Transactional
     fun reviewSubmission(request: ReviewSubmissionRequest, idempotencyKey: String?): ReviewResponse {
+        return reviewSubmissionItem(request, idempotencyKey)
+    }
+
+    fun reviewSubmissionsBatch(request: ReviewBatchRequest): ReviewBatchResponse {
+        if (request.clientMutationId.isBlank()) throw BadRequestError("批量审核幂等标识不能为空")
+        if (request.items.isEmpty()) throw BadRequestError("批量审核 items 不能为空")
+        if (request.items.size > 50) throw BadRequestError("批量审核最多支持 50 条")
+        if (request.items.map { it.submissionId }.toSet().size != request.items.size) {
+            throw BadRequestError("批量审核不允许重复的 submissionId")
+        }
+        val results = request.items.sortedBy { it.submissionId.toString() }.map { item ->
+            try {
+                val review = selfProvider.getObject().reviewSubmissionItem(
+                    ReviewSubmissionRequest(item.submissionId, item.decision, item.feedback),
+                    "${request.clientMutationId}:${item.submissionId}",
+                )
+                ReviewBatchItemResult(item.submissionId, true, reviewId = review.id)
+            } catch (ex: com.wishpool.core.shared.ApiError) {
+                ReviewBatchItemResult(item.submissionId, false, code = ex.status.value().toString(), message = batchMessage(ex))
+            } catch (ex: Exception) {
+                ReviewBatchItemResult(item.submissionId, false, code = "INTERNAL_ERROR", message = "该条审核处理失败，请稍后重试")
+            }
+        }
+        val succeeded = results.count { it.ok }
+        return ReviewBatchResponse(ReviewBatchSummary(results.size, succeeded, results.size - succeeded), results)
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    fun reviewSubmissionItem(request: ReviewSubmissionRequest, idempotencyKey: String?): ReviewResponse {
         val user = currentUser.require()
         validateReviewRequest(request)
         val submission = findSubmissionForUpdate(request.submissionId) ?: throw NotFoundError("Submission not found.")
@@ -172,6 +203,14 @@ class ReviewService(
         audit(submission.familyId, user.userId, "review.${request.decision}", "review", review.id)
         idempotencyService.remember(submission.familyId, idempotencyKey, REVIEW_OPERATION, "review", review.id, user.userId)
         return toResponse(review)
+    }
+
+    private fun batchMessage(ex: com.wishpool.core.shared.ApiError): String = when {
+        ex.message?.contains("AI", true) == true || ex.message?.contains("智能") == true -> "智能检查还没完成，稍等一下再试"
+        ex.message?.contains("not pending", true) == true -> "该提交已不是待审核状态"
+        ex.message?.contains("no longer", true) == true -> "该任务的待审核目标已发生变化"
+        ex.message?.contains("not found", true) == true -> "未找到该提交记录"
+        else -> ex.message ?: "该条审核未成功"
     }
 
     @Transactional
