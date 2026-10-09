@@ -68,6 +68,7 @@ class OutboxPublisher(
                 }
                 "wish.redeemed" -> startGenerateMemory(event)
                 "privacy.deletion_requested" -> startPrivacyDeletion(event)
+                "privacy.export_requested" -> startPrivacyExport(event)
                 "media.uploaded" -> startMediaProcessing(event)
                 "submission.created" -> startAiPrecheck(event)
                 else -> logger.debug("No workflow route for outbox event type {}", event.type)
@@ -135,6 +136,11 @@ class OutboxPublisher(
             PrivacyDeletionWorkflow::class.java,
             workflowOptions("privacy-deletion", event.id),
         )
+        WorkflowClient.start(workflow::run, event.id)
+    }
+
+    private fun startPrivacyExport(event: OutboxEvent) {
+        val workflow = workflowClient.newWorkflowStub(PrivacyExportWorkflow::class.java, workflowOptions("privacy-export", event.id))
         WorkflowClient.start(workflow::run, event.id)
     }
 

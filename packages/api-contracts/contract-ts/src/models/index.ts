@@ -78,6 +78,7 @@ export * from './PostponeTaskRequest';
 export * from './PrivacyDeletionWorkflowRequest';
 export * from './PrivacyRequest';
 export * from './PrivacyRequestCreate';
+export * from './PrivacyRequestList';
 export * from './Problem';
 export * from './RedeemWishRequest';
 export * from './RefreshRequest';

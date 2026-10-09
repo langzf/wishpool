@@ -14,4 +14,6 @@ fun privacyRequestRecord(rs: ResultSet, rowNum: Int): PrivacyRequestRecord =
         exportMediaId = rs.getObject("export_media_id", UUID::class.java),
         reason = rs.getString("reason"),
         createdAt = rs.getObject("created_at", OffsetDateTime::class.java),
+        completedAt = rs.getObject("completed_at", OffsetDateTime::class.java),
+        errorMessage = rs.getString("error_message"),
     )

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { getPrivacyStatusLabel } from "@/app/settings/privacy/status-labels";
 
 type PrivacyType = "export" | "delete";
 type PrivacyResponse = { id: string; status: string; requestType: PrivacyType };
 const confirmationTexts = { export: "EXPORT FAMILY DATA", delete: "DELETE FAMILY DATA" } as const;
-const statusLabels: Record<string, string> = { requested: "已提交", verifying: "正在核验", locking_family: "正在锁定家庭", deleting_records: "正在删除记录", deleting_objects: "正在删除文件", verifying_deletion: "正在核验删除结果", completed: "已完成", failed_needs_attention: "失败，需要人工处理" };
 
 export function PrivacyActions({ familyId }: Readonly<{ familyId: string }>) {
   const [exportText, setExportText] = useState("");
@@ -49,7 +49,7 @@ export function PrivacyActions({ familyId }: Readonly<{ familyId: string }>) {
         <button className="danger-button" type="button" disabled={!deleteReady || pending !== null} onClick={() => void submit("delete")}>{pending === "delete" ? "提交中…" : "删除家庭"}</button>
       </article>
       {error ? <p className="form-error privacy-message" role="alert">{error}</p> : null}
-      {result ? <p className="form-success privacy-message" role="status">{result.requestType === "export" ? "导出请求" : "删除请求"}已提交，当前状态：{statusLabels[result.status] ?? result.status}。请求编号：{result.id}。后端暂无状态查询接口，页面不会轮询。</p> : null}
+      {result ? <p className="form-success privacy-message" role="status">{result.requestType === "export" ? "导出请求" : "删除请求"}已提交，当前状态：{getPrivacyStatusLabel(result.status)}。请求编号：{result.id}。后端暂无状态查询接口，页面不会轮询。</p> : null}
     </div>
   );
 }

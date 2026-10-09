@@ -56,6 +56,13 @@ interface PrivacyDeletionWorkflow {
     fun run(triggeredByEventId: UUID)
 }
 
+@WorkflowInterface
+interface PrivacyExportWorkflow { @WorkflowMethod fun run(triggeredByEventId: UUID) }
+
+class PrivacyExportWorkflowImpl : PrivacyExportWorkflow {
+    override fun run(triggeredByEventId: UUID) { workflowActivities().privacyExport(triggeredByEventId) }
+}
+
 class PrivacyDeletionWorkflowImpl : PrivacyDeletionWorkflow {
     private val activities = workflowActivities()
 
@@ -100,6 +107,7 @@ interface WorkflowActivities {
     fun privacyDeletion(triggeredByEventId: UUID)
     fun markMediaProcessingStarted(request: MediaProcessingWorkflowRequest)
     fun runAiPrecheck(request: AiPrecheckWorkflowRequest)
+    fun privacyExport(triggeredByEventId: UUID)
 }
 
 private fun workflowActivities(): WorkflowActivities =

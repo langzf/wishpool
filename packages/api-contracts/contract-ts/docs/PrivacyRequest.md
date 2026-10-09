@@ -12,6 +12,9 @@ Name | Type
 `status` | string
 `exportMedia` | [MediaAsset](MediaAsset.md)
 `createdAt` | Date
+`completedAt` | Date
+`errorMessage` | string
+`downloadUrl` | string
 
 ## Example
 
@@ -26,6 +29,9 @@ const example = {
   "status": null,
   "exportMedia": null,
   "createdAt": null,
+  "completedAt": null,
+  "errorMessage": null,
+  "downloadUrl": null,
 } satisfies PrivacyRequest
 
 console.log(example)

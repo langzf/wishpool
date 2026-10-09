@@ -1429,6 +1429,23 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /families/{familyId}/privacy-requests:
+    get:
+      tags: [Privacy]
+      operationId: listPrivacyRequests
+      summary: List family privacy requests and export download links.
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Privacy requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacyRequestList'
+        default:
+          $ref: '#/components/responses/Error'
+
   /internal/debug/wishes/{wishId}:
     get:
       tags: [Internal]
@@ -2843,6 +2860,14 @@ components:
         createdAt:
           type: string
           format: date-time
+    PrivacyRequestList:
+      type: object
+      required: [requests]
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrivacyRequest'
 
     SkipTaskRequest:
       type: object
@@ -4551,3 +4576,14 @@ components:
         createdAt:
           type: string
           format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        errorMessage:
+          type: string
+          nullable: true
+        downloadUrl:
+          type: string
+          format: uri
+          nullable: true

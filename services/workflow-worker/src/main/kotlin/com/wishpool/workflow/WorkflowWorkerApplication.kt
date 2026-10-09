@@ -37,6 +37,7 @@ fun main() {
         RewardEvaluationWorkflowImpl::class.java,
         GenerateMemoryWorkflowImpl::class.java,
         PrivacyDeletionWorkflowImpl::class.java,
+        PrivacyExportWorkflowImpl::class.java,
         MediaProcessingWorkflowImpl::class.java,
         AiPrecheckWorkflowImpl::class.java,
     )

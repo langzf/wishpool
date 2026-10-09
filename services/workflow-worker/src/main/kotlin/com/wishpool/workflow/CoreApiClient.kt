@@ -56,6 +56,9 @@ class CoreApiClient(
     fun privacyDeletion(triggeredByEventId: UUID): WorkflowAcceptedResponse =
         post("/internal/workflows/privacy-deletion", PrivacyDeletionWorkflowRequest(triggeredByEventId))
 
+    fun privacyExport(triggeredByEventId: UUID): WorkflowAcceptedResponse =
+        post("/internal/workflows/privacy-export", PrivacyDeletionWorkflowRequest(triggeredByEventId))
+
     fun markMediaProcessingStarted(mediaAssetId: UUID) {
         post<Unit>("/internal/media/$mediaAssetId/processing-started", emptyMap<String, String>())
     }

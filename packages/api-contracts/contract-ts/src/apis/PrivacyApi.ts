@@ -24,10 +24,19 @@ import {
     PrivacyRequestCreateToJSON,
 } from '../models/PrivacyRequestCreate';
 import {
+    type PrivacyRequestList,
+    PrivacyRequestListFromJSON,
+    PrivacyRequestListToJSON,
+} from '../models/PrivacyRequestList';
+import {
     type Problem,
     ProblemFromJSON,
     ProblemToJSON,
 } from '../models/Problem';
+
+export interface ListPrivacyRequestsRequest {
+    familyId: string;
+}
 
 export interface RequestDataExportRequest {
     privacyRequestCreate: PrivacyRequestCreate;
@@ -46,6 +55,29 @@ export interface RequestFamilyDeletionRequest {
  * @interface PrivacyApiInterface
  */
 export interface PrivacyApiInterface {
+    /**
+     * Creates request options for listPrivacyRequests without sending the request
+     * @param {string} familyId 
+     * @throws {RequiredError}
+     * @memberof PrivacyApiInterface
+     */
+    listPrivacyRequestsRequestOpts(requestParameters: ListPrivacyRequestsRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @summary List family privacy requests and export download links.
+     * @param {string} familyId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof PrivacyApiInterface
+     */
+    listPrivacyRequestsRaw(requestParameters: ListPrivacyRequestsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PrivacyRequestList>>;
+
+    /**
+     * List family privacy requests and export download links.
+     */
+    listPrivacyRequests(requestParameters: ListPrivacyRequestsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PrivacyRequestList>;
+
     /**
      * Creates request options for requestDataExport without sending the request
      * @param {PrivacyRequestCreate} privacyRequestCreate 
@@ -102,6 +134,59 @@ export interface PrivacyApiInterface {
  * 
  */
 export class PrivacyApi extends runtime.BaseAPI implements PrivacyApiInterface {
+
+    /**
+     * Creates request options for listPrivacyRequests without sending the request
+     */
+    async listPrivacyRequestsRequestOpts(requestParameters: ListPrivacyRequestsRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['familyId'] == null) {
+            throw new runtime.RequiredError(
+                'familyId',
+                'Required parameter "familyId" was null or undefined when calling listPrivacyRequests().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/families/{familyId}/privacy-requests`;
+        urlPath = urlPath.replace('{familyId}', encodeURIComponent(String(requestParameters['familyId'])));
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     * List family privacy requests and export download links.
+     */
+    async listPrivacyRequestsRaw(requestParameters: ListPrivacyRequestsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PrivacyRequestList>> {
+        const requestOptions = await this.listPrivacyRequestsRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => PrivacyRequestListFromJSON(jsonValue));
+    }
+
+    /**
+     * List family privacy requests and export download links.
+     */
+    async listPrivacyRequests(requestParameters: ListPrivacyRequestsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PrivacyRequestList> {
+        const response = await this.listPrivacyRequestsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Creates request options for requestDataExport without sending the request

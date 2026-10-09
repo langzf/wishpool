@@ -114,6 +114,7 @@ All URIs are relative to *http://localhost:8080*
 *PairingApi* | [**createPairingSession**](docs/PairingApi.md#createpairingsessionoperation) | **POST** /families/{familyId}/pairing-sessions | Create a child device pairing session.
 *PlansApi* | [**getWeeklyPlan**](docs/PlansApi.md#getweeklyplan) | **GET** /plans/{planId} | Get a weekly plan.
 *PlansApi* | [**saveWeeklyPlan**](docs/PlansApi.md#saveweeklyplanoperation) | **POST** /plans | Create or update a weekly plan.
+*PrivacyApi* | [**listPrivacyRequests**](docs/PrivacyApi.md#listprivacyrequests) | **GET** /families/{familyId}/privacy-requests | List family privacy requests and export download links.
 *PrivacyApi* | [**requestDataExport**](docs/PrivacyApi.md#requestdataexport) | **POST** /privacy/export | Request family data export.
 *PrivacyApi* | [**requestFamilyDeletion**](docs/PrivacyApi.md#requestfamilydeletion) | **POST** /privacy/delete | Request family deletion.
 *ReviewsApi* | [**getReviewDetail**](docs/ReviewsApi.md#getreviewdetail) | **GET** /reviews/{submissionId}/detail | Get a review detail view for a submission.
@@ -226,6 +227,7 @@ All URIs are relative to *http://localhost:8080*
 - [PrivacyDeletionWorkflowRequest](docs/PrivacyDeletionWorkflowRequest.md)
 - [PrivacyRequest](docs/PrivacyRequest.md)
 - [PrivacyRequestCreate](docs/PrivacyRequestCreate.md)
+- [PrivacyRequestList](docs/PrivacyRequestList.md)
 - [Problem](docs/Problem.md)
 - [RedeemWishRequest](docs/RedeemWishRequest.md)
 - [RefreshRequest](docs/RefreshRequest.md)

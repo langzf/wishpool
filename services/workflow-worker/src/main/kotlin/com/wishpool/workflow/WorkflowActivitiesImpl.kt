@@ -28,4 +28,6 @@ class WorkflowActivitiesImpl(
     override fun runAiPrecheck(request: AiPrecheckWorkflowRequest) {
         coreApiClient.runAiPrecheck(request)
     }
+
+    override fun privacyExport(triggeredByEventId: UUID) { coreApiClient.privacyExport(triggeredByEventId) }
 }

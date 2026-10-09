@@ -91,6 +91,7 @@ docs/PrivacyApi.md
 docs/PrivacyDeletionWorkflowRequest.md
 docs/PrivacyRequest.md
 docs/PrivacyRequestCreate.md
+docs/PrivacyRequestList.md
 docs/Problem.md
 docs/RedeemWishRequest.md
 docs/RefreshRequest.md
@@ -244,6 +245,7 @@ src/models/PostponeTaskRequest.ts
 src/models/PrivacyDeletionWorkflowRequest.ts
 src/models/PrivacyRequest.ts
 src/models/PrivacyRequestCreate.ts
+src/models/PrivacyRequestList.ts
 src/models/Problem.ts
 src/models/RedeemWishRequest.ts
 src/models/RefreshRequest.ts

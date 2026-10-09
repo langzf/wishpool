@@ -18,6 +18,9 @@ data class PrivacyRequestResponse(
     val status: String,
     val exportMedia: MediaAssetResponse? = null,
     val createdAt: OffsetDateTime,
+    val completedAt: OffsetDateTime? = null,
+    val errorMessage: String? = null,
+    val downloadUrl: String? = null,
 )
 
 data class PrivacyRequestRecord(
@@ -29,4 +32,8 @@ data class PrivacyRequestRecord(
     val exportMediaId: UUID?,
     val reason: String?,
     val createdAt: OffsetDateTime,
+    val completedAt: OffsetDateTime?,
+    val errorMessage: String?,
 )
+
+data class PrivacyRequestListResponse(val requests: List<PrivacyRequestResponse>)

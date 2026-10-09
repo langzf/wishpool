@@ -97,4 +97,10 @@ class WorkflowController(
             acceptedAt = OffsetDateTime.now(ZoneOffset.UTC),
         )
     }
+
+    @PostMapping("/internal/workflows/privacy-export")
+    fun privacyExport(@RequestHeader("X-Internal-Token", required = false) internalToken: String?, @Valid @RequestBody request: PrivacyDeletionWorkflowRequest): WorkflowAcceptedResponse {
+        internalAuthService.requireToken(internalToken); privacyService.runExportFromWorkflow(request.triggeredByEventId)
+        return WorkflowAcceptedResponse("PrivacyExportWorkflow", "completed", OffsetDateTime.now(ZoneOffset.UTC))
+    }
 }

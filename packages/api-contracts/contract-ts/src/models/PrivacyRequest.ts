@@ -63,6 +63,24 @@ export interface PrivacyRequest {
      * @memberof PrivacyRequest
      */
     createdAt: Date;
+    /**
+     * 
+     * @type {Date}
+     * @memberof PrivacyRequest
+     */
+    completedAt?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof PrivacyRequest
+     */
+    errorMessage?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof PrivacyRequest
+     */
+    downloadUrl?: string;
 }
 
 
@@ -119,6 +137,9 @@ export function PrivacyRequestFromJSONTyped(json: any, ignoreDiscriminator: bool
         'status': json['status'],
         'exportMedia': json['exportMedia'] == null ? undefined : MediaAssetFromJSON(json['exportMedia']),
         'createdAt': (new Date(json['createdAt'])),
+        'completedAt': json['completedAt'] == null ? undefined : (new Date(json['completedAt'])),
+        'errorMessage': json['errorMessage'] == null ? undefined : json['errorMessage'],
+        'downloadUrl': json['downloadUrl'] == null ? undefined : json['downloadUrl'],
     };
 }
 
@@ -139,6 +160,9 @@ export function PrivacyRequestToJSONTyped(value?: PrivacyRequest | null, ignoreD
         'status': value['status'],
         'exportMedia': MediaAssetToJSON(value['exportMedia']),
         'createdAt': value['createdAt'].toISOString(),
+        'completedAt': value['completedAt'] == null ? value['completedAt'] : value['completedAt'].toISOString(),
+        'errorMessage': value['errorMessage'],
+        'downloadUrl': value['downloadUrl'],
     };
 }
 
