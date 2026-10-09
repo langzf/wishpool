@@ -18,23 +18,23 @@ import {
   Configuration,
   AdminApi,
 } from '@wishpool/api-client';
-import type { CreateAdminImageModelProviderRequest } from '@wishpool/api-client';
+import type { CreateAdminAiTextModelProviderRequest } from '@wishpool/api-client';
 
 async function example() {
   console.log("🚀 Testing @wishpool/api-client SDK...");
   const config = new Configuration({ 
-    // To configure API key authorization: internalToken
-    apiKey: "YOUR API KEY",
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
   });
   const api = new AdminApi(config);
 
   const body = {
-    // ImageModelProviderWriteRequest
-    imageModelProviderWriteRequest: ...,
-  } satisfies CreateAdminImageModelProviderRequest;
+    // AiTextModelProviderWriteRequest
+    aiTextModelProviderWriteRequest: ...,
+  } satisfies CreateAdminAiTextModelProviderRequest;
 
   try {
-    const data = await api.createAdminImageModelProvider(body);
+    const data = await api.createAdminAiTextModelProvider(body);
     console.log(data);
   } catch (error) {
     console.error(error);
@@ -54,10 +54,13 @@ All URIs are relative to *http://localhost:8080*
 
 | Class | Method | HTTP request | Description
 | ----- | ------ | ------------ | -------------
+*AdminApi* | [**createAdminAiTextModelProvider**](docs/AdminApi.md#createadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers | 
 *AdminApi* | [**createAdminImageModelProvider**](docs/AdminApi.md#createadminimagemodelprovider) | **POST** /internal/admin/image-model-providers | Create an image generation model provider.
+*AdminApi* | [**deleteAdminAiTextModelProvider**](docs/AdminApi.md#deleteadminaitextmodelprovider) | **DELETE** /internal/admin/ai-text-model-providers/{id} | 
 *AdminApi* | [**deleteAdminImageModelProvider**](docs/AdminApi.md#deleteadminimagemodelprovider) | **DELETE** /internal/admin/image-model-providers/{id} | Delete an image generation model provider.
 *AdminApi* | [**getAdminDashboard**](docs/AdminApi.md#getadmindashboard) | **GET** /internal/admin/dashboard | Get local administration dashboard counters.
 *AdminApi* | [**grantAdminMediaAccess**](docs/AdminApi.md#grantadminmediaaccess) | **POST** /internal/admin/media-access-grants | Create an audited short-lived media access grant.
+*AdminApi* | [**listAdminAiTextModelProviders**](docs/AdminApi.md#listadminaitextmodelproviders) | **GET** /internal/admin/ai-text-model-providers | 
 *AdminApi* | [**listAdminAuditLogs**](docs/AdminApi.md#listadminauditlogs) | **GET** /internal/admin/audit-logs | List audit logs for administration.
 *AdminApi* | [**listAdminFamilies**](docs/AdminApi.md#listadminfamilies) | **GET** /internal/admin/families | List family metadata for administration.
 *AdminApi* | [**listAdminImageGenUsages**](docs/AdminApi.md#listadminimagegenusages) | **GET** /internal/admin/image-gen-usages | List business usage to image provider mappings.
@@ -65,8 +68,12 @@ All URIs are relative to *http://localhost:8080*
 *AdminApi* | [**listAdminMediaAccessGrants**](docs/AdminApi.md#listadminmediaaccessgrants) | **GET** /internal/admin/media-access-grants | 
 *AdminApi* | [**listAdminPrivacyRequests**](docs/AdminApi.md#listadminprivacyrequests) | **GET** /internal/admin/privacy-requests | List privacy requests for administration.
 *AdminApi* | [**revokeAdminMediaAccessGrant**](docs/AdminApi.md#revokeadminmediaaccessgrantoperation) | **POST** /internal/admin/media-access-grants/{grantId}/revoke | 
+*AdminApi* | [**setDefaultAdminAiTextModelProvider**](docs/AdminApi.md#setdefaultadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers/{id}/set-default | 
 *AdminApi* | [**setDefaultAdminImageModelProvider**](docs/AdminApi.md#setdefaultadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/set-default | Set the global default image generation model provider.
+*AdminApi* | [**testAdminAiTextModelProvider**](docs/AdminApi.md#testadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers/{id}/test-connection | 
+*AdminApi* | [**toggleAdminAiTextModelProvider**](docs/AdminApi.md#toggleadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers/{id}/toggle | 
 *AdminApi* | [**toggleAdminImageModelProvider**](docs/AdminApi.md#toggleadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/toggle | Enable or disable an image generation model provider.
+*AdminApi* | [**updateAdminAiTextModelProvider**](docs/AdminApi.md#updateadminaitextmodelprovider) | **PUT** /internal/admin/ai-text-model-providers/{id} | 
 *AdminApi* | [**updateAdminImageModelProvider**](docs/AdminApi.md#updateadminimagemodelprovider) | **PUT** /internal/admin/image-model-providers/{id} | Update an image generation model provider.
 *AdminApi* | [**upsertAdminImageGenUsage**](docs/AdminApi.md#upsertadminimagegenusage) | **PUT** /internal/admin/image-gen-usages/{usageCode} | Create or update a business usage to image provider mapping.
 *AuthApi* | [**getMe**](docs/AuthApi.md#getme) | **GET** /me | Get the current authenticated user context.
@@ -158,6 +165,10 @@ All URIs are relative to *http://localhost:8080*
 - [AdminMediaAccessGrantRequest](docs/AdminMediaAccessGrantRequest.md)
 - [AdminPrivacyRequest](docs/AdminPrivacyRequest.md)
 - [AiPrecheck](docs/AiPrecheck.md)
+- [AiTextModelProvider](docs/AiTextModelProvider.md)
+- [AiTextModelProviderToggleRequest](docs/AiTextModelProviderToggleRequest.md)
+- [AiTextModelProviderWriteRequest](docs/AiTextModelProviderWriteRequest.md)
+- [AiTextProviderTestResponse](docs/AiTextProviderTestResponse.md)
 - [ArrangeRoomItemRequest](docs/ArrangeRoomItemRequest.md)
 - [ArrangeRoomItemRequestPosition](docs/ArrangeRoomItemRequestPosition.md)
 - [AttachWishImageRequest](docs/AttachWishImageRequest.md)

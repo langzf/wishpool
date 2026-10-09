@@ -21,6 +21,7 @@ class AiPrecheckService(
     private val aiWorkerClient: AiWorkerClient,
     private val eventPublisher: DomainEventPublisher,
     private val objectMapper: ObjectMapper,
+    private val aiTextModelProviderService: AiTextModelProviderService,
 ) {
     @Transactional
     fun runSubmissionPrecheck(request: RunAiPrecheckWorkflowRequest): AiPrecheckResponse {
@@ -41,8 +42,8 @@ class AiPrecheckService(
             markSubmissionStatus(submission.id, "review_pending")
             recordInvocation(
                 jobId = jobId,
-                provider = "wishpool-ai-worker",
-                model = "deterministic-precheck",
+                provider = selectedProviderCode(),
+                model = selectedModelName(),
                 latencyMs = elapsedMillis(startedAt),
                 status = "failed",
                 errorCode = ex::class.simpleName ?: "provider_error",
@@ -62,11 +63,11 @@ class AiPrecheckService(
         }
         recordInvocation(
             jobId = jobId,
-            provider = "wishpool-ai-worker",
-            model = "deterministic-precheck",
+            provider = if (aiResponse.provider_status == "used") aiResponse.used_provider else "deterministic-fallback",
+            model = if (aiResponse.provider_status == "used") aiResponse.used_model else "deterministic-precheck",
             latencyMs = elapsedMillis(startedAt),
-            status = "succeeded",
-            errorCode = null,
+            status = if (aiResponse.provider_status == "used") "succeeded" else "failed",
+            errorCode = aiResponse.provider_error_code,
         )
         val precheck = upsertPrecheck(submission, jobId, aiResponse)
         markJobSucceeded(jobId)
@@ -274,8 +275,8 @@ class AiPrecheckService(
               flags_json, model_provider, model_name, model_version, prompt_version
             ) values (
               :family_id, :child_id, :ai_job_id, :submission_id, 'submission_precheck',
-              :summary, :confidence, cast(:flags_json as jsonb), 'wishpool-ai-worker',
-              'deterministic-precheck', '0.1.0', 'precheck-v1'
+              :summary, :confidence, cast(:flags_json as jsonb), :provider,
+              :model, '0.1.0', 'precheck-v1'
             )
             returning id, family_id, child_id, ai_job_id, submission_id, type, summary, confidence,
                       flags_json::text, model_provider, model_name, model_version, prompt_version, created_at
@@ -288,9 +289,14 @@ class AiPrecheckService(
             .param("summary", aiResponse.summary)
             .param("confidence", aiResponse.confidence)
             .param("flags_json", flagsJson)
+            .param("provider", aiResponse.used_provider)
+            .param("model", aiResponse.used_model)
             .query(aiPrecheckRecord(objectMapper))
             .single()
     }
+
+    private fun selectedProviderCode() = aiTextModelProviderService.resolve("text_vision")?.code ?: aiTextModelProviderService.resolve("text")?.code ?: "deterministic"
+    private fun selectedModelName() = aiTextModelProviderService.resolve("text_vision")?.modelName ?: aiTextModelProviderService.resolve("text")?.modelName ?: "deterministic-precheck"
 
     private fun toWorkerRequest(submission: SubmissionAiContext, media: List<MediaAssetRecord>): AiWorkerPrecheckRequest =
         AiWorkerPrecheckRequest(
@@ -303,7 +309,8 @@ class AiPrecheckService(
                     media_id = asset.id.toString(),
                     kind = mediaKind(asset.contentType),
                     mime_type = asset.contentType,
-                    visual_labels = listOf(asset.purpose, asset.status),
+                    visual_labels = emptyList(),
+                    image_url = if (mediaKind(asset.contentType) == "image") mediaService.createAiReadyDownloadUrl(asset.id) else null,
                 )
             },
         )

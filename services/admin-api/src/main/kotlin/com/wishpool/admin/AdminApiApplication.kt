@@ -133,6 +133,13 @@ fun Application.adminModule(runtime: AdminRuntime) {
             runtime.coreApiClient.deleteImageModelProvider(id)
             call.respondJson("""{"status":"deleted"}""")
         }
+        get("/admin/ai-text-model-providers") { if (!call.requireAdminToken(runtime.config.adminToken)) return@get; call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.aiTextModelProviders())) }
+        post("/admin/ai-text-model-providers") { if (!call.requireAdminToken(runtime.config.adminToken)) return@post; call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.createAiTextModelProvider(mapper.readValue(call.receiveText())))) }
+        put("/admin/ai-text-model-providers/{id}") { if (!call.requireAdminToken(runtime.config.adminToken)) return@put; val id=UUID.fromString(call.parameters["id"]); call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.updateAiTextModelProvider(id,mapper.readValue(call.receiveText())))) }
+        post("/admin/ai-text-model-providers/{id}/toggle") { if (!call.requireAdminToken(runtime.config.adminToken)) return@post; val id=UUID.fromString(call.parameters["id"]); call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.toggleAiTextModelProvider(id,mapper.readValue(call.receiveText())))) }
+        post("/admin/ai-text-model-providers/{id}/set-default") { if (!call.requireAdminToken(runtime.config.adminToken)) return@post; call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.setDefaultAiTextModelProvider(UUID.fromString(call.parameters["id"])))) }
+        post("/admin/ai-text-model-providers/{id}/test-connection") { if (!call.requireAdminToken(runtime.config.adminToken)) return@post; call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.testAiTextModelProvider(UUID.fromString(call.parameters["id"])))) }
+        delete("/admin/ai-text-model-providers/{id}") { if (!call.requireAdminToken(runtime.config.adminToken)) return@delete; runtime.coreApiClient.deleteAiTextModelProvider(UUID.fromString(call.parameters["id"])); call.respondJson("{\"status\":\"deleted\"}") }
         get("/admin/image-gen-usages") {
             if (!call.requireAdminToken(runtime.config.adminToken)) return@get
             call.respondJson(mapper.writeValueAsString(runtime.coreApiClient.imageGenUsages()))

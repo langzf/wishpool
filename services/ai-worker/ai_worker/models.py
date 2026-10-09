@@ -49,6 +49,7 @@ class MediaSignal(JsonModel):
     transcript: str | None = None
     visual_labels: list[str] = field(default_factory=list)
     duration_seconds: float | None = None
+    image_url: str | None = None
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "MediaSignal":
@@ -65,6 +66,7 @@ class MediaSignal(JsonModel):
             transcript=_optional_string(data, "transcript"),
             visual_labels=_string_list(data, "visual_labels"),
             duration_seconds=float(duration) if duration is not None else None,
+            image_url=_optional_string(data, "image_url"),
         )
 
 
@@ -76,6 +78,7 @@ class AiPrecheckRequest(JsonModel):
     child_age: int | None = None
     media: list[MediaSignal] = field(default_factory=list)
     child_note: str | None = None
+    provider_config: "TextProviderConfig | None" = None
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "AiPrecheckRequest":
@@ -92,7 +95,28 @@ class AiPrecheckRequest(JsonModel):
             child_age=age,
             media=[MediaSignal.from_dict(item) for item in media],
             child_note=_optional_string(data, "child_note"),
+            provider_config=TextProviderConfig.from_dict(data["provider_config"]) if isinstance(data.get("provider_config"), dict) else None,
         )
+
+@dataclass(frozen=True)
+class TextProviderConfig(JsonModel):
+    code: str
+    provider_type: Literal["volcengine_ark", "aliyun_bailian", "openai_compatible", "deepseek", "deterministic"]
+    base_url: str
+    api_key: str | None
+    model_name: str
+    capability: Literal["text", "vision", "text_vision", "asr"] = "text"
+    extra_params: dict[str, Any] = field(default_factory=dict)
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "TextProviderConfig":
+        provider_type = _required_string(data, "provider_type")
+        if provider_type not in {"volcengine_ark", "aliyun_bailian", "openai_compatible", "deepseek", "deterministic"}:
+            raise ValidationError("provider_type is invalid")
+        capability = data.get("capability", "text")
+        if capability not in {"text", "vision", "text_vision", "asr"}:
+            raise ValidationError("capability is invalid")
+        return TextProviderConfig(_required_string(data, "code"), provider_type, _required_string(data, "base_url"), _optional_string(data, "api_key"), _required_string(data, "model_name"), capability, data.get("extra_params") or {})
 
 
 @dataclass(frozen=True)
@@ -104,6 +128,10 @@ class AiPrecheckResponse(JsonModel):
     suggested_decision: Literal["approve", "needs_revision", "manual_review"]
     checklist: list[str]
     safety_notes: list[str]
+    provider_status: Literal["used", "fallback"] = "fallback"
+    provider_error_code: str | None = None
+    used_provider: str = "deterministic"
+    used_model: str = "deterministic-precheck"
 
 
 @dataclass(frozen=True)

@@ -7,6 +7,7 @@ import { FormSubmitButton } from "@/components/FormSubmitButton";
 import { requireAdminPageContext } from "@/lib/admin-page";
 import { buildAdminHeaders } from "@/lib/runtime";
 import { configForAdminWebSession } from "@/lib/session";
+import { AiTextModelManager, type AiTextModelProvider } from "@/components/AiTextModelManager";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -32,9 +33,10 @@ export default async function AiModelsPage({ searchParams }: PageProps) {
   }
 
   const config = configForAdminWebSession(session);
-  const [providers, usages] = await Promise.all([
+  const [providers, usages, textProviders] = await Promise.all([
     adminGet<ImageModelProvider[]>(`${config.adminApiBaseUrl}/admin/image-model-providers`, session.adminToken),
-    adminGet<ImageGenUsage[]>(`${config.adminApiBaseUrl}/admin/image-gen-usages`, session.adminToken)
+    adminGet<ImageGenUsage[]>(`${config.adminApiBaseUrl}/admin/image-gen-usages`, session.adminToken),
+    adminGet<AiTextModelProvider[]>(`${config.adminApiBaseUrl}/admin/ai-text-model-providers`, session.adminToken)
   ]);
   const enabledProviders = providers.filter((provider) => provider.isEnabled);
   const actionSuccess = singleParam(params.actionSuccess);
@@ -75,6 +77,7 @@ export default async function AiModelsPage({ searchParams }: PageProps) {
 
       <section className="admin-grid ai-models-page" aria-label="AI 模型管理">
         <AiModelManager enabledCount={enabledProviders.length} providers={providers} />
+        <AiTextModelManager providers={textProviders} />
 
         <article className="panel span-12 usage-panel">
           <div className="section-header usage-section-header">

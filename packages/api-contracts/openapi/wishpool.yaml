@@ -2168,6 +2168,53 @@ paths:
         default:
           $ref: '#/components/responses/Error'
 
+  /internal/admin/ai-text-model-providers:
+    get:
+      tags: [Admin]
+      operationId: listAdminAiTextModelProviders
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/AiTextModelProvider' } } } } }
+    post:
+      tags: [Admin]
+      operationId: createAdminAiTextModelProvider
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextModelProviderWriteRequest' } } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextModelProvider' } } } }
+  /internal/admin/ai-text-model-providers/{id}:
+    put:
+      tags: [Admin]
+      operationId: updateAdminAiTextModelProvider
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextModelProviderWriteRequest' } } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextModelProvider' } } } }
+    delete:
+      tags: [Admin]
+      operationId: deleteAdminAiTextModelProvider
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Deleted } }
+  /internal/admin/ai-text-model-providers/{id}/toggle:
+    post:
+      tags: [Admin]
+      operationId: toggleAdminAiTextModelProvider
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextModelProviderToggleRequest' } } } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextModelProvider' } } } }
+  /internal/admin/ai-text-model-providers/{id}/set-default:
+    post:
+      tags: [Admin]
+      operationId: setDefaultAdminAiTextModelProvider
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextModelProvider' } } } }
+  /internal/admin/ai-text-model-providers/{id}/test-connection:
+    post:
+      tags: [Admin]
+      operationId: testAdminAiTextModelProvider
+      parameters: [{ in: path, name: id, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/AiTextProviderTestResponse' } } } }
 components:
   securitySchemes:
     bearerAuth:
@@ -3383,6 +3430,49 @@ components:
         updatedAt:
           type: string
           format: date-time
+    AiTextModelProvider:
+      type: object
+      required: [id, code, displayName, providerType, baseUrl, hasApiKey, modelName, capability, extraParams, isDefault, isEnabled, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        displayName: { type: string }
+        providerType: { type: string, enum: [volcengine_ark, aliyun_bailian, openai_compatible, deepseek, deterministic] }
+        baseUrl: { type: string, format: uri }
+        apiKeyMasked: { type: string, nullable: true }
+        hasApiKey: { type: boolean }
+        modelName: { type: string }
+        capability: { type: string, enum: [text, vision, text_vision, asr] }
+        extraParams: { type: object, additionalProperties: true }
+        isDefault: { type: boolean }
+        isEnabled: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AiTextModelProviderWriteRequest:
+      type: object
+      required: [displayName, providerType, baseUrl, modelName, capability]
+      properties:
+        code: { type: string, nullable: true }
+        displayName: { type: string }
+        providerType: { type: string }
+        baseUrl: { type: string }
+        apiKey: { type: string, nullable: true, writeOnly: true }
+        modelName: { type: string }
+        capability: { type: string }
+        extraParams: { type: object, additionalProperties: true }
+        isDefault: { type: boolean }
+        isEnabled: { type: boolean }
+    AiTextModelProviderToggleRequest:
+      type: object
+      required: [isEnabled]
+      properties:
+        isEnabled: { type: boolean }
+    AiTextProviderTestResponse:
+      type: object
+      required: [ok, message]
+      properties:
+        ok: { type: boolean }
+        message: { type: string }
 
     ImageModelProviderWriteRequest:
       type: object

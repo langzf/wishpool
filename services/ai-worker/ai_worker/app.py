@@ -14,7 +14,7 @@ from ai_worker.models import (
     ValidationError,
     WishImageGenerationRequest,
 )
-from ai_worker.provider import AiProvider, create_image_provider, create_provider
+from ai_worker.provider import AiProvider, create_image_provider, create_provider, create_text_provider
 
 
 RequestFactory = Callable[[dict[str, Any]], Any]
@@ -66,6 +66,8 @@ class AiWorkerApp:
                 raise ValidationError("body must be a JSON object")
             factory, provider_method = routes[path]
             request = factory(payload)
+            if path != "/internal/ai/generate-wish-image" and getattr(request, "provider_config", None) is not None:
+                provider_method = getattr(create_text_provider(request.provider_config), path.rsplit("/", 1)[-1].replace("-", "_"))
             response = provider_method(request)
             return HTTPStatus.OK, response.to_dict()
         except json.JSONDecodeError:

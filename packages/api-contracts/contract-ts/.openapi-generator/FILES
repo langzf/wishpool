@@ -10,6 +10,10 @@ docs/AdminMediaAccessGrantPage.md
 docs/AdminMediaAccessGrantRequest.md
 docs/AdminPrivacyRequest.md
 docs/AiPrecheck.md
+docs/AiTextModelProvider.md
+docs/AiTextModelProviderToggleRequest.md
+docs/AiTextModelProviderWriteRequest.md
+docs/AiTextProviderTestResponse.md
 docs/ArrangeRoomItemRequest.md
 docs/ArrangeRoomItemRequestPosition.md
 docs/AttachWishImageRequest.md
@@ -180,6 +184,10 @@ src/models/AdminMediaAccessGrantPage.ts
 src/models/AdminMediaAccessGrantRequest.ts
 src/models/AdminPrivacyRequest.ts
 src/models/AiPrecheck.ts
+src/models/AiTextModelProvider.ts
+src/models/AiTextModelProviderToggleRequest.ts
+src/models/AiTextModelProviderWriteRequest.ts
+src/models/AiTextProviderTestResponse.ts
 src/models/ArrangeRoomItemRequest.ts
 src/models/ArrangeRoomItemRequestPosition.ts
 src/models/AttachWishImageRequest.ts

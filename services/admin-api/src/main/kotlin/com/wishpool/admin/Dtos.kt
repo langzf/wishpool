@@ -117,6 +117,10 @@ data class ImageGenUsageWriteRequest(
     val usageCode: String,
     val providerCode: String,
 )
+data class AiTextModelProviderResponse(val id:UUID,val code:String,val displayName:String,val providerType:String,val baseUrl:String,val apiKeyMasked:String?,val hasApiKey:Boolean,val modelName:String,val capability:String,val extraParams:JsonNode,val isDefault:Boolean,val isEnabled:Boolean,val createdAt:OffsetDateTime,val updatedAt:OffsetDateTime)
+data class AiTextModelProviderWriteRequest(val code:String?=null,val displayName:String,val providerType:String,val baseUrl:String,val apiKey:String?=null,val modelName:String,val capability:String,val extraParams:JsonNode?=null,val isDefault:Boolean=false,val isEnabled:Boolean=true)
+data class AiTextModelProviderToggleRequest(val isEnabled:Boolean)
+data class AiTextProviderTestResponse(val ok:Boolean,val message:String)
 
 data class AdminHealthResponse(
     val service: String = "admin-api",

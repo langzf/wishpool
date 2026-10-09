@@ -20,6 +20,7 @@ from ai_worker.models import (
     PrivacySummaryResponse,
     WishImageGenerationRequest,
     WishImageGenerationResponse,
+    TextProviderConfig,
 )
 
 
@@ -63,6 +64,7 @@ class DeterministicAiProvider(AiProvider):
                 "Parent should confirm duration, clarity, and completion quality when needed.",
             ],
             safety_notes=["Potential safety or privacy terms were detected."] if has_risk else [],
+            used_provider="deterministic", used_model="deterministic-precheck",
         )
 
     def draft_feedback(self, request: FeedbackDraftRequest) -> FeedbackDraftResponse:
@@ -108,6 +110,46 @@ class DeterministicAiProvider(AiProvider):
             ],
             risk_notes=["Delete requests are irreversible and require second confirmation."] if request.request_type == "delete" else [],
         )
+
+class HostedTextProvider(AiProvider):
+    def __init__(self, config: TextProviderConfig):
+        self.config = config
+        self.timeout_seconds = float(config.extra_params.get("timeout_seconds", 30) or 30)
+
+    def _call(self, system: str, user: str, image_urls: list[str] | None = None) -> dict[str, Any]:
+        content: list[dict[str, Any]] = [{"type": "text", "text": user}]
+        content.extend({"type": "image_url", "image_url": {"url": url}} for url in (image_urls or []))
+        payload = {"model": self.config.model_name, "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}], "temperature": 0, "response_format": {"type": "json_object"}}
+        req = urlrequest.Request(self.config.base_url.rstrip("/") + "/chat/completions", data=json.dumps(payload, ensure_ascii=False).encode(), method="POST", headers={"Content-Type": "application/json", "Authorization": f"Bearer {self.config.api_key or ''}"})
+        with urlrequest.urlopen(req, timeout=self.timeout_seconds) as response:
+            data = json.loads(response.read().decode())
+        content = ((data.get("choices") or [{}])[0].get("message") or {}).get("content")
+        if not isinstance(content, str): raise RuntimeError("structured_output_missing")
+        return json.loads(content)
+
+    def precheck_submission(self, request: AiPrecheckRequest) -> AiPrecheckResponse:
+        fallback = DeterministicAiProvider().precheck_submission(request)
+        try:
+            urls = [x.image_url for x in request.media if x.kind == "image" and x.image_url]
+            value = self._call("Return only JSON with summary,risk_level,confidence,suggested_decision,checklist,safety_notes.", json.dumps(request.to_dict(), ensure_ascii=False), urls)
+            return AiPrecheckResponse(request.submission_id, value["summary"], value["risk_level"], float(value["confidence"]), value["suggested_decision"], value["checklist"], value["safety_notes"], "used", None, self.config.code, self.config.model_name)
+        except error.HTTPError as exc:
+            fallback = fallback.__class__(**{**fallback.to_dict(), "provider_error_code": f"provider_http_{exc.code}", "used_provider": "deterministic", "used_model": "deterministic-precheck"})
+            return fallback
+        except TimeoutError:
+            return fallback.__class__(**{**fallback.to_dict(), "provider_error_code": "provider_timeout"})
+        except Exception:
+            return fallback.__class__(**{**fallback.to_dict(), "provider_error_code": "provider_error"})
+
+    def draft_feedback(self, request):
+        return DeterministicAiProvider().draft_feedback(request) if self.config.provider_type == "deterministic" else self._typed(request, FeedbackDraftResponse)
+    def generate_memory_narrative(self, request):
+        return DeterministicAiProvider().generate_memory_narrative(request) if self.config.provider_type == "deterministic" else self._typed(request, MemoryNarrativeResponse)
+    def summarize_privacy_request(self, request):
+        return DeterministicAiProvider().summarize_privacy_request(request) if self.config.provider_type == "deterministic" else self._typed(request, PrivacySummaryResponse)
+    def _typed(self, request, cls):
+        value = self._call("Return only JSON matching the requested response fields.", json.dumps(request.to_dict(), ensure_ascii=False))
+        return cls(**value)
 
 
 @dataclass(frozen=True)
@@ -317,6 +359,11 @@ def create_provider(name: str) -> AiProvider:
     if normalized == "deterministic":
         return DeterministicAiProvider()
     raise ValueError(f"Unsupported AI provider: {name}")
+
+def create_text_provider(config: TextProviderConfig | None, worker_config: AiWorkerConfig | None = None) -> AiProvider:
+    if config is None or config.provider_type == "deterministic":
+        return DeterministicAiProvider()
+    return HostedTextProvider(config)
 
 
 def create_image_provider(config: ImageProviderConfig | None, worker_config: AiWorkerConfig | None = None) -> ImageProvider:

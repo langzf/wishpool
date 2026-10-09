@@ -15,6 +15,7 @@ class AiWorkerClient(
     @Value("\${wishpool.ai.worker.base-url:}") private val aiWorkerBaseUrl: String,
     @Value("\${wishpool.internal.token}") private val internalToken: String,
     private val imageModelProviderService: ImageModelProviderService,
+    private val aiTextModelProviderService: AiTextModelProviderService,
     private val jsonMapper: JsonMapper,
 ) {
     private val restClient: RestClient = RestClient.builder()
@@ -27,12 +28,14 @@ class AiWorkerClient(
         .build()
 
     fun precheckSubmission(request: AiWorkerPrecheckRequest): AiWorkerPrecheckResponse {
-        if (aiWorkerBaseUrl.isBlank()) return deterministicPrecheck(request)
+        val p = aiTextModelProviderService.resolve("text_vision") ?: aiTextModelProviderService.resolve("text")
+        val resolvedRequest = request.copy(provider_config = p?.let { AiWorkerTextProviderConfig(it.code,it.providerType,it.baseUrl,it.apiKey,it.modelName,it.capability,jsonMapper.convertValue(it.extraParams, Map::class.java) as Map<String,Any?>) })
+        if (aiWorkerBaseUrl.isBlank()) return deterministicPrecheck(resolvedRequest)
         return restClient.post()
             .uri(aiWorkerBaseUrl.trimEnd('/') + "/internal/ai/precheck-submission")
             .contentType(MediaType.APPLICATION_JSON)
             .header("Authorization", "Bearer $internalToken")
-            .body(jsonBody(request))
+            .body(jsonBody(resolvedRequest))
             .retrieve()
             .body(AiWorkerPrecheckResponse::class.java)
             ?: deterministicPrecheck(request)

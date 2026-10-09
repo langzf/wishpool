@@ -78,6 +78,13 @@ class CoreApiClient(
     fun deleteImageModelProvider(id: UUID) {
         delete("internal/admin/image-model-providers/$id")
     }
+    fun aiTextModelProviders(): List<AiTextModelProviderResponse> = get("internal/admin/ai-text-model-providers")
+    fun createAiTextModelProvider(r:AiTextModelProviderWriteRequest)=post<AiTextModelProviderResponse>("internal/admin/ai-text-model-providers",r)
+    fun updateAiTextModelProvider(id:UUID,r:AiTextModelProviderWriteRequest)=put<AiTextModelProviderResponse>("internal/admin/ai-text-model-providers/$id",r)
+    fun toggleAiTextModelProvider(id:UUID,r:AiTextModelProviderToggleRequest)=post<AiTextModelProviderResponse>("internal/admin/ai-text-model-providers/$id/toggle",r)
+    fun setDefaultAiTextModelProvider(id:UUID)=post<AiTextModelProviderResponse>("internal/admin/ai-text-model-providers/$id/set-default",emptyMap<String,String>())
+    fun testAiTextModelProvider(id:UUID)=post<AiTextProviderTestResponse>("internal/admin/ai-text-model-providers/$id/test-connection",emptyMap<String,String>())
+    fun deleteAiTextModelProvider(id:UUID){delete("internal/admin/ai-text-model-providers/$id")}
 
     fun imageGenUsages(): List<ImageGenUsageResponse> =
         get("internal/admin/image-gen-usages")

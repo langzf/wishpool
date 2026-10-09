@@ -104,6 +104,17 @@ export async function saveImageModelProviderAction(formData: FormData) {
   redirect(`/ai-models?actionSuccess=${encodeURIComponent("模型配置已保存。")}`);
 }
 
+export async function saveAiTextModelProviderAction(formData: FormData) {
+  const id = valueFromForm(formData, "id");
+  const payload = { code: valueFromForm(formData, "code"), displayName: valueFromForm(formData, "displayName"), providerType: valueFromForm(formData, "providerType"), baseUrl: valueFromForm(formData, "baseUrl"), apiKey: valueFromForm(formData, "apiKey") || undefined, modelName: valueFromForm(formData, "modelName"), capability: valueFromForm(formData, "capability"), extraParams: parseExtraParams(valueFromForm(formData, "extraParams")), isDefault: formData.get("isDefault") === "on", isEnabled: formData.get("isEnabled") === "on" };
+  await writeAdminApi(id ? `/admin/ai-text-model-providers/${id}` : "/admin/ai-text-model-providers", id ? "PUT" : "POST", payload);
+  redirect(`/ai-models?actionSuccess=${encodeURIComponent("文本模型配置已保存")}`);
+}
+export async function toggleAiTextModelProviderAction(formData: FormData) { const id=valueFromForm(formData,"id"); await writeAdminApi(`/admin/ai-text-model-providers/${id}/toggle`,"POST",{isEnabled:valueFromForm(formData,"isEnabled")==="true"}); redirect(`/ai-models?actionSuccess=${encodeURIComponent("状态已更新")}`); }
+export async function setDefaultAiTextModelProviderAction(formData: FormData) { const id=valueFromForm(formData,"id"); await writeAdminApi(`/admin/ai-text-model-providers/${id}/set-default`,"POST",{}); redirect(`/ai-models?actionSuccess=${encodeURIComponent("默认文本模型已更新")}`); }
+export async function deleteAiTextModelProviderAction(formData: FormData) { const id=valueFromForm(formData,"id"); await writeAdminApi(`/admin/ai-text-model-providers/${id}`,"DELETE",{}); redirect(`/ai-models?actionSuccess=${encodeURIComponent("文本模型已删除")}`); }
+export async function testAiTextModelProviderAction(formData: FormData) { const id=valueFromForm(formData,"id"); const config=await requireAdminActionConfig(); const r=await fetch(`${config.adminApiBaseUrl}/admin/ai-text-model-providers/${id}/test-connection`,{method:"POST",headers:{...buildAdminHeaders(config.adminToken),"Content-Type":"application/json"},body:"{}",cache:"no-store"}); const b=await r.json(); redirect(`/ai-models?action${b.ok?"Success":"Error"}=${encodeURIComponent(b.ok?`连接成功：${b.message}`:`连接失败：${b.message}`)}`); }
+
 export async function toggleImageModelProviderAction(formData: FormData) {
   const id = valueFromForm(formData, "id");
   const isEnabled = valueFromForm(formData, "isEnabled") === "true";

@@ -32,7 +32,10 @@ data class AiWorkerPrecheckRequest(
     val media: List<AiWorkerMediaSignal>,
     @JsonProperty("child_note")
     val child_note: String? = null,
+    @JsonProperty("provider_config") val provider_config: AiWorkerTextProviderConfig? = null,
 )
+
+data class AiWorkerTextProviderConfig(val code:String,@JsonProperty("provider_type") val provider_type:String,@JsonProperty("base_url") val base_url:String,@JsonProperty("api_key") val api_key:String?,@JsonProperty("model_name") val model_name:String,val capability:String,@JsonProperty("extra_params") val extra_params: Map<String,Any?> = emptyMap())
 
 data class AiWorkerMediaSignal(
     @JsonProperty("media_id")
@@ -45,6 +48,7 @@ data class AiWorkerMediaSignal(
     val visual_labels: List<String> = emptyList(),
     @JsonProperty("duration_seconds")
     val duration_seconds: Double? = null,
+    @JsonProperty("image_url") val image_url: String? = null,
 )
 
 data class AiWorkerPrecheckResponse(
@@ -59,6 +63,10 @@ data class AiWorkerPrecheckResponse(
     val checklist: List<String>,
     @JsonProperty("safety_notes")
     val safety_notes: List<String>,
+    @JsonProperty("provider_status") val provider_status: String = "fallback",
+    @JsonProperty("provider_error_code") val provider_error_code: String? = null,
+    @JsonProperty("used_provider") val used_provider: String = "deterministic",
+    @JsonProperty("used_model") val used_model: String = "deterministic-precheck",
 )
 
 data class AiJobRecord(

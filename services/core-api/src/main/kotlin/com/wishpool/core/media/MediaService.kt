@@ -360,8 +360,10 @@ class MediaService(
                 ?.let { presignedGetUrl(it.storageKey, presigner) },
         )
 
-    fun createDownloadUrl(storageKey: String): String =
-        presignedGetUrl(storageKey, publicS3Presigner)
+    fun createDownloadUrl(storageKey: String): String = presignedGetUrl(storageKey, publicS3Presigner)
+    fun createAiReadyDownloadUrl(mediaId: UUID): String? = listDerivatives(mediaId).firstOrNull { it.kind == "ai_ready" }?.let { derivative ->
+        presignedGetUrl(derivative.storageKey, publicS3Presigner, Duration.ofMinutes(10))
+    }
 
     fun deleteObjects(storageKeys: Collection<String>) {
         storageKeys.asSequence()
@@ -661,13 +663,13 @@ class MediaService(
         }.url().toString()
     }
 
-    private fun presignedGetUrl(storageKey: String, presigner: S3Presigner): String {
+    private fun presignedGetUrl(storageKey: String, presigner: S3Presigner, signatureDuration: Duration = Duration.ofSeconds(downloadUrlTtlSec)): String {
         val request = GetObjectRequest.builder()
             .bucket(bucket)
             .key(storageKey)
             .build()
         return presigner.presignGetObject {
-            it.signatureDuration(Duration.ofSeconds(downloadUrlTtlSec))
+            it.signatureDuration(signatureDuration)
                 .getObjectRequest(request)
         }.url().toString()
     }

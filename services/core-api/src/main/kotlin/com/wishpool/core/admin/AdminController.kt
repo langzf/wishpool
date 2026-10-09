@@ -7,6 +7,9 @@ import com.wishpool.core.ai.ImageModelProviderResponse
 import com.wishpool.core.ai.ImageModelProviderService
 import com.wishpool.core.ai.ImageModelProviderToggleRequest
 import com.wishpool.core.ai.ImageModelProviderWriteRequest
+import com.wishpool.core.ai.AiTextModelProviderService
+import com.wishpool.core.ai.AiTextModelProviderWriteRequest
+import com.wishpool.core.ai.AiTextModelProviderToggleRequest
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,6 +27,7 @@ import java.time.OffsetDateTime
 class AdminController(
     private val service: AdminService,
     private val imageModelProviderService: ImageModelProviderService,
+    private val aiTextModelProviderService: AiTextModelProviderService,
     private val internalAuthService: InternalAuthService,
 ) {
     @GetMapping("/internal/admin/dashboard")
@@ -161,6 +165,21 @@ class AdminController(
         internalAuthService.requireToken(internalToken)
         imageModelProviderService.deleteProvider(id)
     }
+
+    @GetMapping("/internal/admin/ai-text-model-providers")
+    fun listAiTextProviders(@RequestHeader("X-Internal-Token", required = false) token:String?) = aiTextModelProviderService.listAdminProviders().also { internalAuthService.requireToken(token) }
+    @PostMapping("/internal/admin/ai-text-model-providers")
+    fun createAiTextProvider(@RequestHeader("X-Internal-Token", required = false) token:String?,@RequestBody request:AiTextModelProviderWriteRequest) = aiTextModelProviderService.create(request).also { internalAuthService.requireToken(token) }
+    @PutMapping("/internal/admin/ai-text-model-providers/{id}")
+    fun updateAiTextProvider(@RequestHeader("X-Internal-Token", required = false) token:String?,@PathVariable id:UUID,@RequestBody request:AiTextModelProviderWriteRequest) = aiTextModelProviderService.update(id,request).also { internalAuthService.requireToken(token) }
+    @PostMapping("/internal/admin/ai-text-model-providers/{id}/toggle")
+    fun toggleAiTextProvider(@RequestHeader("X-Internal-Token", required = false) token:String?,@PathVariable id:UUID,@RequestBody request:AiTextModelProviderToggleRequest) = aiTextModelProviderService.toggle(id,request).also { internalAuthService.requireToken(token) }
+    @PostMapping("/internal/admin/ai-text-model-providers/{id}/set-default")
+    fun defaultAiTextProvider(@RequestHeader("X-Internal-Token", required = false) token:String?,@PathVariable id:UUID) = aiTextModelProviderService.setDefault(id).also { internalAuthService.requireToken(token) }
+    @PostMapping("/internal/admin/ai-text-model-providers/{id}/test-connection")
+    fun testAiTextProvider(@RequestHeader("X-Internal-Token", required = false) token:String?,@PathVariable id:UUID) = aiTextModelProviderService.test(id).also { internalAuthService.requireToken(token) }
+    @DeleteMapping("/internal/admin/ai-text-model-providers/{id}")
+    fun deleteAiTextProvider(@RequestHeader("X-Internal-Token", required = false) token:String?,@PathVariable id:UUID){internalAuthService.requireToken(token);aiTextModelProviderService.delete(id)}
 
     @GetMapping("/internal/admin/image-gen-usages")
     fun listImageGenUsages(

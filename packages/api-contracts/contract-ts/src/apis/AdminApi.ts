@@ -49,6 +49,26 @@ import {
     AdminPrivacyRequestToJSON,
 } from '../models/AdminPrivacyRequest';
 import {
+    type AiTextModelProvider,
+    AiTextModelProviderFromJSON,
+    AiTextModelProviderToJSON,
+} from '../models/AiTextModelProvider';
+import {
+    type AiTextModelProviderToggleRequest,
+    AiTextModelProviderToggleRequestFromJSON,
+    AiTextModelProviderToggleRequestToJSON,
+} from '../models/AiTextModelProviderToggleRequest';
+import {
+    type AiTextModelProviderWriteRequest,
+    AiTextModelProviderWriteRequestFromJSON,
+    AiTextModelProviderWriteRequestToJSON,
+} from '../models/AiTextModelProviderWriteRequest';
+import {
+    type AiTextProviderTestResponse,
+    AiTextProviderTestResponseFromJSON,
+    AiTextProviderTestResponseToJSON,
+} from '../models/AiTextProviderTestResponse';
+import {
     type ImageGenUsage,
     ImageGenUsageFromJSON,
     ImageGenUsageToJSON,
@@ -84,8 +104,16 @@ import {
     RevokeAdminMediaAccessGrantRequestToJSON,
 } from '../models/RevokeAdminMediaAccessGrantRequest';
 
+export interface CreateAdminAiTextModelProviderRequest {
+    aiTextModelProviderWriteRequest: AiTextModelProviderWriteRequest;
+}
+
 export interface CreateAdminImageModelProviderRequest {
     imageModelProviderWriteRequest: ImageModelProviderWriteRequest;
+}
+
+export interface DeleteAdminAiTextModelProviderRequest {
+    id: string;
 }
 
 export interface DeleteAdminImageModelProviderRequest {
@@ -127,13 +155,31 @@ export interface RevokeAdminMediaAccessGrantOperationRequest {
     revokeAdminMediaAccessGrantRequest: RevokeAdminMediaAccessGrantRequest;
 }
 
+export interface SetDefaultAdminAiTextModelProviderRequest {
+    id: string;
+}
+
 export interface SetDefaultAdminImageModelProviderRequest {
     id: string;
+}
+
+export interface TestAdminAiTextModelProviderRequest {
+    id: string;
+}
+
+export interface ToggleAdminAiTextModelProviderRequest {
+    id: string;
+    aiTextModelProviderToggleRequest: AiTextModelProviderToggleRequest;
 }
 
 export interface ToggleAdminImageModelProviderRequest {
     id: string;
     imageModelProviderToggleRequest: ImageModelProviderToggleRequest;
+}
+
+export interface UpdateAdminAiTextModelProviderRequest {
+    id: string;
+    aiTextModelProviderWriteRequest: AiTextModelProviderWriteRequest;
 }
 
 export interface UpdateAdminImageModelProviderRequest {
@@ -153,6 +199,27 @@ export interface UpsertAdminImageGenUsageRequest {
  * @interface AdminApiInterface
  */
 export interface AdminApiInterface {
+    /**
+     * Creates request options for createAdminAiTextModelProvider without sending the request
+     * @param {AiTextModelProviderWriteRequest} aiTextModelProviderWriteRequest 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    createAdminAiTextModelProviderRequestOpts(requestParameters: CreateAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {AiTextModelProviderWriteRequest} aiTextModelProviderWriteRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    createAdminAiTextModelProviderRaw(requestParameters: CreateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>>;
+
+    /**
+     */
+    createAdminAiTextModelProvider(requestParameters: CreateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider>;
+
     /**
      * Creates request options for createAdminImageModelProvider without sending the request
      * @param {ImageModelProviderWriteRequest} imageModelProviderWriteRequest 
@@ -175,6 +242,27 @@ export interface AdminApiInterface {
      * Create an image generation model provider.
      */
     createAdminImageModelProvider(requestParameters: CreateAdminImageModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImageModelProvider>;
+
+    /**
+     * Creates request options for deleteAdminAiTextModelProvider without sending the request
+     * @param {string} id 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    deleteAdminAiTextModelProviderRequestOpts(requestParameters: DeleteAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    deleteAdminAiTextModelProviderRaw(requestParameters: DeleteAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>>;
+
+    /**
+     */
+    deleteAdminAiTextModelProvider(requestParameters: DeleteAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void>;
 
     /**
      * Creates request options for deleteAdminImageModelProvider without sending the request
@@ -242,6 +330,25 @@ export interface AdminApiInterface {
      * Create an audited short-lived media access grant.
      */
     grantAdminMediaAccess(requestParameters: GrantAdminMediaAccessRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminMediaAccessGrant>;
+
+    /**
+     * Creates request options for listAdminAiTextModelProviders without sending the request
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    listAdminAiTextModelProvidersRequestOpts(): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    listAdminAiTextModelProvidersRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<AiTextModelProvider>>>;
+
+    /**
+     */
+    listAdminAiTextModelProviders(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AiTextModelProvider>>;
 
     /**
      * Creates request options for listAdminAuditLogs without sending the request
@@ -419,6 +526,27 @@ export interface AdminApiInterface {
     revokeAdminMediaAccessGrant(requestParameters: RevokeAdminMediaAccessGrantOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminMediaAccessGrant>;
 
     /**
+     * Creates request options for setDefaultAdminAiTextModelProvider without sending the request
+     * @param {string} id 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    setDefaultAdminAiTextModelProviderRequestOpts(requestParameters: SetDefaultAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    setDefaultAdminAiTextModelProviderRaw(requestParameters: SetDefaultAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>>;
+
+    /**
+     */
+    setDefaultAdminAiTextModelProvider(requestParameters: SetDefaultAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider>;
+
+    /**
      * Creates request options for setDefaultAdminImageModelProvider without sending the request
      * @param {string} id 
      * @throws {RequiredError}
@@ -440,6 +568,50 @@ export interface AdminApiInterface {
      * Set the global default image generation model provider.
      */
     setDefaultAdminImageModelProvider(requestParameters: SetDefaultAdminImageModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImageModelProvider>;
+
+    /**
+     * Creates request options for testAdminAiTextModelProvider without sending the request
+     * @param {string} id 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    testAdminAiTextModelProviderRequestOpts(requestParameters: TestAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    testAdminAiTextModelProviderRaw(requestParameters: TestAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextProviderTestResponse>>;
+
+    /**
+     */
+    testAdminAiTextModelProvider(requestParameters: TestAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextProviderTestResponse>;
+
+    /**
+     * Creates request options for toggleAdminAiTextModelProvider without sending the request
+     * @param {string} id 
+     * @param {AiTextModelProviderToggleRequest} aiTextModelProviderToggleRequest 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    toggleAdminAiTextModelProviderRequestOpts(requestParameters: ToggleAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} id 
+     * @param {AiTextModelProviderToggleRequest} aiTextModelProviderToggleRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    toggleAdminAiTextModelProviderRaw(requestParameters: ToggleAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>>;
+
+    /**
+     */
+    toggleAdminAiTextModelProvider(requestParameters: ToggleAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider>;
 
     /**
      * Creates request options for toggleAdminImageModelProvider without sending the request
@@ -465,6 +637,29 @@ export interface AdminApiInterface {
      * Enable or disable an image generation model provider.
      */
     toggleAdminImageModelProvider(requestParameters: ToggleAdminImageModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImageModelProvider>;
+
+    /**
+     * Creates request options for updateAdminAiTextModelProvider without sending the request
+     * @param {string} id 
+     * @param {AiTextModelProviderWriteRequest} aiTextModelProviderWriteRequest 
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    updateAdminAiTextModelProviderRequestOpts(requestParameters: UpdateAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts>;
+
+    /**
+     * 
+     * @param {string} id 
+     * @param {AiTextModelProviderWriteRequest} aiTextModelProviderWriteRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AdminApiInterface
+     */
+    updateAdminAiTextModelProviderRaw(requestParameters: UpdateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>>;
+
+    /**
+     */
+    updateAdminAiTextModelProvider(requestParameters: UpdateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider>;
 
     /**
      * Creates request options for updateAdminImageModelProvider without sending the request
@@ -524,6 +719,59 @@ export interface AdminApiInterface {
 export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
 
     /**
+     * Creates request options for createAdminAiTextModelProvider without sending the request
+     */
+    async createAdminAiTextModelProviderRequestOpts(requestParameters: CreateAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['aiTextModelProviderWriteRequest'] == null) {
+            throw new runtime.RequiredError(
+                'aiTextModelProviderWriteRequest',
+                'Required parameter "aiTextModelProviderWriteRequest" was null or undefined when calling createAdminAiTextModelProvider().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/internal/admin/ai-text-model-providers`;
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: AiTextModelProviderWriteRequestToJSON(requestParameters['aiTextModelProviderWriteRequest']),
+        };
+    }
+
+    /**
+     */
+    async createAdminAiTextModelProviderRaw(requestParameters: CreateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>> {
+        const requestOptions = await this.createAdminAiTextModelProviderRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AiTextModelProviderFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async createAdminAiTextModelProvider(requestParameters: CreateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider> {
+        const response = await this.createAdminAiTextModelProviderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Creates request options for createAdminImageModelProvider without sending the request
      */
     async createAdminImageModelProviderRequestOpts(requestParameters: CreateAdminImageModelProviderRequest): Promise<runtime.RequestOpts> {
@@ -572,6 +820,56 @@ export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
     async createAdminImageModelProvider(requestParameters: CreateAdminImageModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImageModelProvider> {
         const response = await this.createAdminImageModelProviderRaw(requestParameters, initOverrides);
         return await response.value();
+    }
+
+    /**
+     * Creates request options for deleteAdminAiTextModelProvider without sending the request
+     */
+    async deleteAdminAiTextModelProviderRequestOpts(requestParameters: DeleteAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling deleteAdminAiTextModelProvider().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/internal/admin/ai-text-model-providers/{id}`;
+        urlPath = urlPath.replace('{id}', encodeURIComponent(String(requestParameters['id'])));
+
+        return {
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     */
+    async deleteAdminAiTextModelProviderRaw(requestParameters: DeleteAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        const requestOptions = await this.deleteAdminAiTextModelProviderRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     */
+    async deleteAdminAiTextModelProvider(requestParameters: DeleteAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.deleteAdminAiTextModelProviderRaw(requestParameters, initOverrides);
     }
 
     /**
@@ -711,6 +1009,49 @@ export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
      */
     async grantAdminMediaAccess(requestParameters: GrantAdminMediaAccessRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AdminMediaAccessGrant> {
         const response = await this.grantAdminMediaAccessRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for listAdminAiTextModelProviders without sending the request
+     */
+    async listAdminAiTextModelProvidersRequestOpts(): Promise<runtime.RequestOpts> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/internal/admin/ai-text-model-providers`;
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     */
+    async listAdminAiTextModelProvidersRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<AiTextModelProvider>>> {
+        const requestOptions = await this.listAdminAiTextModelProvidersRequestOpts();
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(AiTextModelProviderFromJSON));
+    }
+
+    /**
+     */
+    async listAdminAiTextModelProviders(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AiTextModelProvider>> {
+        const response = await this.listAdminAiTextModelProvidersRaw(initOverrides);
         return await response.value();
     }
 
@@ -1072,6 +1413,57 @@ export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
     }
 
     /**
+     * Creates request options for setDefaultAdminAiTextModelProvider without sending the request
+     */
+    async setDefaultAdminAiTextModelProviderRequestOpts(requestParameters: SetDefaultAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling setDefaultAdminAiTextModelProvider().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/internal/admin/ai-text-model-providers/{id}/set-default`;
+        urlPath = urlPath.replace('{id}', encodeURIComponent(String(requestParameters['id'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     */
+    async setDefaultAdminAiTextModelProviderRaw(requestParameters: SetDefaultAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>> {
+        const requestOptions = await this.setDefaultAdminAiTextModelProviderRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AiTextModelProviderFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async setDefaultAdminAiTextModelProvider(requestParameters: SetDefaultAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider> {
+        const response = await this.setDefaultAdminAiTextModelProviderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Creates request options for setDefaultAdminImageModelProvider without sending the request
      */
     async setDefaultAdminImageModelProviderRequestOpts(requestParameters: SetDefaultAdminImageModelProviderRequest): Promise<runtime.RequestOpts> {
@@ -1117,6 +1509,118 @@ export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
      */
     async setDefaultAdminImageModelProvider(requestParameters: SetDefaultAdminImageModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImageModelProvider> {
         const response = await this.setDefaultAdminImageModelProviderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for testAdminAiTextModelProvider without sending the request
+     */
+    async testAdminAiTextModelProviderRequestOpts(requestParameters: TestAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling testAdminAiTextModelProvider().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/internal/admin/ai-text-model-providers/{id}/test-connection`;
+        urlPath = urlPath.replace('{id}', encodeURIComponent(String(requestParameters['id'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     */
+    async testAdminAiTextModelProviderRaw(requestParameters: TestAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextProviderTestResponse>> {
+        const requestOptions = await this.testAdminAiTextModelProviderRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AiTextProviderTestResponseFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async testAdminAiTextModelProvider(requestParameters: TestAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextProviderTestResponse> {
+        const response = await this.testAdminAiTextModelProviderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for toggleAdminAiTextModelProvider without sending the request
+     */
+    async toggleAdminAiTextModelProviderRequestOpts(requestParameters: ToggleAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling toggleAdminAiTextModelProvider().'
+            );
+        }
+
+        if (requestParameters['aiTextModelProviderToggleRequest'] == null) {
+            throw new runtime.RequiredError(
+                'aiTextModelProviderToggleRequest',
+                'Required parameter "aiTextModelProviderToggleRequest" was null or undefined when calling toggleAdminAiTextModelProvider().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/internal/admin/ai-text-model-providers/{id}/toggle`;
+        urlPath = urlPath.replace('{id}', encodeURIComponent(String(requestParameters['id'])));
+
+        return {
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: AiTextModelProviderToggleRequestToJSON(requestParameters['aiTextModelProviderToggleRequest']),
+        };
+    }
+
+    /**
+     */
+    async toggleAdminAiTextModelProviderRaw(requestParameters: ToggleAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>> {
+        const requestOptions = await this.toggleAdminAiTextModelProviderRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AiTextModelProviderFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async toggleAdminAiTextModelProvider(requestParameters: ToggleAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider> {
+        const response = await this.toggleAdminAiTextModelProviderRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1176,6 +1680,67 @@ export class AdminApi extends runtime.BaseAPI implements AdminApiInterface {
      */
     async toggleAdminImageModelProvider(requestParameters: ToggleAdminImageModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImageModelProvider> {
         const response = await this.toggleAdminImageModelProviderRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for updateAdminAiTextModelProvider without sending the request
+     */
+    async updateAdminAiTextModelProviderRequestOpts(requestParameters: UpdateAdminAiTextModelProviderRequest): Promise<runtime.RequestOpts> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling updateAdminAiTextModelProvider().'
+            );
+        }
+
+        if (requestParameters['aiTextModelProviderWriteRequest'] == null) {
+            throw new runtime.RequiredError(
+                'aiTextModelProviderWriteRequest',
+                'Required parameter "aiTextModelProviderWriteRequest" was null or undefined when calling updateAdminAiTextModelProvider().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/internal/admin/ai-text-model-providers/{id}`;
+        urlPath = urlPath.replace('{id}', encodeURIComponent(String(requestParameters['id'])));
+
+        return {
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: AiTextModelProviderWriteRequestToJSON(requestParameters['aiTextModelProviderWriteRequest']),
+        };
+    }
+
+    /**
+     */
+    async updateAdminAiTextModelProviderRaw(requestParameters: UpdateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiTextModelProvider>> {
+        const requestOptions = await this.updateAdminAiTextModelProviderRequestOpts(requestParameters);
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AiTextModelProviderFromJSON(jsonValue));
+    }
+
+    /**
+     */
+    async updateAdminAiTextModelProvider(requestParameters: UpdateAdminAiTextModelProviderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiTextModelProvider> {
+        const response = await this.updateAdminAiTextModelProviderRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

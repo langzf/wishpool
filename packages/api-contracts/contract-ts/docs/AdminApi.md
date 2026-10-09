@@ -4,10 +4,13 @@ All URIs are relative to *http://localhost:8080*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|
+| [**createAdminAiTextModelProvider**](AdminApi.md#createadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers |  |
 | [**createAdminImageModelProvider**](AdminApi.md#createadminimagemodelprovider) | **POST** /internal/admin/image-model-providers | Create an image generation model provider. |
+| [**deleteAdminAiTextModelProvider**](AdminApi.md#deleteadminaitextmodelprovider) | **DELETE** /internal/admin/ai-text-model-providers/{id} |  |
 | [**deleteAdminImageModelProvider**](AdminApi.md#deleteadminimagemodelprovider) | **DELETE** /internal/admin/image-model-providers/{id} | Delete an image generation model provider. |
 | [**getAdminDashboard**](AdminApi.md#getadmindashboard) | **GET** /internal/admin/dashboard | Get local administration dashboard counters. |
 | [**grantAdminMediaAccess**](AdminApi.md#grantadminmediaaccess) | **POST** /internal/admin/media-access-grants | Create an audited short-lived media access grant. |
+| [**listAdminAiTextModelProviders**](AdminApi.md#listadminaitextmodelproviders) | **GET** /internal/admin/ai-text-model-providers |  |
 | [**listAdminAuditLogs**](AdminApi.md#listadminauditlogs) | **GET** /internal/admin/audit-logs | List audit logs for administration. |
 | [**listAdminFamilies**](AdminApi.md#listadminfamilies) | **GET** /internal/admin/families | List family metadata for administration. |
 | [**listAdminImageGenUsages**](AdminApi.md#listadminimagegenusages) | **GET** /internal/admin/image-gen-usages | List business usage to image provider mappings. |
@@ -15,11 +18,84 @@ All URIs are relative to *http://localhost:8080*
 | [**listAdminMediaAccessGrants**](AdminApi.md#listadminmediaaccessgrants) | **GET** /internal/admin/media-access-grants |  |
 | [**listAdminPrivacyRequests**](AdminApi.md#listadminprivacyrequests) | **GET** /internal/admin/privacy-requests | List privacy requests for administration. |
 | [**revokeAdminMediaAccessGrant**](AdminApi.md#revokeadminmediaaccessgrantoperation) | **POST** /internal/admin/media-access-grants/{grantId}/revoke |  |
+| [**setDefaultAdminAiTextModelProvider**](AdminApi.md#setdefaultadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers/{id}/set-default |  |
 | [**setDefaultAdminImageModelProvider**](AdminApi.md#setdefaultadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/set-default | Set the global default image generation model provider. |
+| [**testAdminAiTextModelProvider**](AdminApi.md#testadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers/{id}/test-connection |  |
+| [**toggleAdminAiTextModelProvider**](AdminApi.md#toggleadminaitextmodelprovider) | **POST** /internal/admin/ai-text-model-providers/{id}/toggle |  |
 | [**toggleAdminImageModelProvider**](AdminApi.md#toggleadminimagemodelprovider) | **POST** /internal/admin/image-model-providers/{id}/toggle | Enable or disable an image generation model provider. |
+| [**updateAdminAiTextModelProvider**](AdminApi.md#updateadminaitextmodelprovider) | **PUT** /internal/admin/ai-text-model-providers/{id} |  |
 | [**updateAdminImageModelProvider**](AdminApi.md#updateadminimagemodelprovider) | **PUT** /internal/admin/image-model-providers/{id} | Update an image generation model provider. |
 | [**upsertAdminImageGenUsage**](AdminApi.md#upsertadminimagegenusage) | **PUT** /internal/admin/image-gen-usages/{usageCode} | Create or update a business usage to image provider mapping. |
 
+
+
+## createAdminAiTextModelProvider
+
+> AiTextModelProvider createAdminAiTextModelProvider(aiTextModelProviderWriteRequest)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { CreateAdminAiTextModelProviderRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // AiTextModelProviderWriteRequest
+    aiTextModelProviderWriteRequest: ...,
+  } satisfies CreateAdminAiTextModelProviderRequest;
+
+  try {
+    const data = await api.createAdminAiTextModelProvider(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **aiTextModelProviderWriteRequest** | [AiTextModelProviderWriteRequest](AiTextModelProviderWriteRequest.md) |  | |
+
+### Return type
+
+[**AiTextModelProvider**](AiTextModelProvider.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
 ## createAdminImageModelProvider
@@ -88,6 +164,75 @@ example().catch(console.error);
 |-------------|-------------|------------------|
 | **200** | Created provider. |  -  |
 | **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## deleteAdminAiTextModelProvider
+
+> deleteAdminAiTextModelProvider(id)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { DeleteAdminAiTextModelProviderRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // string
+    id: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+  } satisfies DeleteAdminAiTextModelProviderRequest;
+
+  try {
+    const data = await api.deleteAdminAiTextModelProvider(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+`void` (Empty response body)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: Not defined
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **204** | Deleted |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -290,6 +435,67 @@ example().catch(console.error);
 |-------------|-------------|------------------|
 | **200** | Media access grant. |  -  |
 | **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## listAdminAiTextModelProviders
+
+> Array&lt;AiTextModelProvider&gt; listAdminAiTextModelProviders()
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { ListAdminAiTextModelProvidersRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new AdminApi(config);
+
+  try {
+    const data = await api.listAdminAiTextModelProviders();
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**Array&lt;AiTextModelProvider&gt;**](AiTextModelProvider.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | OK |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -801,6 +1007,75 @@ example().catch(console.error);
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 
+## setDefaultAdminAiTextModelProvider
+
+> AiTextModelProvider setDefaultAdminAiTextModelProvider(id)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { SetDefaultAdminAiTextModelProviderRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // string
+    id: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+  } satisfies SetDefaultAdminAiTextModelProviderRequest;
+
+  try {
+    const data = await api.setDefaultAdminAiTextModelProvider(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+[**AiTextModelProvider**](AiTextModelProvider.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
 ## setDefaultAdminImageModelProvider
 
 > ImageModelProvider setDefaultAdminImageModelProvider(id)
@@ -867,6 +1142,147 @@ example().catch(console.error);
 |-------------|-------------|------------------|
 | **200** | Updated provider. |  -  |
 | **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## testAdminAiTextModelProvider
+
+> AiTextProviderTestResponse testAdminAiTextModelProvider(id)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { TestAdminAiTextModelProviderRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // string
+    id: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+  } satisfies TestAdminAiTextModelProviderRequest;
+
+  try {
+    const data = await api.testAdminAiTextModelProvider(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | `string` |  | [Defaults to `undefined`] |
+
+### Return type
+
+[**AiTextProviderTestResponse**](AiTextProviderTestResponse.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | OK |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## toggleAdminAiTextModelProvider
+
+> AiTextModelProvider toggleAdminAiTextModelProvider(id, aiTextModelProviderToggleRequest)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { ToggleAdminAiTextModelProviderRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // string
+    id: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // AiTextModelProviderToggleRequest
+    aiTextModelProviderToggleRequest: ...,
+  } satisfies ToggleAdminAiTextModelProviderRequest;
+
+  try {
+    const data = await api.toggleAdminAiTextModelProvider(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | `string` |  | [Defaults to `undefined`] |
+| **aiTextModelProviderToggleRequest** | [AiTextModelProviderToggleRequest](AiTextModelProviderToggleRequest.md) |  | |
+
+### Return type
+
+[**AiTextModelProvider**](AiTextModelProvider.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | OK |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
@@ -940,6 +1356,78 @@ example().catch(console.error);
 |-------------|-------------|------------------|
 | **200** | Updated provider. |  -  |
 | **0** | Error response. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+
+
+## updateAdminAiTextModelProvider
+
+> AiTextModelProvider updateAdminAiTextModelProvider(id, aiTextModelProviderWriteRequest)
+
+
+
+### Example
+
+```ts
+import {
+  Configuration,
+  AdminApi,
+} from '@wishpool/api-client';
+import type { UpdateAdminAiTextModelProviderRequest } from '@wishpool/api-client';
+
+async function example() {
+  console.log("🚀 Testing @wishpool/api-client SDK...");
+  const config = new Configuration({ 
+    // Configure HTTP bearer authorization: bearerAuth
+    accessToken: "YOUR BEARER TOKEN",
+  });
+  const api = new AdminApi(config);
+
+  const body = {
+    // string
+    id: 38400000-8cf0-11bd-b23e-10b96e4ef00d,
+    // AiTextModelProviderWriteRequest
+    aiTextModelProviderWriteRequest: ...,
+  } satisfies UpdateAdminAiTextModelProviderRequest;
+
+  try {
+    const data = await api.updateAdminAiTextModelProvider(body);
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Run the test
+example().catch(console.error);
+```
+
+### Parameters
+
+
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **id** | `string` |  | [Defaults to `undefined`] |
+| **aiTextModelProviderWriteRequest** | [AiTextModelProviderWriteRequest](AiTextModelProviderWriteRequest.md) |  | |
+
+### Return type
+
+[**AiTextModelProvider**](AiTextModelProvider.md)
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+- **Content-Type**: `application/json`
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | OK |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
