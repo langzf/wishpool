@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 
 import '../design/wishpool_theme.dart';
 import '../domain/wishpool_snapshot.dart';
+import '../shared/friendly_error.dart';
 
 class MemoryTimelineScreen extends StatelessWidget {
   const MemoryTimelineScreen({super.key, required this.snapshot, this.onFeature});
@@ -266,7 +267,7 @@ class _MemoryItemCard extends StatelessWidget {
                     height: 170, width: double.infinity, fit: BoxFit.cover),
               ),
             ] else if (isAudio && item.url != null)
-              _AudioPlayer(url: item.url!, durationSec: item.durationSec),
+              AudioPlayerWidget(url: item.url!, durationSec: item.durationSec),
             if (isVideo && item.url != null) ...[
               _VideoPlayer(url: item.url!),
             ],
@@ -283,18 +284,59 @@ class _MemoryItemCard extends StatelessWidget {
   }
 }
 
-class _AudioPlayer extends StatefulWidget {
-  const _AudioPlayer({required this.url, this.durationSec});
+typedef AudioPlayerFactory = AudioPlayerController Function();
+abstract class AudioPlayerController {
+  Stream<PlayerState> get playerStateStream;
+  Stream<Duration> get positionStream;
+  Duration? get duration;
+  bool get playing;
+  ProcessingState get processingState;
+  Future<void> load(String url);
+  Future<void> play();
+  Future<void> pause();
+  Future<void> seek(Duration position);
+  Future<void> dispose();
+}
+class JustAudioPlayerController implements AudioPlayerController {
+  JustAudioPlayerController() : _player = AudioPlayer();
+  final AudioPlayer _player;
+  @override Stream<PlayerState> get playerStateStream => _player.playerStateStream;
+  @override Stream<Duration> get positionStream => _player.positionStream;
+  @override Duration? get duration => _player.duration;
+  @override bool get playing => _player.playing;
+  @override ProcessingState get processingState => _player.processingState;
+  @override Future<void> load(String url) async { await _player.setUrl(url); }
+  @override Future<void> play() => _player.play();
+  @override Future<void> pause() => _player.pause();
+  @override Future<void> seek(Duration position) => _player.seek(position);
+  @override Future<void> dispose() => _player.dispose();
+}
+AudioPlayerFactory audioPlayerFactory = JustAudioPlayerController.new;
+
+class AudioPlayerWidget extends StatefulWidget {
+  const AudioPlayerWidget({super.key, required this.url, this.durationSec, this.playerFactory});
   final String url;
   final int? durationSec;
+  final AudioPlayerFactory? playerFactory;
 
   @override
-  State<_AudioPlayer> createState() => _AudioPlayerState();
+  State<AudioPlayerWidget> createState() => _AudioPlayerState();
 }
 
-class _AudioPlayerState extends State<_AudioPlayer> {
-  final AudioPlayer _player = AudioPlayer();
+class _AudioPlayerState extends State<AudioPlayerWidget> {
+  late final AudioPlayerController _player = (widget.playerFactory ?? audioPlayerFactory)();
   bool _loading = false;
+  String? _error;
+
+  @override
+  void initState() { super.initState(); _loadMetadata(); }
+
+  Future<void> _loadMetadata() async {
+    if (mounted) setState(() { _loading = true; _error = null; });
+    try { await _player.load(widget.url); if (mounted) setState(() {}); }
+    catch (error) { if (mounted) setState(() => _error = childFriendlyError(error)); }
+    finally { if (mounted) setState(() => _loading = false); }
+  }
 
   @override
   void dispose() {
@@ -305,19 +347,15 @@ class _AudioPlayerState extends State<_AudioPlayer> {
   Future<void> _toggle() async {
     setState(() => _loading = true);
     try {
-      if (_player.processingState == ProcessingState.idle) {
-        await _player.setUrl(widget.url);
-      }
+      if (_error != null || _player.processingState == ProcessingState.idle) await _loadMetadata();
+      if (_error != null) return;
       if (_player.playing) {
         await _player.pause();
       } else {
         await _player.play();
       }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('语音播放失败，请稍后重试。')));
-      }
+    } catch (error) {
+      if (mounted) setState(() => _error = childFriendlyError(error));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -326,6 +364,7 @@ class _AudioPlayerState extends State<_AudioPlayer> {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
+      if (_error != null) Row(children: [Expanded(child: Text(_error!)), TextButton(onPressed: _loadMetadata, child: const Text('重试'))]),
       StreamBuilder<PlayerState>(
       stream: _player.playerStateStream,
       builder: (context, snapshot) => Row(
@@ -344,20 +383,19 @@ class _AudioPlayerState extends State<_AudioPlayer> {
         stream: _player.positionStream,
         builder: (context, snapshot) {
           final position = snapshot.data ?? Duration.zero;
-          final duration = _player.duration ??
-              (widget.durationSec == null ? Duration.zero : Duration(seconds: widget.durationSec!));
-          final max = duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1.0;
+          final duration = _player.duration ?? (widget.durationSec == null ? null : Duration(seconds: widget.durationSec!));
+          final max = duration?.inMilliseconds.toDouble() ?? 1.0;
           return Column(children: [
             Slider(
               value: position.inMilliseconds.clamp(0, max.toInt()).toDouble(),
               max: max,
-              onChanged: duration == Duration.zero
+              onChanged: duration == null
                   ? null
                   : (value) => _player.seek(Duration(milliseconds: value.toInt())),
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: Text('${_formatDuration(position)} / ${_formatDuration(duration)}'),
+              child: Text('${formatAudioDuration(duration == null ? null : position)} / ${formatAudioDuration(duration)}'),
             ),
           ]);
         },
@@ -365,8 +403,12 @@ class _AudioPlayerState extends State<_AudioPlayer> {
     ]);
   }
 
-  String _formatDuration(Duration value) =>
-      '${value.inMinutes.remainder(60).toString().padLeft(2, '0')}:${(value.inSeconds % 60).toString().padLeft(2, '0')}';
+}
+
+String formatAudioDuration(Duration? value) {
+  if (value == null) return '--:--';
+  if (value.inHours > 0) return '${value.inHours.toString().padLeft(2, '0')}:${(value.inMinutes % 60).toString().padLeft(2, '0')}:${(value.inSeconds % 60).toString().padLeft(2, '0')}';
+  return '${value.inMinutes.toString().padLeft(2, '0')}:${(value.inSeconds % 60).toString().padLeft(2, '0')}';
 }
 
 class _VideoPlayer extends StatefulWidget {
